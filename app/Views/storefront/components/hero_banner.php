@@ -118,6 +118,34 @@ if ($themeValue) {
                 outline-offset: 2px;
             }
         }
+        @media (min-width: 1024px) {
+            #<?= $id ?> .hero-cta-btn {
+                border-top-left-radius: 1.85rem;
+                padding: 0.85rem 2.15rem;
+            }
+            #<?= $id ?> .hero-cta-text {
+                font-size: 1.05rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+            }
+            #<?= $id ?> .slider-prev,
+            #<?= $id ?> .slider-next {
+                width: 2.75rem !important;
+                height: 2.75rem !important;
+            }
+            #<?= $id ?> .slider-prev {
+                left: 1.25rem;
+            }
+            #<?= $id ?> .slider-next {
+                right: 1.25rem;
+            }
+            #<?= $id ?> .slider-prev svg,
+            #<?= $id ?> .slider-next svg {
+                width: 1.25rem !important;
+                height: 1.25rem !important;
+            }
+        }
     </style>
     <div class="w-full max-w-full mx-auto px-1 sm:px-3 md:px-4 lg:px-6">
         <div class="rounded-2xl sm:rounded-[1.5rem] md:rounded-[2rem] lg:rounded-[2.5rem] p-1 sm:p-2 md:p-3 lg:p-3.5 relative" style="<?= htmlspecialchars($hbBg) ?>">

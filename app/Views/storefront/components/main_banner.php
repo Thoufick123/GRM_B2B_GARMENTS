@@ -1005,6 +1005,46 @@ if (is_numeric($mobileContainerHeight)) $mobileContainerHeight .= 'vh';
         <?php else: ?>
         .mb-left-<?= $uniqueId ?>, .mb-right-stack-<?= $uniqueId ?> { height: auto; }
         <?php endif; ?>
+
+        /* Desktop CTA Button Size Enhancement */
+        .mb-cta-btn-<?= $uniqueId ?> { border-top-left-radius: 1.85rem; padding: 0.85rem 2.15rem; }
+        .mb-cta-text-<?= $uniqueId ?> { font-size: 1.05rem; letter-spacing: 0.06em; }
+        .mb-left-<?= $uniqueId ?> .mb-cta-btn-<?= $uniqueId ?> { border-top-left-radius: 1.85rem; padding: 0.85rem 2.15rem; }
+        .mb-left-<?= $uniqueId ?> .mb-cta-text-<?= $uniqueId ?> { font-size: 1.05rem; letter-spacing: 0.06em; }
+
+        .mb-right_top-<?= $uniqueId ?> .mb-cta-btn-<?= $uniqueId ?>,
+        .mb-right_bottom-<?= $uniqueId ?> .mb-cta-btn-<?= $uniqueId ?> { padding: 0.45rem 1.15rem; border-top-left-radius: 1.15rem; }
+        .mb-right_top-<?= $uniqueId ?> .mb-cta-text-<?= $uniqueId ?>,
+        .mb-right_bottom-<?= $uniqueId ?> .mb-cta-text-<?= $uniqueId ?> { font-size: 0.78rem; letter-spacing: 0.05em; }
+
+        /* Desktop Arrow Button Size Enhancement */
+        [class*="mb-slider-prev-"],
+        [class*="mb-slider-next-"] {
+            width: 2.75rem !important;
+            height: 2.75rem !important;
+        }
+        [class*="mb-slider-prev-"] {
+            left: 1.25rem !important;
+        }
+        [class*="mb-slider-next-"] {
+            right: 1.25rem !important;
+        }
+        [class*="mb-slider-prev-"] svg,
+        [class*="mb-slider-next-"] svg {
+            width: 1.25rem !important;
+            height: 1.25rem !important;
+        }
+
+        .swiper-button-prev-custom,
+        .swiper-button-next-custom {
+            width: 2.25rem !important;
+            height: 2.25rem !important;
+        }
+        .swiper-button-prev-custom svg,
+        .swiper-button-next-custom svg {
+            width: 1.15rem !important;
+            height: 1.15rem !important;
+        }
     }
 
     @media (min-width: 768px) {
