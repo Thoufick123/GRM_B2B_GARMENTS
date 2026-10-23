@@ -101,6 +101,8 @@ try {
             `no_gst_reason` VARCHAR(255) NULL,
             `instagram_link` VARCHAR(255) NULL,
             `instagram_profile` VARCHAR(255) NULL,
+            `tax_verified` TINYINT(1) NOT NULL DEFAULT 0,
+            `verification_data` LONGTEXT NULL,
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE

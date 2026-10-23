@@ -38,7 +38,7 @@
                     </div>
 
                     <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0f2963] font-display tracking-tight leading-tight">
-                        GRM B2B Wholesale Terms & <span class="text-[#F25996]">Conditions</span>
+                        GRM B2B Wholesale Terms &amp; <span class="text-[#F25996]">Conditions</span>
                     </h1>
 
                     <p class="text-slate-600 text-base sm:text-lg max-w-xl leading-relaxed pt-1">

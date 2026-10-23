@@ -615,16 +615,32 @@ if ($hasDynamicNavbar) {
             background: #d94883 !important;
             transform: translateY(-1px);
         }
-        .grm-terms-scroll-box,
         .scrollbar-hide {
             scrollbar-width: none !important;
             -ms-overflow-style: none !important;
         }
-        .grm-terms-scroll-box::-webkit-scrollbar,
         .scrollbar-hide::-webkit-scrollbar {
             display: none !important;
             width: 0px !important;
             height: 0px !important;
+        }
+        .grm-terms-scroll-box {
+            scrollbar-width: thin;
+            scrollbar-color: #f472b6 #fdf2f8;
+        }
+        .grm-terms-scroll-box::-webkit-scrollbar {
+            width: 5px;
+        }
+        .grm-terms-scroll-box::-webkit-scrollbar-track {
+            background: #fdf2f8;
+            border-radius: 9999px;
+        }
+        .grm-terms-scroll-box::-webkit-scrollbar-thumb {
+            background: #f472b6;
+            border-radius: 9999px;
+        }
+        .grm-terms-scroll-box::-webkit-scrollbar-thumb:hover {
+            background: #db2777;
         }
     </style>
 
@@ -694,7 +710,7 @@ if ($hasDynamicNavbar) {
                         + '<h3 style="font-size:22px;font-weight:800;color:#111827;margin:0 0 6px 0;line-height:1.2;font-family:inherit;">Success</h3>'
                         + '<p style="margin:0;font-size:14px;color:#4b5563;font-weight:600;"><?= htmlspecialchars($flashSuccess) ?></p>'
                         + '</div>'
-                        + '<div class="grm-terms-scroll-box" style="background:#fff5f8;border:1px solid #fce7f3;border-radius:14px;padding:14px 16px;text-align:left;max-height:220px;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none;">'
+                        + '<div class="grm-terms-scroll-box" style="background:#fff5f8;border:1px solid #fce7f3;border-radius:14px;padding:14px 16px;text-align:left;max-height:360px;max-height:min(360px, 50vh);overflow-y:auto;">'
                         + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">'
                         + '<svg style="width:15px;height:15px;color:#db2777;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>'
                         + '<p style="margin:0;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#db2777;">Terms &amp; Conditions</p>'
@@ -733,10 +749,16 @@ if ($hasDynamicNavbar) {
                         + '<span>By placing the order, the customer agrees to the above terms.</span>'
                         + '</li>'
                         + '</ul>'
+                        + '<div style="text-align:center;margin-top:10px;padding-top:8px;border-top:1px dashed #fce7f3;">'
+                        + '<a href="<?= BASE_URL ?>/terms" target="_blank" style="font-size:11px;font-weight:700;color:#db2777;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">'
+                        + '<span>Read Full Terms &amp; Conditions</span>'
+                        + '<svg style="width:11px;height:11px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>'
+                        + '</a>'
+                        + '</div>'
                         + '</div>',
                     confirmButtonColor: '#F25996',
                     confirmButtonText: 'OK',
-                    width: 460,
+                    width: 480,
                     allowOutsideClick: false,
                     customClass: {
                         popup: 'swal-login-popup',
