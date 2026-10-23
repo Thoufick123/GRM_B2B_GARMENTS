@@ -8,8 +8,24 @@ $vData = $savedVerification['data'] ?? null;
 $vType = $savedVerification['type'] ?? ($buyer['gst_flag'] ? 'gst' : 'pan');
 ?>
 
+<?php
+$fromParam = $_GET['from'] ?? null;
+$isRejected = ($buyer['status'] === 'rejected') 
+    || (($buyer['request_status'] ?? '') === 'rejected') 
+    || ($fromParam === 'rejected');
+
+$isPending = ($buyer['status'] === 'pending') 
+    || (($buyer['request_status'] ?? '') === 'pending') 
+    || ($fromParam === 'pending');
+?>
+
 <div class="-mt-4 mb-4 flex justify-end">
-    <?php if ($buyer['status'] === 'pending'): ?>
+    <?php if ($isRejected): ?>
+        <a href="<?= BASE_URL ?>/admin/buyers/pending?tab=rejected" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 font-bold transition-colors">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Back to Rejected Buyers
+        </a>
+    <?php elseif ($isPending): ?>
         <a href="<?= BASE_URL ?>/admin/buyers/pending" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 font-bold transition-colors">
             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             Back to Pending Buyers
