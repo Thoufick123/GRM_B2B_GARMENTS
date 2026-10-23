@@ -200,11 +200,7 @@
                     🧵
                 </div>
                 <h3 class="text-xl font-bold text-gray-900 font-display">No Customizable Fabrics Available</h3>
-                <p class="text-sm text-gray-500 max-w-md mx-auto mt-2 mb-6">There are currently no active fabric programs configured by the admin matching your criteria. Please check back shortly.</p>
-                <a href="<?= BASE_URL ?>/catalog" class="inline-flex items-center gap-2 px-6 py-3 bg-[#F25996] hover:bg-[#d8407d] text-white font-bold text-sm rounded-full transition-colors shadow-sm">
-                    <span>Browse Ready Catalog</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                </a>
+                <p class="text-sm text-gray-500 max-w-md mx-auto mt-2">There are currently no active fabric programs configured by the admin matching your criteria. Please check back shortly.</p>
             </div>
         <?php else: ?>
             <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-7">

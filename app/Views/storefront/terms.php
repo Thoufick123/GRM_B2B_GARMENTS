@@ -38,7 +38,7 @@
                     </div>
 
                     <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0f2963] font-display tracking-tight leading-tight">
-                        Terms & <span class="text-[#F25996]">Conditions</span>
+                        GRM B2B Wholesale Terms & <span class="text-[#F25996]">Conditions</span>
                     </h1>
 
                     <p class="text-slate-600 text-base sm:text-lg max-w-xl leading-relaxed pt-1">
@@ -129,7 +129,7 @@
                     <span>Official B2B Agreement</span>
                 </div>
                 <h2 class="text-2xl sm:text-3xl font-extrabold text-[#0f2963] tracking-tight font-display">
-                    B2B Wholesale Terms &amp; Conditions
+                    GRM B2B Wholesale Terms &amp; Conditions
                 </h2>
                 <p class="text-slate-600 text-sm sm:text-base mt-3 leading-relaxed">
                     These Terms and Conditions (&ldquo;Terms&rdquo;) govern every wholesale order placed with the Company (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) by a registered business buyer (&ldquo;the Buyer,&rdquo; &ldquo;you,&rdquo; or &ldquo;the Customer&rdquo;). They are written to set out, in clear and professional language, exactly what both sides can expect once an order is placed. By submitting a purchase order, confirming a quotation or invoice, or otherwise placing a wholesale order with us &mdash; whether by phone, email, in person, or through our website &mdash; the Buyer acknowledges that it has read, understood, and agreed to be bound by these Terms in full.
@@ -152,11 +152,11 @@
                         </div>
                     </div>
                     <ul class="space-y-2 pl-11 text-slate-700 text-sm sm:text-base leading-relaxed">
-                        <li><strong class="text-gray-900">&bull; &ldquo;Buyer&rdquo;</strong> means the business placing an Order with the Company.</li>
-                        <li><strong class="text-gray-900">&bull; &ldquo;Order&rdquo;</strong> means a purchase order, accepted quotation, or any request to buy goods, submitted through any channel.</li>
-                        <li><strong class="text-gray-900">&bull; &ldquo;Order Confirmation&rdquo;</strong> means the Company's written confirmation, proforma invoice, or tax invoice for an Order.</li>
-                        <li><strong class="text-gray-900">&bull; &ldquo;Goods&rdquo;</strong> means the products supplied under an Order.</li>
-                        <li><strong class="text-gray-900">&bull; &ldquo;Assorted&rdquo;</strong> means Goods sold in mixed or random designs, colours, or prints selected by the Company.</li>
+                        <li><strong class="text-gray-900">1.1 &ldquo;Buyer&rdquo;</strong> means the business placing an Order with the Company.</li>
+                        <li><strong class="text-gray-900">1.2 &ldquo;Order&rdquo;</strong> means a purchase order, accepted quotation, or any request to buy goods, submitted through any channel.</li>
+                        <li><strong class="text-gray-900">1.3 &ldquo;Order Confirmation&rdquo;</strong> means the Company's written confirmation, proforma invoice, or tax invoice for an Order.</li>
+                        <li><strong class="text-gray-900">1.4 &ldquo;Goods&rdquo;</strong> means the products supplied under an Order.</li>
+                        <li><strong class="text-gray-900">1.5 &ldquo;Assorted&rdquo;</strong> means Goods sold in mixed or random designs, colours, or prints selected by the Company.</li>
                     </ul>
                 </div>
 
@@ -424,8 +424,8 @@
                 
                 <a href="mailto:grmb2bsupport@gmail.com" 
                    class="inline-flex items-center justify-center gap-2 bg-[#F25996] hover:bg-[#d8407d] active:bg-[#c2346e] text-white font-bold px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-sm whitespace-nowrap w-full sm:w-auto text-center transform hover:-translate-y-0.5">
-                    <span>Contact Support</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <span>Contact Us</span>
+                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
                 </a>

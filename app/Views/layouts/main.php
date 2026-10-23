@@ -2468,43 +2468,37 @@ if ($hasDynamicNavbar) {
             }
         }
 
-        /* Bouncing Scroll-to-Top Button */
+        /* Bouncing Scroll-to-Top Button - Same Style as WhatsApp Button */
         #scroll-to-top-btn {
             position: fixed;
             z-index: 998;
+            background-color: #e8015b !important;
+            color: #ffffff !important;
+            border-radius: 9999px !important;
             border: none;
-            background: transparent;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            outline: none;
             cursor: pointer;
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.2s ease;
-            filter: drop-shadow(0 4px 12px rgba(232, 1, 91, 0.35));
+            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
         }
         #scroll-to-top-btn.is-visible {
             opacity: 1;
             visibility: visible;
             pointer-events: auto;
+            animation: bounceButtonUp 1.6s infinite ease-in-out !important;
         }
-        #scroll-to-top-btn.is-visible .scroll-arrow-icon {
-            animation: bounceArrowUp 1.8s infinite ease-in-out;
+        #scroll-to-top-btn.is-visible:hover {
+            animation-play-state: paused;
+            transform: translateY(-4px) scale(1.1);
         }
-        #scroll-to-top-btn:hover {
-            transform: scale(1.1);
-        }
-        #scroll-to-top-btn:active {
-            transform: scale(0.95);
-        }
-        @keyframes bounceArrowUp {
+        @keyframes bounceButtonUp {
             0%, 100% {
                 transform: translateY(0);
             }
             50% {
-                transform: translateY(-8px);
+                transform: translateY(-10px);
             }
         }
         /* Mobile View (<768px): position above WhatsApp button */
@@ -2514,7 +2508,11 @@ if ($hasDynamicNavbar) {
                 height: 42px !important;
                 bottom: 70px !important;
                 right: 18px !important;
-                filter: drop-shadow(0 3px 10px rgba(232, 1, 91, 0.32)) !important;
+                box-shadow: 0 4px 14px rgba(232, 1, 91, 0.38) !important;
+            }
+            #scroll-to-top-btn svg {
+                width: 22px !important;
+                height: 22px !important;
             }
         }
         /* Tablet View (768px - 1023px) */
@@ -2524,6 +2522,11 @@ if ($hasDynamicNavbar) {
                 height: 46px !important;
                 bottom: 76px !important;
                 right: 19px !important;
+                box-shadow: 0 4px 14px rgba(232, 1, 91, 0.38) !important;
+            }
+            #scroll-to-top-btn svg {
+                width: 24px !important;
+                height: 24px !important;
             }
         }
         /* Desktop View (>= 1024px) */
@@ -2533,6 +2536,11 @@ if ($hasDynamicNavbar) {
                 height: 50px !important;
                 bottom: 88px !important;
                 right: 24px !important;
+                box-shadow: 0 6px 20px rgba(232, 1, 91, 0.42) !important;
+            }
+            #scroll-to-top-btn svg {
+                width: 26px !important;
+                height: 26px !important;
             }
         }
     </style>
@@ -2546,13 +2554,15 @@ if ($hasDynamicNavbar) {
         </div>
     </a>
 
-    <!-- Bouncing Scroll to Top Button -->
-    <button id="scroll-to-top-btn" type="button" aria-label="Scroll to top" title="Scroll to top">
-        <svg class="scroll-arrow-icon w-full h-full block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
-            <!--!Font Awesome Free v7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
-            <circle cx="320" cy="320" r="255" fill="#ffffff" />
-            <path fill="#e8015b" d="M320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576zM337 199L417 279C426.4 288.4 426.4 303.6 417 312.9C407.6 322.2 392.4 322.3 383.1 312.9L344.1 273.9L344.1 424C344.1 437.3 333.4 448 320.1 448C306.8 448 296.1 437.3 296.1 424L296.1 273.9L257.1 312.9C247.7 322.3 232.5 322.3 223.2 312.9C213.9 303.5 213.8 288.3 223.2 279L303.2 199C312.6 189.6 327.8 189.6 337.1 199z"/>
+    <!-- Bouncing Scroll to Top Button (Same style as WhatsApp Button) -->
+    <button id="scroll-to-top-btn" type="button" class="fixed bg-[#e8015b] text-white rounded-full shadow-md hover:scale-110 transition-transform duration-300 flex items-center justify-center group" aria-label="Scroll to top" title="Scroll to top">
+        <svg class="scroll-arrow-icon" fill="currentColor" viewBox="200 175 240 285" xmlns="http://www.w3.org/2000/svg">
+            <path d="M337 199L417 279C426.4 288.4 426.4 303.6 417 312.9C407.6 322.2 392.4 322.3 383.1 312.9L344.1 273.9L344.1 424C344.1 437.3 333.4 448 320.1 448C306.8 448 296.1 437.3 296.1 424L296.1 273.9L257.1 312.9C247.7 322.3 232.5 322.3 223.2 312.9C213.9 303.5 213.8 288.3 223.2 279L303.2 199C312.6 189.6 327.8 189.6 337.1 199z"/>
         </svg>
+        <!-- Optional Tooltip -->
+        <div class="absolute right-full mr-3 bg-white text-gray-800 text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 whitespace-nowrap pointer-events-none">
+            Scroll to top
+        </div>
     </button>
 
     <script>

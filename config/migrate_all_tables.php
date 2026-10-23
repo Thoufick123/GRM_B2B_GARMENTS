@@ -39,6 +39,7 @@ try {
             `name` VARCHAR(255) NULL,
             `email` VARCHAR(255) UNIQUE NOT NULL,
             `phone` VARCHAR(20) UNIQUE NOT NULL,
+            `profile_picture` VARCHAR(500) NULL,
             `password_hash` VARCHAR(255) NOT NULL,
             `role` VARCHAR(50) NOT NULL DEFAULT 'buyer',
             `role_id` BIGINT NULL,

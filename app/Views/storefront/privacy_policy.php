@@ -38,7 +38,7 @@
                     </div>
 
                     <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0f2963] font-display tracking-tight leading-tight">
-                        GRM B2B WHOLESALE <span class="text-[#F25996]">Privacy Policy</span>
+                        GRM B2B Wholesale <span class="text-[#F25996]"> & Privacy Policy</span>
                     </h1>
 
                     <p class="text-slate-600 text-base sm:text-lg max-w-xl leading-relaxed pt-1">
@@ -108,7 +108,7 @@
                     <span>Official Privacy Policy</span>
                 </div>
                 <h2 class="text-2xl sm:text-3xl font-extrabold text-[#0f2963] tracking-tight font-display">
-                    GRM B2B WHOLESALE Privacy Policy
+                    GRM B2B Wholesale Privacy Policy
                 </h2>
                 <p class="text-slate-600 text-sm sm:text-base mt-2 leading-relaxed max-w-4xl">
                     At GRM B2B Wholesale, we are committed to protecting the privacy and security of our business customers. This policy explains how we collect, use, and safeguard your information.

@@ -4,18 +4,31 @@ $userName = $user['name'] ?? (\Core\Session::get('user_name') ?? '');
 $userProfilePic = $user['profile_picture'] ?? '';
 
 if (($userId && empty($userName)) || ($userId && empty($userProfilePic))) {
-    $db = \Core\Database::getInstance();
-    $stmt = $db->prepare("SELECT name, profile_picture FROM users WHERE id = ?");
-    $stmt->execute([$userId]);
-    $uRow = $stmt->fetch();
-    if ($uRow) {
-        if (empty($userName) && !empty($uRow['name'])) {
-            $userName = $uRow['name'];
-            \Core\Session::set('user_name', $userName);
+    try {
+        $db = \Core\Database::getInstance();
+        $stmt = $db->prepare("SELECT name, profile_picture FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $uRow = $stmt->fetch();
+        if ($uRow) {
+            if (empty($userName) && !empty($uRow['name'])) {
+                $userName = $uRow['name'];
+                \Core\Session::set('user_name', $userName);
+            }
+            if (empty($userProfilePic) && !empty($uRow['profile_picture'])) {
+                $userProfilePic = $uRow['profile_picture'];
+            }
         }
-        if (empty($userProfilePic) && !empty($uRow['profile_picture'])) {
-            $userProfilePic = $uRow['profile_picture'];
-        }
+    } catch (\Throwable $e) {
+        // Fallback to name-only query if profile_picture column does not exist
+        try {
+            $stmt = $db->prepare("SELECT name FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $uRow = $stmt->fetch();
+            if ($uRow && empty($userName) && !empty($uRow['name'])) {
+                $userName = $uRow['name'];
+                \Core\Session::set('user_name', $userName);
+            }
+        } catch (\Throwable $e2) {}
     }
 }
 $displayName = !empty($userName) ? $userName : 'Buyer';
