@@ -675,9 +675,9 @@ class InvoiceService
   .change-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; }
 
   .bank-table { width: 100%; border: 1px solid #334155; border-collapse: collapse; }
-  .bank-table th { background-color: #1e293b; color: #ffffff; font-size: 8px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; padding: 4px 6px; text-align: left; border: 1px solid #334155; }
-  .bank-table td { padding: 3px 6px; font-size: 8px; border: 1px solid #334155; vertical-align: middle; }
-  .bank-table td.bank-label { width: 38%; font-weight: 700; color: #1e293b; background-color: #f8fafc; text-transform: uppercase; font-size: 7.5px; }
+  .bank-table th { background-color: #1e293b; color: #ffffff; font-size: 7.5px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; padding: 3px 5px; text-align: left; border: 1px solid #334155; }
+  .bank-table td { padding: 2.5px 5px; font-size: 7px; border: 1px solid #334155; vertical-align: middle; }
+  .bank-table td.bank-label { width: 36%; font-weight: 700; color: #1e293b; background-color: #f8fafc; text-transform: uppercase; font-size: 6.8px; }
   .bank-table td.bank-val { font-weight: 800; color: #0f172a; }
 
   .totals-table { width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; border-collapse: collapse; }
@@ -685,21 +685,27 @@ class InvoiceService
   .totals-table td:first-child { font-weight: 600; color: #475569; border-right: 1px solid #e2e8f0; width: 55%; }
   .totals-table td:last-child { text-align: right; font-weight: 700; color: #0f172a; }
   .totals-table tr.tax-row td { background-color: #f8fafc; color: #475569; }
-  .totals-table tr.grand-total td { background-color: #1e293b; font-weight: 900; font-size: 10.5px; color: #ffffff; }
+  .totals-table tr.grand-total td { background-color: #1e293b; font-weight: 900; font-size: 10px; color: #ffffff; }
 
-  .terms-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 5px 8px; }
-  .terms-box h4 { margin: 0 0 2.5px 0; font-size: 8px; text-transform: uppercase; color: #0f172a; font-weight: 800; letter-spacing: 0.5px; }
-  .terms-box ol { margin: 0; padding-left: 12px; font-size: 7.2px; color: #334155; line-height: 1.35; }
-  .terms-box li { margin-bottom: 1.2px; }
+  .terms-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 6px; font-size: 5.2px; color: #334155; line-height: 1.18; }
+  .terms-box h4 { margin: 0 0 2px 0; font-size: 6.8px; text-transform: uppercase; color: #0f172a; font-weight: 800; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px; }
+  .terms-box .terms-intro { font-size: 5.2px; color: #475569; margin: 0 0 2px 0; line-height: 1.18; }
+  .terms-box .term-item { margin-bottom: 1px; }
+  .terms-box .term-item strong { color: #0f172a; font-weight: 700; }
+  .terms-box ol { margin: 0; padding-left: 10px; }
+  .terms-box li { margin-bottom: 1px; }
+  .terms-box li strong { color: #0f172a; font-weight: 700; }
+  .terms-sublist { margin: 1px 0 2px 0; padding-left: 0; list-style: none; }
+  .terms-sublist div { margin-bottom: 1px; }
 
-  .declaration-box { margin-top: 5px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; }
-  .declaration-box h4 { margin: 0 0 2px 0; font-size: 7.5px; text-transform: uppercase; color: #0f172a; font-weight: 800; letter-spacing: 0.5px; }
-  .declaration-box p { margin: 0; font-size: 7px; color: #475569; line-height: 1.3; }
+  .declaration-box { margin-top: 3px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 3px 5px; }
+  .declaration-box h4 { margin: 0 0 1px 0; font-size: 6.5px; text-transform: uppercase; color: #0f172a; font-weight: 800; letter-spacing: 0.5px; }
+  .declaration-box p { margin: 0; font-size: 5.2px; color: #475569; line-height: 1.18; }
 
   .seal-box { text-align: center; padding: 4px 0; }
-  .seal-box .seal-company { font-size: 8.5px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
-  .seal-box .seal-space { height: 38px; }
-  .seal-box .seal-sign { font-size: 8px; font-weight: 700; color: #334155; }
+  .seal-box .seal-company { font-size: 8px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
+  .seal-box .seal-space { height: 28px; }
+  .seal-box .seal-sign { font-size: 7.5px; font-weight: 700; color: #334155; }
 
   .footer { border-top: 1px solid #e2e8f0; padding-top: 5px; font-size: 8px; color: #64748b; display: table; width: 100%; margin-top: 8px; }
   .footer-left { display: table-cell; text-align: left; }
@@ -1008,23 +1014,32 @@ class InvoiceService
     }
   ?>
 
-  <!-- Bottom Layout: Terms & Bank Account Details on Left (58%), Totals on Right (42%) -->
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+  <!-- Bottom Layout: Terms & Declaration on Left (58%), Totals, Bank Details & Signature on Right (42%) -->
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
     <tr>
       <!-- Left Column: Terms & Conditions and Declaration -->
       <td style="width: 58%; vertical-align: top; padding-right: 10px;">
         <div class="terms-box">
-          <h4>Terms &amp; Conditions</h4>
-          <ol>
-            <li>Wholesale orders only.</li>
-            <li>Products are supplied as per the quantity ordered.</li>
-            <li>For products with assorted/random designs, pieces are selected randomly and may differ from the images shown on the website.</li>
-            <li>Images are for reference only; actual design, print, color, or pattern may vary.</li>
-            <li><strong>NO RETURN, NO EXCHANGE, NO CASH REFUND</strong> is accepted once the order is confirmed/delivered.</li>
-            <li>Customers are requested to check the quantity and products at the time of delivery.</li>
-            <li>Once the order is confirmed, cancellation is not allowed.</li>
-            <li>By placing the order, the customer agrees to the above terms.</li>
-          </ol>
+          <h4>GRM B2B Wholesale Terms &amp; Conditions</h4>
+          <p class="terms-intro">These Terms and Conditions (&ldquo;Terms&rdquo;) govern every wholesale order placed with the Company (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) by a registered business buyer (&ldquo;the Buyer,&rdquo; &ldquo;you,&rdquo; or &ldquo;the Customer&rdquo;). They are written to set out, in clear and professional language, exactly what both sides can expect once an order is placed. By submitting a purchase order, confirming a quotation or invoice, or otherwise placing a wholesale order with us &mdash; whether by phone, email, in person, or through our website &mdash; the Buyer acknowledges that it has read, understood, and agreed to be bound by these Terms in full.</p>
+
+          <div class="terms-list">
+            <div class="term-item"><strong>1. Definitions:</strong> 1.1 &ldquo;Buyer&rdquo; means the business placing an Order with the Company. 1.2 &ldquo;Order&rdquo; means a purchase order, accepted quotation, or any request to buy goods, submitted through any channel. 1.3 &ldquo;Order Confirmation&rdquo; means the Company's written confirmation, proforma invoice, or tax invoice for an Order. 1.4 &ldquo;Goods&rdquo; means the products supplied under an Order. 1.5 &ldquo;Assorted&rdquo; means Goods sold in mixed or random designs, colours, or prints selected by the Company.</div>
+            <div class="term-item"><strong>2. Wholesale Only:</strong> 2.1 The Company sells only to businesses buying for resale, distribution, or commercial use, and does not sell to individual retail consumers. 2.2 The Buyer must provide a valid GSTIN or other business registration proof [if applicable] before its first Order. 2.3 The minimum order quantity is [quantity/value], unless stated otherwise in the quotation. 2.4 The Company may decline or limit any Order, or request further verification, at its discretion. 2.5 Wholesale prices and catalogues are for trade Buyers only and must not be quoted to end consumers.</div>
+            <div class="term-item"><strong>3. Orders and Confirmation:</strong> 3.1 An Order becomes binding once the Company issues an Order Confirmation and, where full payment is required before dispatch under Section 4, once that payment is received. 3.2 The Buyer must check the product, design, quantity, size, and price on the Order Confirmation and report any error within [24] hours of receiving it. 3.3 The Company will not substitute products or reduce quantities without the Buyer's consent, except for Assorted Goods under Section 5. 3.4 If an item becomes unavailable after confirmation, the Company will inform the Buyer before dispatch. The Buyer may choose a partial shipment, a back-order, or an agreed substitute; any amount paid for items not supplied will be refunded or credited within [3] working days.</div>
+            <div class="term-item"><strong>4. Prices and Payment:</strong> 4.1 Prices are in Rupees and exclusive of GST, freight, and insurance, unless the quotation states otherwise. 4.2 Quotations and proforma invoices are valid for 48 hours. If full payment is not received within that period, the quotation lapses and prices may be revised before a new one is issued. 4.3 Full payment is required before dispatch. The Company does not offer credit or cash on delivery (COD). 4.4 Payments must be made only to the Company's official bank account; the Company is not responsible for payments made to any other account. 4.5 Ownership of the Goods passes to the Buyer once full payment is received and the Goods are dispatched.</div>
+            <div class="term-item"><strong>5. Product Images, Assorted Designs, and Variations:</strong> 5.1 Images on the Company's website, catalogues, and marketing materials are for reference only; actual design, print placement, colour, pattern, texture, finish, and packaging may vary. 5.2 For Assorted Goods, designs, colours, and prints are selected by the Company at the time of packing and may differ from the images shown. A Buyer wanting a specific design must request it in writing before confirmation; this is subject to stock availability and may affect price or lead time. 5.3 The following are normal variations and not defects: colour or shade differences between production batches; minor variation in size, weight, or dimensions within [&plusmn;5]%; colour differences caused by screen display or photography; and the random selection of designs in Assorted Goods. 5.4 None of the variations in this Section is grounds for rejection, return, or refund.</div>
+            <div class="term-item"><strong>6. Dispatch, Delivery, and Transit Risk:</strong> 6.1 Goods are usually dispatched within [3] working days of full payment being received. Dispatch and delivery dates are estimates only; a delay does not entitle the Buyer to cancel the Order or claim compensation. 6.2 Goods are sent through [the Company's chosen transporter / a transporter nominated by the Buyer]; freight is [payable by the Buyer / included in the price, as stated in the quotation]. 6.3 Risk of loss or damage passes to the Buyer once the Goods are handed to the transporter, or collected by the Buyer from the Company's premises. 6.4 Loss or damage in transit must be claimed from the transporter or insurer. The Company will share the relevant dispatch documents and reasonably support the claim.</div>
+            <div class="term-item"><strong>7. Inspection and Claims:</strong> 7.1 At delivery, the Buyer must check the number of cartons or packages against the delivery documents and confirm the outer packaging is intact. Any missing item or visible damage must be noted on the transporter's delivery receipt before signing. 7.2 Within [48] hours of delivery, the Buyer must inspect the contents. Any shortage, wrong item, or manufacturing defect must be reported to [support contact] along with the invoice number, clear photographs, and, where possible, an unedited video of the sealed package being opened. 7.3 The Company will not accept a claim that is reported after this window, made without the evidence above, concerning Goods that have been used, altered, repacked, or sold on, or concerning any variation described in Section 5. 7.4 Where a claim is valid, the Company will, at its choice, replace the affected items, supply the missing items, or issue a credit note for their invoice value. This is the Buyer's sole remedy for shortage, wrong supply, or defects.</div>
+            <div class="term-item"><strong>8. No Returns, Exchanges, or Refunds &ndash; Strict Policy:</strong> 8.1 No Goods may be sent back to the Company without its prior written approval; Goods returned without approval will be refused or held at the Buyer's cost. 8.2 Except for valid claims under Section 7 and refunds for unsupplied items under Section 3.4, the Company does not accept returns, exchanges, or refunds once an Order is confirmed. 8.3 This applies regardless of the reason given, including change of preference or the variations described in Section 5.</div>
+            <div class="term-item"><strong>9. Cancellation and Changes:</strong> 9.1 The Buyer cannot cancel an Order once it is binding under Section 3.1. 9.2 A request to increase quantity or change specification may be accepted at the Company's discretion before dispatch; any additional amount must be paid in full before dispatch, and no refund is given for a reduction or change. 9.3 If the Buyer refuses to accept delivery of paid Goods, no refund will be given, and the Buyer must bear the return freight and any storage charges. Goods not collected within [30] days of written notice may be disposed of or resold by the Company. 9.4 The Company may cancel an Order it cannot supply for reasons beyond its control; in that case, any amount paid for the unsupplied Goods will be refunded.</div>
+            <div class="term-item"><strong>10. Limitation of Liability:</strong> 10.1 The Company's total liability for any Order is limited to the invoice value of the Goods concerned. 10.2 The Company is not liable for loss of profit, loss of business, or any indirect or consequential loss. 10.3 The Company's liability for the quality of Goods is limited to the remedies in Section 7; to the extent permitted by law, all other conditions and warranties about quality or fitness for a particular purpose are excluded.</div>
+            <div class="term-item"><strong>11. Force Majeure:</strong> The Company is not liable for any delay or failure to supply caused by events beyond its reasonable control, including natural disasters, fire, epidemics, strikes, power failure, shortage of raw materials, transport disruption, or government action. If such an event continues for more than [30] days, either party may cancel the unsupplied part of the Order, and any amount paid for it will be refunded.</div>
+            <div class="term-item"><strong>12. Designs and Intellectual Property:</strong> 12.1 All images, catalogues, designs, and content on the Company's website remain its property and may not be copied or used without written permission. 12.2 Where the Buyer supplies its own design, logo, or artwork for use on the Goods or packaging, the Buyer confirms it owns or has the right to use it, and will indemnify the Company against any claim that it infringes another person's rights.</div>
+            <div class="term-item"><strong>13. Privacy:</strong> The Company collects and uses the Buyer's business and contact details only to process Orders, deliver Goods, and communicate about its products. Further details are set out in the Company's Privacy Policy.</div>
+            <div class="term-item"><strong>14. General:</strong> 14.1 By placing an Order through any channel, the Buyer agrees to these Terms, which apply to every Order even if not separately referenced on the purchase order, invoice, or delivery note. 14.2 These Terms override any terms in the Buyer's purchase order, unless an authorised representative of the Company agrees otherwise in writing. 14.3 The Company may update these Terms at any time; the version in effect at the time an Order is confirmed applies to that Order. 14.4 If any clause is found invalid or unenforceable, the remaining clauses continue to apply. 14.5 If the Company does not enforce a clause at any time, it does not lose the right to enforce it later.</div>
+            <div class="term-item"><strong>15. Governing Law and Disputes:</strong> 15.1 These Terms are governed by the laws of [India\ Tamil Nadu]. 15.2 The parties will first try to resolve any dispute through good-faith discussion within [15] days. 15.3 Any unresolved dispute is subject to the exclusive jurisdiction of the courts at [coimbatore], [India\ Tamil Nadu].</div>
+          </div>
         </div>
 
         <div class="declaration-box">
@@ -1033,7 +1048,7 @@ class InvoiceService
         </div>
       </td>
 
-      <!-- Right Column: Final Totals Summary (CGST/SGST, IGST, Fees & Round Off) -->
+      <!-- Right Column: Final Totals Summary, Bank Details & Signature -->
       <td style="width: 42%; vertical-align: top; padding-left: 10px;">
         <table class="totals-table">
           <tr>
@@ -1110,16 +1125,9 @@ class InvoiceService
             <td style="color: #ffffff;">₹<?= number_format($finalGrandTotal, 2) ?></td>
           </tr>
         </table>
-      </td>
-    </tr>
-  </table>
 
-  <!-- Bank Details & Official Signature -->
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
-    <tr>
-      <!-- Left Column: Bank Account Details -->
-      <td style="width: 58%; vertical-align: top; padding-right: 8px;">
-        <table class="bank-table">
+        <!-- Bank Account Details (Directly below Grand Total) -->
+        <table class="bank-table" style="margin-top: 8px;">
           <tr>
             <th colspan="2">BANK ACCOUNT DETAILS</th>
           </tr>
@@ -1133,11 +1141,11 @@ class InvoiceService
           </tr>
           <tr>
             <td class="bank-label">ACCOUNT NO</td>
-            <td class="bank-val" style="font-family: monospace; font-size: 8.5px; letter-spacing: 0.5px;">34890210000830</td>
+            <td class="bank-val" style="font-family: monospace; font-size: 8px; letter-spacing: 0.5px;">34890210000830</td>
           </tr>
           <tr>
             <td class="bank-label">IFSC CODE</td>
-            <td class="bank-val" style="font-family: monospace; font-size: 8.5px; letter-spacing: 0.5px;">UCBA0003489</td>
+            <td class="bank-val" style="font-family: monospace; font-size: 8px; letter-spacing: 0.5px;">UCBA0003489</td>
           </tr>
           <tr>
             <td class="bank-label">BRANCH NAME</td>
@@ -1145,15 +1153,13 @@ class InvoiceService
           </tr>
           <tr>
             <td class="bank-label">BRANCH ADDRESS</td>
-            <td class="bank-val" style="font-size: 7.5px; line-height: 1.25;">1323, Trichy Main Road, Near Registry Office, Sulur, Coimbatore, TN - 641041</td>
+            <td class="bank-val" style="font-size: 6.8px; line-height: 1.2;">1323, Trichy Main Road, Near Registry Office, Sulur, Coimbatore, TN - 641041</td>
           </tr>
         </table>
-      </td>
 
-      <!-- Right Column: Official Seal (Right Bottom - Boxless, text only) -->
-      <td style="width: 42%; vertical-align: middle; padding-left: 8px;">
-        <div class="seal-box">
-          <div class="seal-company">For GRM Garments</div>
+        <!-- Official Signatory & Seal (Directly below Bank Details) -->
+        <div class="seal-box" style="margin-top: 10px;">
+          <div class="seal-company">FOR GRM GARMENTS</div>
           <div class="seal-space"></div>
           <div class="seal-sign">Authorized Signatory &amp; Seal</div>
         </div>
