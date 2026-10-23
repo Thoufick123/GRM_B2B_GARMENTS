@@ -130,19 +130,35 @@ class User extends Model
 
     public function getBuyerDetails(int $id)
     {
-        $sql = "
-            SELECT u.id, u.unique_buyer_id, u.name, u.email, u.phone, u.created_at, u.status, u.role, u.role_id, u.permissions,
-                   bp.business_name, bp.shop_location, bp.gst_number, bp.gst_document, bp.pan_number, bp.pan_document, bp.no_gst_reason, bp.instagram_link,
-                   bp.verification_data, bp.tax_verified,
-                   rr.status as request_status, rr.gst_flag
-            FROM users u
-            LEFT JOIN business_profiles bp ON u.id = bp.user_id
-            LEFT JOIN registration_requests rr ON u.id = rr.user_id
-            WHERE u.id = :id
-        ";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute(['id' => $id]);
-        $user = $stmt->fetch();
+        try {
+            $sql = "
+                SELECT u.id, u.unique_buyer_id, u.name, u.email, u.phone, u.created_at, u.status, u.role, u.role_id, u.permissions,
+                       bp.business_name, bp.shop_location, bp.gst_number, bp.gst_document, bp.pan_number, bp.pan_document, bp.no_gst_reason, bp.instagram_link,
+                       bp.verification_data, bp.tax_verified,
+                       rr.status as request_status, rr.gst_flag
+                FROM users u
+                LEFT JOIN business_profiles bp ON u.id = bp.user_id
+                LEFT JOIN registration_requests rr ON u.id = rr.user_id
+                WHERE u.id = :id
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(['id' => $id]);
+            $user = $stmt->fetch();
+        } catch (\PDOException $e) {
+            $sql = "
+                SELECT u.id, u.unique_buyer_id, u.name, u.email, u.phone, u.created_at, u.status, u.role, u.role_id, u.permissions,
+                       bp.business_name, bp.shop_location, bp.gst_number, bp.gst_document, bp.pan_number, bp.pan_document, bp.no_gst_reason, bp.instagram_link,
+                       NULL as verification_data, 0 as tax_verified,
+                       rr.status as request_status, rr.gst_flag
+                FROM users u
+                LEFT JOIN business_profiles bp ON u.id = bp.user_id
+                LEFT JOIN registration_requests rr ON u.id = rr.user_id
+                WHERE u.id = :id
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(['id' => $id]);
+            $user = $stmt->fetch();
+        }
 
         if ($user) {
             $stmtMedia = $this->db->prepare("SELECT * FROM media WHERE user_id = :id");

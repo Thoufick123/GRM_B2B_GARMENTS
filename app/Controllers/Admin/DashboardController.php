@@ -279,6 +279,8 @@ class DashboardController extends Controller
             // Fetch Total Orders
             $totalOrders = 0;
             $pendingOrders = 0;
+            $adminCancelledOrders = 0;
+            $buyerCancelledOrders = 0;
             try {
                 $stmt = $db->query("SELECT count(id) as count FROM orders WHERE status NOT IN ('cancelled')" . $dateFilter);
                 $totalOrders = $stmt->fetch()['count'] ?? 0;
@@ -286,11 +288,16 @@ class DashboardController extends Controller
                 $stmtPending = $db->query("SELECT count(DISTINCT user_id) as count FROM orders WHERE status NOT IN ('cancelled', 'delivered', 'shipped', 'processing') AND payment_status NOT IN ('paid', 'completed')" . $dateFilter);
                 $pendingOrders = $stmtPending->fetch()['count'] ?? 0;
 
-                $stmtAdminCancel = $db->query("SELECT count(id) as count FROM orders WHERE status = 'cancelled' AND cancelled_by_role = 'admin'" . $dateFilter);
-                $adminCancelledOrders = $stmtAdminCancel->fetch()['count'] ?? 0;
+                try {
+                    $stmtAdminCancel = $db->query("SELECT count(id) as count FROM orders WHERE status = 'cancelled' AND cancelled_by_role = 'admin'" . $dateFilter);
+                    $adminCancelledOrders = $stmtAdminCancel->fetch()['count'] ?? 0;
 
-                $stmtBuyerCancel = $db->query("SELECT count(id) as count FROM orders WHERE status = 'cancelled' AND (cancelled_by_role = 'buyer' OR cancelled_by_role IS NULL)" . $dateFilter);
-                $buyerCancelledOrders = $stmtBuyerCancel->fetch()['count'] ?? 0;
+                    $stmtBuyerCancel = $db->query("SELECT count(id) as count FROM orders WHERE status = 'cancelled' AND (cancelled_by_role = 'buyer' OR cancelled_by_role IS NULL)" . $dateFilter);
+                    $buyerCancelledOrders = $stmtBuyerCancel->fetch()['count'] ?? 0;
+                } catch (\Exception $e) {
+                    $adminCancelledOrders = 0;
+                    $buyerCancelledOrders = 0;
+                }
             } catch (\Exception $e) {}
 
             // Fetch Top Categories
@@ -318,6 +325,7 @@ class DashboardController extends Controller
             }
             
             // Recent Users
+            
             $stmt = $db->query("SELECT 'user' as type, email as title, created_at FROM users WHERE role = 'buyer' ORDER BY created_at DESC LIMIT 2");
             $users = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             foreach($users as $u) {
@@ -471,8 +479,8 @@ class DashboardController extends Controller
                 'totalProducts' => $totalProducts,
                 'totalOrders' => $totalOrders,
                 'pendingOrders' => $pendingOrders,
-                'adminCancelledOrders' => $adminCancelledOrders,
-                'buyerCancelledOrders' => $buyerCancelledOrders,
+                'adminCancelledOrders' => $adminCancelledOrders ?? 0,
+                'buyerCancelledOrders' => $buyerCancelledOrders ?? 0,
                 'topCategories' => $topCategories,
                 'topSellingProducts' => $topSellingProducts,
                 'chartDates' => $chartDates,

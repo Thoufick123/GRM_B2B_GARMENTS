@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS orders (
     order_number VARCHAR(50) UNIQUE NOT NULL,
     total_amount DECIMAL(12, 2) NOT NULL,
     status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
+    cancellation_reason TEXT NULL,
+    cancelled_by_role VARCHAR(20) NULL DEFAULT NULL,
+    cancelled_at DATETIME NULL,
     payment_status ENUM('pending', 'paid', 'failed') NOT NULL DEFAULT 'pending',
     shipping_address TEXT NOT NULL, -- Simplified for now
     notes TEXT,

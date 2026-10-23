@@ -272,8 +272,10 @@ class BuyerController extends Controller
                     'verified_at' => date('Y-m-d H:i:s'),
                     'data' => $data
                 ]);
-                $stmtUpdate = $db->prepare("UPDATE business_profiles SET tax_verified = 1, verification_data = :vdata WHERE user_id = :uid");
-                $stmtUpdate->execute(['vdata' => $payload, 'uid' => $userId]);
+                try {
+                    $stmtUpdate = $db->prepare("UPDATE business_profiles SET tax_verified = 1, verification_data = :vdata WHERE user_id = :uid");
+                    $stmtUpdate->execute(['vdata' => $payload, 'uid' => $userId]);
+                } catch (\PDOException $e) {}
             }
 
             echo json_encode([
@@ -349,8 +351,10 @@ class BuyerController extends Controller
                     'verified_at' => date('Y-m-d H:i:s'),
                     'data' => $data
                 ]);
-                $stmtUpdate = $db->prepare("UPDATE business_profiles SET tax_verified = 1, verification_data = :vdata WHERE user_id = :uid");
-                $stmtUpdate->execute(['vdata' => $payload, 'uid' => $userId]);
+                try {
+                    $stmtUpdate = $db->prepare("UPDATE business_profiles SET tax_verified = 1, verification_data = :vdata WHERE user_id = :uid");
+                    $stmtUpdate->execute(['vdata' => $payload, 'uid' => $userId]);
+                } catch (\PDOException $e) {}
             }
 
             echo json_encode([

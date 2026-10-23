@@ -323,8 +323,13 @@ class CheckoutController extends Controller
             $razorpayOrderId = $rzpRes['order']['id'];
 
             // Store Razorpay Order ID in DB (also populate cashfree_order_id for backward compatibility)
-            $stmt = $db->prepare("UPDATE orders SET razorpay_order_id = ?, cashfree_order_id = ? WHERE order_number = ?");
-            $stmt->execute([$razorpayOrderId, $razorpayOrderId, $orderNumber]);
+            try {
+                $stmt = $db->prepare("UPDATE orders SET razorpay_order_id = ?, cashfree_order_id = ? WHERE order_number = ?");
+                $stmt->execute([$razorpayOrderId, $razorpayOrderId, $orderNumber]);
+            } catch (\PDOException $e) {
+                $stmt = $db->prepare("UPDATE orders SET cashfree_order_id = ? WHERE order_number = ?");
+                $stmt->execute([$razorpayOrderId, $orderNumber]);
+            }
 
             // Render Razorpay payment page
             $this->render('storefront/payment', [
@@ -431,8 +436,11 @@ class CheckoutController extends Controller
             ]);
 
             if ($rzpRes['success']) {
-                $razorpayOrderId = $rzpRes['order']['id'];
-                $db->prepare("UPDATE orders SET razorpay_order_id = ? WHERE order_number = ?")->execute([$razorpayOrderId, $orderNumber]);
+                try {
+                    $db->prepare("UPDATE orders SET razorpay_order_id = ? WHERE order_number = ?")->execute([$razorpayOrderId, $orderNumber]);
+                } catch (\PDOException $e) {
+                    $db->prepare("UPDATE orders SET cashfree_order_id = ? WHERE order_number = ?")->execute([$razorpayOrderId, $orderNumber]);
+                }
             } else {
                 Session::setFlash('error', 'Could not initialize payment for this order: ' . ($rzpRes['error'] ?? ''));
                 $this->redirect('/dashboard/orders');
@@ -587,16 +595,28 @@ class CheckoutController extends Controller
                 $finalOrderNumber = $candidateOrderNumber;
             }
 
-            $stmt = $db->prepare("
-                UPDATE orders 
-                SET payment_status = 'paid', 
-                    status = 'placed', 
-                    razorpay_payment_id = ?, 
-                    razorpay_order_id = ?, 
-                    order_number = ? 
-                WHERE order_number = ?
-            ");
-            $stmt->execute([$razorpayPaymentId, $razorpayOrderId, $finalOrderNumber, $orderNumber]);
+            try {
+                $stmt = $db->prepare("
+                    UPDATE orders 
+                    SET payment_status = 'paid', 
+                        status = 'placed', 
+                        razorpay_payment_id = ?, 
+                        razorpay_order_id = ?, 
+                        order_number = ? 
+                    WHERE order_number = ?
+                ");
+                $stmt->execute([$razorpayPaymentId, $razorpayOrderId, $finalOrderNumber, $orderNumber]);
+            } catch (\PDOException $e) {
+                $stmt = $db->prepare("
+                    UPDATE orders 
+                    SET payment_status = 'paid', 
+                        status = 'placed', 
+                        cashfree_order_id = ?, 
+                        order_number = ? 
+                    WHERE order_number = ?
+                ");
+                $stmt->execute([$razorpayOrderId, $finalOrderNumber, $orderNumber]);
+            }
             
             // Reduce stock
             $orderModel = new Order();
