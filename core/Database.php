@@ -40,10 +40,14 @@ class Database
             \PDO::MYSQL_ATTR_INIT_COMMAND  => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci, time_zone = '{$offset}'",
         ];
 
-        // If TiDB / Cloud Database requires SSL
-        if (!empty($config['ssl'])) {
+        // If remote Cloud Database (TiDB / AWS RDS) explicitly requires SSL and is not localhost
+        $isLocalHost = in_array(strtolower(trim((string)($config['host'] ?? ''))), ['localhost', '127.0.0.1', '::1']);
+        if (!empty($config['ssl']) && !$isLocalHost) {
             $options[\PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-            $options[\PDO::MYSQL_ATTR_SSL_CA] = dirname(__DIR__) . '/cacert.pem';
+            $caPath = dirname(__DIR__) . '/cacert.pem';
+            if (file_exists($caPath)) {
+                $options[\PDO::MYSQL_ATTR_SSL_CA] = $caPath;
+            }
         }
 
         $maxRetries = 3;
@@ -55,11 +59,23 @@ class Database
                 return self::$instance;
             } catch (\Throwable $e) {
                 $lastException = $e;
+
+                // Self-healing fallback: If SSL was configured but the MySQL server doesn't support it (e.g. Hostinger local MySQL)
+                if (isset($options[\PDO::MYSQL_ATTR_SSL_CA]) || isset($options[\PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT])) {
+                    try {
+                        unset($options[\PDO::MYSQL_ATTR_SSL_CA], $options[\PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT]);
+                        self::$instance = @new \PDO($dsn, $config['user'], $config['pass'], $options);
+                        return self::$instance;
+                    } catch (\Throwable $fallbackEx) {
+                        $lastException = $fallbackEx;
+                    }
+                }
+
                 if ($attempt < $maxRetries) {
                     usleep(200000); // Wait 200ms before retry
                     continue;
                 }
-                throw new \Exception("Database connection failed: " . $e->getMessage());
+                throw new \Exception("Database connection failed: " . $lastException->getMessage());
             }
         }
 

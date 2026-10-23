@@ -32,5 +32,5 @@ return [
     'user'    => $envVars['DB_USER'] ?? 'root', 
     'pass'    => $envVars['DB_PASS'] ?? '',     
     'charset' => $envVars['DB_CHARSET'] ?? 'utf8mb4',
-    'ssl'     => !empty($envVars['DB_SSL'])
+    'ssl'     => filter_var($envVars['DB_SSL'] ?? false, FILTER_VALIDATE_BOOLEAN)
 ];
