@@ -1268,23 +1268,6 @@ function adjustFabricMultiplier(delta) {
         }
     }
 
-    // If reducing fabric quantity, verify that selected pieces do not exceed the new capacity
-    if (delta < 0) {
-        const sizes = getSelectedSizes();
-        const currentTotalPieces = Object.values(sizes).reduce((a, b) => a + b, 0);
-        const targetMax = val * MAX_PIECES;
-        if (currentTotalPieces > targetMax) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Cannot Reduce Fabric Quantity',
-                    text: `You currently have ${currentTotalPieces} pieces selected. Maximum allowed for ${val} Fabric Quantity is ${targetMax} pieces. Please reduce variant quantities first.`,
-                    confirmButtonColor: '#F25996'
-                });
-            }
-            return;
-        }
-    }
 
     inp.value = val;
     onFabricMultiplierChange(inp);
@@ -1348,7 +1331,7 @@ function syncFabricSets(targetCount) {
         fabricSetsData = fabricSetsData.slice(0, mult);
     }
 
-    if (activeConfigSet !== 'all' && activeConfigSet > mult) {
+    if (mult <= 1 || (activeConfigSet !== 'all' && activeConfigSet > mult)) {
         activeConfigSet = 1;
     }
 }
@@ -2017,23 +2000,6 @@ function onFabricMultiplierChange(inp) {
         }
     }
 
-    // Check if current selected pieces exceed the new mult limit
-    const sizes = getSelectedSizes();
-    const currentTotalPieces = Object.values(sizes).reduce((a, b) => a + b, 0);
-    const targetMax = mult * MAX_PIECES;
-    if (currentTotalPieces > targetMax) {
-        const minMultNeeded = Math.ceil(currentTotalPieces / MAX_PIECES);
-        mult = Math.min(minMultNeeded, maxStock);
-        inp.value = mult;
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Cannot Reduce Fabric Quantity',
-                text: `You currently have ${currentTotalPieces} pieces selected. Fabric Quantity must be at least ${mult} to accommodate these pieces. Please reduce variant quantities first.`,
-                confirmButtonColor: '#F25996'
-            });
-        }
-    }
 
     const topInp = document.getElementById('fabric_multiplier_top');
     if (topInp && topInp !== inp) topInp.value = mult;
