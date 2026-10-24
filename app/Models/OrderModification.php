@@ -58,8 +58,9 @@ class OrderModification extends Model
             $itemsStmt->execute([$modId]);
             $modItems = $itemsStmt->fetchAll(\PDO::FETCH_ASSOC);
 
-            $updateProductStock = $this->db->prepare("UPDATE products SET stock_quantity = stock_quantity + ?, sold_count = sold_count - ? WHERE id = ?");
-            $updateVariantStock = $this->db->prepare("UPDATE product_variants SET current_stock = current_stock + ? WHERE id = ?");
+            $updateProductStock = $this->db->prepare("UPDATE products SET stock_quantity = GREATEST(0, stock_quantity + ?) WHERE id = ?");
+            $updateVariantStock = $this->db->prepare("UPDATE product_variants SET current_stock = GREATEST(0, current_stock + ?), stock = GREATEST(0, stock + ?) WHERE id = ?");
+            $syncParentStock = $this->db->prepare("UPDATE products SET stock_quantity = (SELECT COALESCE(SUM(current_stock), 0) FROM product_variants WHERE product_id = ?) WHERE id = ?");
 
             $getOrigItem = $this->db->prepare("SELECT product_id, variant_id FROM order_items WHERE id = ?");
 
@@ -114,9 +115,11 @@ class OrderModification extends Model
 
                 // Apply inventory adjustments
                 if ($qtyDiff !== 0 && $pid) {
-                    $updateProductStock->execute([$qtyDiff, -$qtyDiff, $pid]);
                     if ($vid) {
-                        $updateVariantStock->execute([$qtyDiff, $vid]);
+                        $updateVariantStock->execute([$qtyDiff, $qtyDiff, $vid]);
+                        $syncParentStock->execute([$pid, $pid]);
+                    } else {
+                        $updateProductStock->execute([$qtyDiff, $pid]);
                     }
                 }
             }
@@ -262,8 +265,9 @@ class OrderModification extends Model
                 $itemsStmt->execute([$modId]);
                 $modItems = $itemsStmt->fetchAll(\PDO::FETCH_ASSOC);
 
-                $updateProductStock = $this->db->prepare("UPDATE products SET stock_quantity = stock_quantity + ?, sold_count = sold_count - ? WHERE id = ?");
-                $updateVariantStock = $this->db->prepare("UPDATE product_variants SET current_stock = current_stock + ? WHERE id = ?");
+                $updateProductStock = $this->db->prepare("UPDATE products SET stock_quantity = GREATEST(0, stock_quantity + ?) WHERE id = ?");
+                $updateVariantStock = $this->db->prepare("UPDATE product_variants SET current_stock = GREATEST(0, current_stock + ?), stock = GREATEST(0, stock + ?) WHERE id = ?");
+                $syncParentStock = $this->db->prepare("UPDATE products SET stock_quantity = (SELECT COALESCE(SUM(current_stock), 0) FROM product_variants WHERE product_id = ?) WHERE id = ?");
 
                 $getOrigItem = $this->db->prepare("SELECT product_id, variant_id FROM order_items WHERE id = ?");
 
@@ -318,9 +322,11 @@ class OrderModification extends Model
 
                     // Apply inventory adjustments
                     if ($qtyDiff !== 0 && $pid) {
-                        $updateProductStock->execute([$qtyDiff, -$qtyDiff, $pid]);
                         if ($vid) {
-                            $updateVariantStock->execute([$qtyDiff, $vid]);
+                            $updateVariantStock->execute([$qtyDiff, $qtyDiff, $vid]);
+                            $syncParentStock->execute([$pid, $pid]);
+                        } else {
+                            $updateProductStock->execute([$qtyDiff, $pid]);
                         }
                     }
                 }

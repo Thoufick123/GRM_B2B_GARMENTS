@@ -95,6 +95,7 @@ ALTER TABLE `orders` MODIFY COLUMN `status` ENUM(
 -- 6. Add missing columns to orders table
 -- (Executed safely with IF NOT EXISTS)
 ALTER TABLE `orders` 
+    ADD COLUMN IF NOT EXISTS `is_stock_reduced` TINYINT(1) NOT NULL DEFAULT 0 AFTER `payment_status`,
     ADD COLUMN IF NOT EXISTS `courier_name` VARCHAR(100) NULL AFTER `status`,
     ADD COLUMN IF NOT EXISTS `tracking_number` VARCHAR(100) NULL AFTER `courier_name`,
     ADD COLUMN IF NOT EXISTS `tracking_url` VARCHAR(255) NULL AFTER `tracking_number`,

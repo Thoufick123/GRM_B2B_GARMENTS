@@ -549,8 +549,8 @@ class FabricCustomizationController extends Controller
             $orderStmt = $db->prepare("
                 INSERT INTO orders (
                     user_id, order_number, total_amount, grand_total, shipping_address, 
-                    status, payment_status, notes, created_at
-                ) VALUES (?, ?, ?, ?, ?, 'placed', 'request_pending', ?, NOW())
+                    status, payment_status, is_stock_reduced, notes, created_at
+                ) VALUES (?, ?, ?, ?, ?, 'placed', 'request_pending', 1, ?, NOW())
             ");
 
             $orderStmt->execute([
@@ -594,13 +594,15 @@ class FabricCustomizationController extends Controller
             $syncVarStmt = $db->prepare("
                 UPDATE product_variants 
                 SET current_stock = (SELECT stock_quantity FROM products WHERE id = :p1),
-                    inventory = (SELECT stock_quantity FROM products WHERE id = :p2)
-                WHERE product_id = :p3
+                    stock = (SELECT stock_quantity FROM products WHERE id = :p2),
+                    inventory = (SELECT stock_quantity FROM products WHERE id = :p3)
+                WHERE product_id = :p4
             ");
             $syncVarStmt->execute([
                 'p1' => $customization['fabric_id'],
                 'p2' => $customization['fabric_id'],
-                'p3' => $customization['fabric_id']
+                'p3' => $customization['fabric_id'],
+                'p4' => $customization['fabric_id']
             ]);
 
             $db->commit();
@@ -856,9 +858,9 @@ class FabricCustomizationController extends Controller
             $orderStmt = $db->prepare("
                 INSERT INTO orders (
                     user_id, order_number, total_amount, grand_total, shipping_address, 
-                    status, payment_status, razorpay_order_id, razorpay_payment_id, 
+                    status, payment_status, is_stock_reduced, razorpay_order_id, razorpay_payment_id, 
                     notes, created_at
-                ) VALUES (?, ?, ?, ?, ?, 'placed', 'paid', ?, ?, ?, NOW())
+                ) VALUES (?, ?, ?, ?, ?, 'placed', 'paid', 1, ?, ?, ?, NOW())
             ");
 
             $orderStmt->execute([
@@ -904,13 +906,15 @@ class FabricCustomizationController extends Controller
             $syncVarStmt = $db->prepare("
                 UPDATE product_variants 
                 SET current_stock = (SELECT stock_quantity FROM products WHERE id = :p1),
-                    inventory = (SELECT stock_quantity FROM products WHERE id = :p2)
-                WHERE product_id = :p3
+                    stock = (SELECT stock_quantity FROM products WHERE id = :p2),
+                    inventory = (SELECT stock_quantity FROM products WHERE id = :p3)
+                WHERE product_id = :p4
             ");
             $syncVarStmt->execute([
                 'p1' => $customization['fabric_id'],
                 'p2' => $customization['fabric_id'],
-                'p3' => $customization['fabric_id']
+                'p3' => $customization['fabric_id'],
+                'p4' => $customization['fabric_id']
             ]);
 
             $db->commit();

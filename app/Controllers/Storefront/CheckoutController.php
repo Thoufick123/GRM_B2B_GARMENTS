@@ -304,6 +304,70 @@ class CheckoutController extends Controller
             // [ACTIVE] Razorpay Integration
             // =========================================================================
             $payableAmount = round($feeDetails['paid_amount'], 2);
+
+            // If payable amount is 0 (e.g. COD without advance or full waiver), place order immediately
+            if ($payableAmount <= 0) {
+                $finalOrderNumber = $orderNumber;
+                if (strpos($orderNumber, 'PENDING-') === 0) {
+                    $stmt = $db->query("
+                        SELECT order_number 
+                        FROM orders 
+                        WHERE order_number REGEXP '^GB[0-9]+$' 
+                        ORDER BY id DESC
+                    ");
+                    $gbOrders = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+
+                    $maxNum = 0;
+                    foreach ($gbOrders as $ord) {
+                        if (preg_match('/^GB(\d+)$/', $ord, $matches)) {
+                            $numVal = (int)$matches[1];
+                            if ($numVal > $maxNum) {
+                                $maxNum = $numVal;
+                            }
+                        }
+                    }
+
+                    do {
+                        $maxNum++;
+                        $candidateOrderNumber = 'GB' . str_pad($maxNum, 5, '0', STR_PAD_LEFT);
+                        $chk = $db->prepare("SELECT COUNT(*) FROM orders WHERE order_number = ?");
+                        $chk->execute([$candidateOrderNumber]);
+                        $exists = ((int)$chk->fetchColumn()) > 0;
+                    } while ($exists);
+
+                    $finalOrderNumber = $candidateOrderNumber;
+                }
+
+                $finalPaymentStatus = ($paymentMethod === 'COD') ? 'pending' : 'paid';
+
+                $stmt = $db->prepare("
+                    UPDATE orders 
+                    SET payment_status = ?, 
+                        status = 'placed', 
+                        order_number = ? 
+                    WHERE order_number = ?
+                ");
+                $stmt->execute([$finalPaymentStatus, $finalOrderNumber, $orderNumber]);
+
+                // Reduce stock immediately and permanently
+                $orderModel->reduceStockForOrder($finalOrderNumber);
+
+                // Clear cart
+                if ($userId) {
+                    $stmtClear = $db->prepare("DELETE FROM cart_items WHERE user_id = ?");
+                    $stmtClear->execute([$userId]);
+                }
+
+                // Invalidate admin dashboard cached stats
+                \Core\Cache::delete('admin_dashboard_stats_30');
+                \Core\Cache::delete('admin_dashboard_stats_7');
+                \Core\Cache::delete('admin_dashboard_stats_all');
+
+                Session::setFlash('success', 'Order placed successfully!');
+                $this->redirect('/order-success?order_id=' . $finalOrderNumber);
+                return;
+            }
+
             $razorpayService = new \App\Services\RazorpayService();
             $rzpRes = $razorpayService->createOrder($payableAmount, $orderNumber, [
                 'order_number' => $orderNumber,

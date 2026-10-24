@@ -55,7 +55,13 @@ class Order extends Model
                 if (!in_array('packing_video_expires_at', $colsLower)) {
                     $this->db->exec("ALTER TABLE `orders` ADD COLUMN `packing_video_expires_at` DATETIME NULL AFTER `delivered_at`");
                 }
+                if (!in_array('is_stock_reduced', $colsLower)) {
+                    $this->db->exec("ALTER TABLE `orders` ADD COLUMN `is_stock_reduced` TINYINT(1) NOT NULL DEFAULT 0 AFTER `payment_status`");
+                }
             }
+
+            // Run self-healing sync for any active orders that missed stock reduction
+            $this->syncMissingOrderStockReductions();
         } catch (\Throwable $e) {
             error_log("Order::ensureSchema notice: " . $e->getMessage());
         }
@@ -615,93 +621,271 @@ class Order extends Model
         ]);
     }
 
-    public function reduceStockForOrder(string $orderNumber)
+    public function reduceStockForOrder($orderIdentifier): bool
     {
         try {
             $this->db->beginTransaction();
 
-            $stmt = $this->db->prepare("SELECT id FROM orders WHERE order_number = ?");
-            $stmt->execute([$orderNumber]);
+            if (is_numeric($orderIdentifier)) {
+                $stmt = $this->db->prepare("SELECT id, order_number, is_stock_reduced FROM orders WHERE id = ? FOR UPDATE");
+                $stmt->execute([(int)$orderIdentifier]);
+            } else {
+                $stmt = $this->db->prepare("SELECT id, order_number, is_stock_reduced FROM orders WHERE order_number = ? FOR UPDATE");
+                $stmt->execute([$orderIdentifier]);
+            }
             $order = $stmt->fetch();
 
             if (!$order) {
-                throw new \Exception("Order not found");
+                $this->db->rollBack();
+                error_log("Failed to reduce stock: Order {$orderIdentifier} not found");
+                return false;
             }
 
-            $stmtItems = $this->db->prepare("SELECT product_id, variant_id, quantity FROM order_items WHERE order_id = ?");
+            // Guard against duplicate stock deduction
+            if (!empty($order['is_stock_reduced'])) {
+                $this->db->commit();
+                return true;
+            }
+
+            $stmtItems = $this->db->prepare("
+                SELECT product_id, variant_id, customization_id, customization_data, quantity 
+                FROM order_items 
+                WHERE order_id = ?
+            ");
             $stmtItems->execute([$order['id']]);
             $items = $stmtItems->fetchAll();
 
             $updateProductStmt = $this->db->prepare("
                 UPDATE products 
-                SET stock_quantity = stock_quantity - ?, sold_count = sold_count + ?
+                SET stock_quantity = GREATEST(0, stock_quantity - ?) 
                 WHERE id = ?
             ");
 
             $updateVariantStmt = $this->db->prepare("
                 UPDATE product_variants 
-                SET current_stock = current_stock - ?
+                SET current_stock = GREATEST(0, current_stock - ?),
+                    stock = GREATEST(0, COALESCE(stock, current_stock) - ?)
                 WHERE id = ?
             ");
 
+            $syncVariantStockStmt = $this->db->prepare("
+                UPDATE products 
+                SET stock_quantity = (SELECT COALESCE(SUM(current_stock), 0) FROM product_variants WHERE product_id = :p1)
+                WHERE id = :p2
+            ");
+
+            $syncCustomFabricVariants = $this->db->prepare("
+                UPDATE product_variants 
+                SET current_stock = (SELECT stock_quantity FROM products WHERE id = :p1),
+                    inventory = (SELECT stock_quantity FROM products WHERE id = :p2)
+                WHERE product_id = :p3
+            ");
+
+            $checkCustomStmt = $this->db->prepare("SELECT is_customizable FROM products WHERE id = ?");
+
+            $affectedProductIds = [];
+
             foreach ($items as $item) {
                 $qty = (int)$item['quantity'];
-                
-                // Always update the main product's sold count and stock quantity
-                // (Assuming stock_quantity on main product is the sum of variants or represents total stock)
-                $updateProductStmt->execute([$qty, $qty, $item['product_id']]);
+                if ($qty <= 0) continue;
 
-                if (!empty($item['variant_id'])) {
-                    $updateVariantStmt->execute([$qty, $item['variant_id']]);
+                $pid = (int)($item['product_id'] ?? 0);
+                $vid = !empty($item['variant_id']) ? (int)$item['variant_id'] : null;
+
+                // Handle customized items (fabric consumption)
+                if (!empty($item['customization_id']) || !empty($item['customization_data'])) {
+                    $cData = !empty($item['customization_data']) ? (is_array($item['customization_data']) ? $item['customization_data'] : json_decode($item['customization_data'], true)) : null;
+                    $fabricDeduct = !empty($cData['required_fabric']) ? (int)$cData['required_fabric'] : $qty;
+                    if ($pid > 0) {
+                        $updateProductStmt->execute([$fabricDeduct, $pid]);
+                        $syncCustomFabricVariants->execute(['p1' => $pid, 'p2' => $pid, 'p3' => $pid]);
+                        $affectedProductIds[$pid] = true;
+                    }
+                    continue;
+                }
+
+                // Standard variant product
+                if ($vid) {
+                    $updateVariantStmt->execute([$qty, $qty, $vid]);
+                    if ($pid > 0) {
+                        $affectedProductIds[$pid] = true;
+                    }
+                } elseif ($pid > 0) {
+                    // Simple product without variants
+                    $updateProductStmt->execute([$qty, $pid]);
+                    $affectedProductIds[$pid] = true;
                 }
             }
 
+            // Sync parent product stock_quantity for all affected variant products
+            foreach (array_keys($affectedProductIds) as $pId) {
+                $checkCustomStmt->execute([$pId]);
+                $isCust = (int)$checkCustomStmt->fetchColumn();
+                if ($isCust !== 1) {
+                    $hasVariants = (int)$this->db->query("SELECT COUNT(*) FROM product_variants WHERE product_id = {$pId}")->fetchColumn();
+                    if ($hasVariants > 0) {
+                        $syncVariantStockStmt->execute(['p1' => $pId, 'p2' => $pId]);
+                    }
+                }
+            }
+
+            // Mark order as stock reduced
+            $this->db->prepare("UPDATE orders SET is_stock_reduced = 1 WHERE id = ?")->execute([$order['id']]);
+
             $this->db->commit();
+
+            // Clear dashboard and inventory cached counts
+            try {
+                \Core\Cache::delete('admin_dashboard_stats_30');
+                \Core\Cache::delete('admin_dashboard_stats_7');
+                \Core\Cache::delete('admin_dashboard_stats_all');
+            } catch (\Throwable $e) {}
+
             return true;
         } catch (\Exception $e) {
             $this->db->rollBack();
-            error_log("Failed to reduce stock for order {$orderNumber}: " . $e->getMessage());
+            error_log("Failed to reduce stock for order {$orderIdentifier}: " . $e->getMessage());
             return false;
         }
     }
 
-    public function restoreStockForOrderId(int $orderId)
+    public function restoreStockForOrderId(int $orderId): bool
     {
         try {
             $this->db->beginTransaction();
 
-            $stmtItems = $this->db->prepare("SELECT product_id, variant_id, quantity FROM order_items WHERE order_id = ?");
+            $stmt = $this->db->prepare("SELECT id, is_stock_reduced FROM orders WHERE id = ? FOR UPDATE");
+            $stmt->execute([$orderId]);
+            $order = $stmt->fetch();
+
+            if (!$order) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            // If stock was never reduced for this order, do not restore
+            if (empty($order['is_stock_reduced'])) {
+                $this->db->commit();
+                return true;
+            }
+
+            $stmtItems = $this->db->prepare("
+                SELECT product_id, variant_id, customization_id, customization_data, quantity 
+                FROM order_items 
+                WHERE order_id = ?
+            ");
             $stmtItems->execute([$orderId]);
             $items = $stmtItems->fetchAll();
 
             $updateProductStmt = $this->db->prepare("
                 UPDATE products 
-                SET stock_quantity = stock_quantity + ?, sold_count = sold_count - ?
+                SET stock_quantity = stock_quantity + ? 
                 WHERE id = ?
             ");
 
             $updateVariantStmt = $this->db->prepare("
                 UPDATE product_variants 
-                SET current_stock = current_stock + ?
+                SET current_stock = current_stock + ?,
+                    stock = COALESCE(stock, current_stock) + ?
                 WHERE id = ?
             ");
 
+            $syncVariantStockStmt = $this->db->prepare("
+                UPDATE products 
+                SET stock_quantity = (SELECT COALESCE(SUM(current_stock), 0) FROM product_variants WHERE product_id = :p1)
+                WHERE id = :p2
+            ");
+
+            $syncCustomFabricVariants = $this->db->prepare("
+                UPDATE product_variants 
+                SET current_stock = (SELECT stock_quantity FROM products WHERE id = :p1),
+                    inventory = (SELECT stock_quantity FROM products WHERE id = :p2)
+                WHERE product_id = :p3
+            ");
+
+            $checkCustomStmt = $this->db->prepare("SELECT is_customizable FROM products WHERE id = ?");
+
+            $affectedProductIds = [];
+
             foreach ($items as $item) {
                 $qty = (int)$item['quantity'];
-                
-                $updateProductStmt->execute([$qty, $qty, $item['product_id']]);
+                if ($qty <= 0) continue;
 
-                if (!empty($item['variant_id'])) {
-                    $updateVariantStmt->execute([$qty, $item['variant_id']]);
+                $pid = (int)($item['product_id'] ?? 0);
+                $vid = !empty($item['variant_id']) ? (int)$item['variant_id'] : null;
+
+                if (!empty($item['customization_id']) || !empty($item['customization_data'])) {
+                    $cData = !empty($item['customization_data']) ? (is_array($item['customization_data']) ? $item['customization_data'] : json_decode($item['customization_data'], true)) : null;
+                    $fabricDeduct = !empty($cData['required_fabric']) ? (int)$cData['required_fabric'] : $qty;
+                    if ($pid > 0) {
+                        $updateProductStmt->execute([$fabricDeduct, $pid]);
+                        $syncCustomFabricVariants->execute(['p1' => $pid, 'p2' => $pid, 'p3' => $pid]);
+                        $affectedProductIds[$pid] = true;
+                    }
+                    continue;
+                }
+
+                if ($vid) {
+                    $updateVariantStmt->execute([$qty, $qty, $vid]);
+                    if ($pid > 0) {
+                        $affectedProductIds[$pid] = true;
+                    }
+                } elseif ($pid > 0) {
+                    $updateProductStmt->execute([$qty, $pid]);
+                    $affectedProductIds[$pid] = true;
                 }
             }
 
+            foreach (array_keys($affectedProductIds) as $pId) {
+                $checkCustomStmt->execute([$pId]);
+                $isCust = (int)$checkCustomStmt->fetchColumn();
+                if ($isCust !== 1) {
+                    $hasVariants = (int)$this->db->query("SELECT COUNT(*) FROM product_variants WHERE product_id = {$pId}")->fetchColumn();
+                    if ($hasVariants > 0) {
+                        $syncVariantStockStmt->execute(['p1' => $pId, 'p2' => $pId]);
+                    }
+                }
+            }
+
+            $this->db->prepare("UPDATE orders SET is_stock_reduced = 0 WHERE id = ?")->execute([$orderId]);
+
             $this->db->commit();
+
+            try {
+                \Core\Cache::delete('admin_dashboard_stats_30');
+                \Core\Cache::delete('admin_dashboard_stats_7');
+                \Core\Cache::delete('admin_dashboard_stats_all');
+            } catch (\Throwable $e) {}
+
             return true;
         } catch (\Exception $e) {
             $this->db->rollBack();
             error_log("Failed to restore stock for order ID {$orderId}: " . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Self-healing sync: Reduce stock for any previously placed orders that were missed
+     */
+    public function syncMissingOrderStockReductions(): void
+    {
+        try {
+            $stmt = $this->db->query("
+                SELECT id, order_number 
+                FROM orders 
+                WHERE status IN ('placed', 'packed', 'shipped', 'out_for_delivery', 'delivered')
+                  AND (is_stock_reduced = 0 OR is_stock_reduced IS NULL)
+                  AND order_number NOT LIKE 'PENDING-%'
+                ORDER BY id ASC
+                LIMIT 50
+            ");
+            $unreduced = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            foreach ($unreduced as $ord) {
+                $this->reduceStockForOrder($ord['order_number']);
+            }
+        } catch (\Throwable $e) {
+            error_log("syncMissingOrderStockReductions notice: " . $e->getMessage());
         }
     }
 
