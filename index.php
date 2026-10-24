@@ -520,6 +520,9 @@ $router->post('/admin/orders/cleanup-packing-videos', 'App\Controllers\Admin\Ord
 $router->post('/admin/orders/update-status', 'App\Controllers\Admin\OrderController@updateStatus');
 $router->post('/admin/orders/update-packed', 'App\Controllers\Admin\OrderController@updatePacked');
 $router->post('/admin/orders/update-courier', 'App\Controllers\Admin\OrderController@updateCourier');
+$router->get('/admin/orders/courier-services', 'App\Controllers\Admin\OrderController@getCourierServices');
+$router->post('/admin/orders/courier-services/add', 'App\Controllers\Admin\OrderController@addCourierService');
+$router->post('/admin/orders/courier-services/delete', 'App\Controllers\Admin\OrderController@deleteCourierService');
 
 // Admin Packing Slip Config & 100mm Thermal Slip Printing
 $router->get('/admin/orders/packing-slip-config', 'App\Controllers\Admin\PackingSlipConfigController@index');

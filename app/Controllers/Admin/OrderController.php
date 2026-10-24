@@ -257,6 +257,95 @@ class OrderController extends Controller
         }
     }
 
+    public function getCourierServices()
+    {
+        header('Content-Type: application/json');
+        try {
+            $db = \Core\Database::getInstance();
+            $stmt = $db->query("SELECT id, name, default_url FROM courier_services WHERE is_active = 1 ORDER BY name ASC");
+            $couriers = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            echo json_encode(['success' => true, 'couriers' => $couriers]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    public function addCourierService()
+    {
+        $this->requirePermission('all_orders', 'edit');
+        header('Content-Type: application/json');
+        
+        $input = json_decode(file_get_contents('php://input'), true);
+        $name = trim($input['name'] ?? '');
+        $defaultUrl = trim($input['default_url'] ?? '');
+
+        if (empty($name)) {
+            echo json_encode(['success' => false, 'message' => 'Courier name is required']);
+            exit;
+        }
+
+        try {
+            $db = \Core\Database::getInstance();
+            $stmt = $db->prepare("SELECT id, is_active FROM courier_services WHERE LOWER(name) = LOWER(?) LIMIT 1");
+            $stmt->execute([$name]);
+            $existing = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if ($existing) {
+                if ($existing['is_active'] == 0) {
+                    $upd = $db->prepare("UPDATE courier_services SET is_active = 1, default_url = ? WHERE id = ?");
+                    $upd->execute([$defaultUrl, $existing['id']]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Courier service already exists']);
+                    exit;
+                }
+            } else {
+                $ins = $db->prepare("INSERT INTO courier_services (name, default_url, is_active) VALUES (?, ?, 1)");
+                $ins->execute([$name, $defaultUrl]);
+            }
+
+            $stmt = $db->query("SELECT id, name, default_url FROM courier_services WHERE is_active = 1 ORDER BY name ASC");
+            $couriers = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            echo json_encode(['success' => true, 'message' => 'Courier added successfully', 'couriers' => $couriers, 'added_name' => $name]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    public function deleteCourierService()
+    {
+        $this->requirePermission('all_orders', 'edit');
+        header('Content-Type: application/json');
+        
+        $input = json_decode(file_get_contents('php://input'), true);
+        $id = (int)($input['id'] ?? 0);
+        $name = trim($input['name'] ?? '');
+
+        if (!$id && empty($name)) {
+            echo json_encode(['success' => false, 'message' => 'Courier ID or name is required']);
+            exit;
+        }
+
+        try {
+            $db = \Core\Database::getInstance();
+            if ($id) {
+                $stmt = $db->prepare("DELETE FROM courier_services WHERE id = ?");
+                $stmt->execute([$id]);
+            } else {
+                $stmt = $db->prepare("DELETE FROM courier_services WHERE LOWER(name) = LOWER(?)");
+                $stmt->execute([$name]);
+            }
+
+            $stmt = $db->query("SELECT id, name, default_url FROM courier_services WHERE is_active = 1 ORDER BY name ASC");
+            $couriers = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            echo json_encode(['success' => true, 'message' => 'Courier deleted successfully', 'couriers' => $couriers]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
+
     public function updatePacked()
     {
         ini_set('display_errors', '0');

@@ -109,14 +109,16 @@ $uniqueId = 'reels_' . substr(md5(uniqid()), 0, 8);
                     <!-- Mobile Compact Header Arrows (Never blocks the reels!) -->
                     <div class="flex sm:hidden items-center gap-1.5 shrink-0">
                         <button type="button" 
+                                id="reels-mob-prev-<?= $uniqueId ?>"
                                 onclick="scrollReelsTrack('<?= $uniqueId ?>', -1)" 
-                                class="w-8 h-8 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200 flex items-center justify-center active:scale-95 transition-all"
+                                class="w-8 h-8 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200 flex items-center justify-center active:scale-95 transition-all disabled:opacity-35 disabled:cursor-not-allowed disabled:pointer-events-none"
                                 aria-label="Previous Reel">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                         </button>
                         <button type="button" 
+                                id="reels-mob-next-<?= $uniqueId ?>"
                                 onclick="scrollReelsTrack('<?= $uniqueId ?>', 1)" 
-                                class="w-8 h-8 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200 flex items-center justify-center active:scale-95 transition-all"
+                                class="w-8 h-8 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200 flex items-center justify-center active:scale-95 transition-all disabled:opacity-35 disabled:cursor-not-allowed disabled:pointer-events-none"
                                 aria-label="Next Reel">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
                         </button>
@@ -139,8 +141,8 @@ $uniqueId = 'reels_' . substr(md5(uniqid()), 0, 8);
                 </button>
             <?php endif; ?>
 
-            <!-- Horizontal Scrollable Snap Track with touch-action pan-y for smooth vertical scrolling -->
-            <div class="reels-track flex items-stretch overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 pt-1 <?= count($items) < $deskCols ? 'justify-start lg:justify-center' : 'justify-start' ?>" id="track-<?= $uniqueId ?>" style="touch-action: pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; overscroll-behavior-y: auto;">
+            <!-- Horizontal Scrollable Snap Track with unrestricted touch scrolling -->
+            <div class="reels-track flex items-stretch overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 pt-1 <?= count($items) < $deskCols ? 'justify-start lg:justify-center' : 'justify-start' ?>" id="track-<?= $uniqueId ?>" style="touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;">
                 <?php foreach ($items as $idx => $item): 
                     $reelTitle = !empty($item['title']) ? $item['title'] : 'Explore Style';
                     $ctaUrl = !empty($item['cta_url']) ? $item['cta_url'] : '#';
@@ -259,23 +261,29 @@ function updateReelsLock(containerId) {
     const track = document.getElementById(`track-${containerId}`);
     const prevBtn = document.getElementById(`reels-prev-${containerId}`);
     const nextBtn = document.getElementById(`reels-next-${containerId}`);
+    const mobPrevBtn = document.getElementById(`reels-mob-prev-${containerId}`);
+    const mobNextBtn = document.getElementById(`reels-mob-next-${containerId}`);
     if (!track) return;
     
     const isAtStart = track.scrollLeft <= 5;
     const isAtEnd = (track.scrollLeft + track.clientWidth) >= (track.scrollWidth - 8);
     
-    if (prevBtn) {
-        prevBtn.disabled = isAtStart;
-        prevBtn.style.opacity = isAtStart ? '0.35' : '1';
-        prevBtn.style.cursor = isAtStart ? 'not-allowed' : 'pointer';
-        prevBtn.style.pointerEvents = isAtStart ? 'none' : 'auto';
-    }
-    if (nextBtn) {
-        nextBtn.disabled = isAtEnd;
-        nextBtn.style.opacity = isAtEnd ? '0.35' : '1';
-        nextBtn.style.cursor = isAtEnd ? 'not-allowed' : 'pointer';
-        nextBtn.style.pointerEvents = isAtEnd ? 'none' : 'auto';
-    }
+    [prevBtn, mobPrevBtn].forEach(btn => {
+        if (btn) {
+            btn.disabled = isAtStart;
+            btn.style.opacity = isAtStart ? '0.35' : '1';
+            btn.style.cursor = isAtStart ? 'not-allowed' : 'pointer';
+            btn.style.pointerEvents = isAtStart ? 'none' : 'auto';
+        }
+    });
+    [nextBtn, mobNextBtn].forEach(btn => {
+        if (btn) {
+            btn.disabled = isAtEnd;
+            btn.style.opacity = isAtEnd ? '0.35' : '1';
+            btn.style.cursor = isAtEnd ? 'not-allowed' : 'pointer';
+            btn.style.pointerEvents = isAtEnd ? 'none' : 'auto';
+        }
+    });
 }
 
 function scrollReelsTrack(containerId, direction) {
