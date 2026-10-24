@@ -542,9 +542,15 @@ try {
                 'refund_completed',
                 'refund_failed'
             ) NOT NULL DEFAULT 'pending',
+            `courier_name` VARCHAR(100) NULL,
+            `tracking_number` VARCHAR(100) NULL,
+            `tracking_url` VARCHAR(255) NULL,
             `cancellation_reason` VARCHAR(500) NULL,
+            `cancelled_by_role` VARCHAR(20) NULL DEFAULT NULL,
             `cancelled_at` DATETIME NULL,
             `cashfree_order_id` VARCHAR(100) NULL,
+            `razorpay_order_id` VARCHAR(100) NULL,
+            `razorpay_payment_id` VARCHAR(100) NULL,
             `payment_status` ENUM('pending', 'paid', 'failed') NOT NULL DEFAULT 'pending',
             `shipping_address` TEXT NOT NULL,
             `shipping_fee` DECIMAL(10, 2) DEFAULT 0.00,
@@ -706,7 +712,10 @@ try {
                 'completed',
                 'rejected'
             ) NOT NULL DEFAULT 'pending_admin_approval',
+            `refund_method` VARCHAR(50) NULL,
+            `refund_details` TEXT NULL,
             `cashfree_refund_id` VARCHAR(100) NULL,
+            `razorpay_refund_id` VARCHAR(100) NULL,
             `cashfree_order_id` VARCHAR(100) NULL,
             `admin_notes` TEXT NULL,
             `processed_by` BIGINT NULL,
@@ -956,6 +965,30 @@ try {
             `is_active` TINYINT(1) DEFAULT 1,
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
+
+        // 54. COURIER SERVICES
+        "courier_services" => "
+        CREATE TABLE IF NOT EXISTS `courier_services` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `name` VARCHAR(100) NOT NULL UNIQUE,
+            `default_url` VARCHAR(255) NULL,
+            `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
+
+        // 55. RATE LIMITS
+        "rate_limits" => "
+        CREATE TABLE IF NOT EXISTS `rate_limits` (
+            `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+            `key_name` VARCHAR(191) NOT NULL UNIQUE,
+            `hits` INT NOT NULL DEFAULT 1,
+            `expires_at` BIGINT NOT NULL,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX `idx_rate_limits_key` (`key_name`),
+            INDEX `idx_rate_limits_expires` (`expires_at`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;"
     ];
 
@@ -964,6 +997,53 @@ try {
         $db->exec($sql);
         echo "  [OK] Table `{$name}` verified/created.\n";
         $createdCount++;
+    }
+
+    // Upgrade existing tables with any missing columns (Hostinger compatibility patch)
+    echo "\n  Upgrading existing table columns...\n";
+    $ordersCols = array_map('strtolower', $db->query("SHOW COLUMNS FROM `orders`")->fetchAll(PDO::FETCH_COLUMN));
+    if (!in_array('razorpay_order_id', $ordersCols)) {
+        $db->exec("ALTER TABLE `orders` ADD COLUMN `razorpay_order_id` VARCHAR(100) NULL AFTER `cashfree_order_id`");
+    }
+    if (!in_array('razorpay_payment_id', $ordersCols)) {
+        $db->exec("ALTER TABLE `orders` ADD COLUMN `razorpay_payment_id` VARCHAR(100) NULL AFTER `razorpay_order_id`");
+    }
+    if (!in_array('cancelled_by_role', $ordersCols)) {
+        $db->exec("ALTER TABLE `orders` ADD COLUMN `cancelled_by_role` VARCHAR(20) NULL DEFAULT NULL AFTER `cancellation_reason`");
+    }
+    if (!in_array('courier_name', $ordersCols)) {
+        $db->exec("ALTER TABLE `orders` ADD COLUMN `courier_name` VARCHAR(100) NULL AFTER `status`");
+    }
+    if (!in_array('tracking_number', $ordersCols)) {
+        $db->exec("ALTER TABLE `orders` ADD COLUMN `tracking_number` VARCHAR(100) NULL AFTER `courier_name`");
+    }
+    if (!in_array('tracking_url', $ordersCols)) {
+        $db->exec("ALTER TABLE `orders` ADD COLUMN `tracking_url` VARCHAR(255) NULL AFTER `tracking_number`");
+    }
+
+    $refundCols = array_map('strtolower', $db->query("SHOW COLUMNS FROM `refund_requests`")->fetchAll(PDO::FETCH_COLUMN));
+    if (!in_array('razorpay_refund_id', $refundCols)) {
+        $db->exec("ALTER TABLE `refund_requests` ADD COLUMN `razorpay_refund_id` VARCHAR(100) NULL AFTER `cashfree_refund_id`");
+    }
+    if (!in_array('refund_method', $refundCols)) {
+        $db->exec("ALTER TABLE `refund_requests` ADD COLUMN `refund_method` VARCHAR(50) NULL AFTER `cancellation_type`");
+    }
+    if (!in_array('refund_details', $refundCols)) {
+        $db->exec("ALTER TABLE `refund_requests` ADD COLUMN `refund_details` TEXT NULL AFTER `refund_method`");
+    }
+
+    // Seed default couriers if empty
+    $courierCount = (int)$db->query("SELECT COUNT(*) FROM `courier_services`")->fetchColumn();
+    if ($courierCount === 0) {
+        $db->exec("
+            INSERT IGNORE INTO `courier_services` (`name`, `default_url`, `is_active`) VALUES
+            ('ST Courier', 'https://stcourier.com/track', 1),
+            ('Professional Couriers', 'https://www.tpcindia.com', 1),
+            ('DTDC', 'https://www.dtdc.in', 1),
+            ('Delhivery', 'https://www.delhivery.com', 1),
+            ('Blue Dart', 'https://www.bluedart.com', 1),
+            ('India Post', 'https://www.indiapost.gov.in', 1);
+        ");
     }
 
     // Re-enable foreign key checks

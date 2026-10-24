@@ -5,6 +5,62 @@ use Core\Model;
 
 class Order extends Model
 {
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureSchema();
+    }
+
+    private function ensureSchema(): void
+    {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+
+        try {
+            $cols = $this->db->query("SHOW COLUMNS FROM `orders`")->fetchAll(\PDO::FETCH_COLUMN);
+            $colsLower = array_map('strtolower', $cols);
+
+            if (!empty($colsLower)) {
+                if (!in_array('razorpay_order_id', $colsLower)) {
+                    $this->db->exec("ALTER TABLE `orders` ADD COLUMN `razorpay_order_id` VARCHAR(100) NULL AFTER `cashfree_order_id`");
+                }
+                if (!in_array('razorpay_payment_id', $colsLower)) {
+                    $this->db->exec("ALTER TABLE `orders` ADD COLUMN `razorpay_payment_id` VARCHAR(100) NULL AFTER `razorpay_order_id`");
+                }
+                if (!in_array('cancelled_by_role', $colsLower)) {
+                    $this->db->exec("ALTER TABLE `orders` ADD COLUMN `cancelled_by_role` VARCHAR(20) NULL DEFAULT NULL AFTER `cancellation_reason`");
+                }
+                if (!in_array('courier_name', $colsLower)) {
+                    $this->db->exec("ALTER TABLE `orders` ADD COLUMN `courier_name` VARCHAR(100) NULL AFTER `status`");
+                }
+                if (!in_array('tracking_number', $colsLower)) {
+                    $this->db->exec("ALTER TABLE `orders` ADD COLUMN `tracking_number` VARCHAR(100) NULL AFTER `courier_name`");
+                }
+                if (!in_array('tracking_url', $colsLower)) {
+                    $this->db->exec("ALTER TABLE `orders` ADD COLUMN `tracking_url` VARCHAR(255) NULL AFTER `tracking_number`");
+                }
+                if (!in_array('packing_video_1', $colsLower)) {
+                    $this->db->exec("ALTER TABLE `orders` ADD COLUMN `packing_video_1` VARCHAR(255) NULL AFTER `notes`");
+                }
+                if (!in_array('packing_video_2', $colsLower)) {
+                    $this->db->exec("ALTER TABLE `orders` ADD COLUMN `packing_video_2` VARCHAR(255) NULL AFTER `packing_video_1`");
+                }
+                if (!in_array('packed_at', $colsLower)) {
+                    $this->db->exec("ALTER TABLE `orders` ADD COLUMN `packed_at` DATETIME NULL AFTER `packing_video_2`");
+                }
+                if (!in_array('delivered_at', $colsLower)) {
+                    $this->db->exec("ALTER TABLE `orders` ADD COLUMN `delivered_at` DATETIME NULL AFTER `packed_at`");
+                }
+                if (!in_array('packing_video_expires_at', $colsLower)) {
+                    $this->db->exec("ALTER TABLE `orders` ADD COLUMN `packing_video_expires_at` DATETIME NULL AFTER `delivered_at`");
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log("Order::ensureSchema notice: " . $e->getMessage());
+        }
+    }
+
     public function createOrder(int $userId, array $cartItems, float $totalAmount, string $address, array $feeDetails = [])
     {
         try {

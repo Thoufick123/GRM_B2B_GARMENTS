@@ -20,14 +20,29 @@ class CancellationRule
     }
 
     /**
-     * Ensure database schema supports varchar payment_method to prevent enum truncation errors
+     * Ensure database schema supports cancellation_rules and varchar payment_method
      */
     private function ensureSchema(): void
     {
         try {
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS `cancellation_rules` (
+                    `id` INT AUTO_INCREMENT PRIMARY KEY,
+                    `rule_name` VARCHAR(255) NOT NULL,
+                    `payment_method` VARCHAR(50) NOT NULL DEFAULT 'both',
+                    `cancellation_fee` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+                    `refund_percentage` INT NOT NULL DEFAULT 100,
+                    `sla_days` INT NOT NULL DEFAULT 0,
+                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `created_by` BIGINT NULL,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+
             $col = $this->db->query("SHOW COLUMNS FROM cancellation_rules LIKE 'payment_method'")->fetch(\PDO::FETCH_ASSOC);
             if ($col && strpos(strtolower($col['Type']), 'varchar') === false) {
-                $this->db->exec("ALTER TABLE cancellation_rules MODIFY COLUMN payment_method VARCHAR(50) NOT NULL DEFAULT 'prepaid'");
+                $this->db->exec("ALTER TABLE cancellation_rules MODIFY COLUMN payment_method VARCHAR(50) NOT NULL DEFAULT 'both'");
             }
         } catch (\Throwable $e) {}
     }

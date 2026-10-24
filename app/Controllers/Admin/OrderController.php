@@ -262,6 +262,31 @@ class OrderController extends Controller
         header('Content-Type: application/json');
         try {
             $db = \Core\Database::getInstance();
+            $db->exec("
+                CREATE TABLE IF NOT EXISTS `courier_services` (
+                    `id` INT AUTO_INCREMENT PRIMARY KEY,
+                    `name` VARCHAR(100) NOT NULL UNIQUE,
+                    `default_url` VARCHAR(255) NULL,
+                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+
+            // Seed defaults if table is empty
+            $cnt = (int)$db->query("SELECT COUNT(*) FROM `courier_services`")->fetchColumn();
+            if ($cnt === 0) {
+                $db->exec("
+                    INSERT IGNORE INTO `courier_services` (`name`, `default_url`, `is_active`) VALUES
+                    ('ST Courier', 'https://stcourier.com/track', 1),
+                    ('Professional Couriers', 'https://www.tpcindia.com', 1),
+                    ('DTDC', 'https://www.dtdc.in', 1),
+                    ('Delhivery', 'https://www.delhivery.com', 1),
+                    ('Blue Dart', 'https://www.bluedart.com', 1),
+                    ('India Post', 'https://www.indiapost.gov.in', 1);
+                ");
+            }
+
             $stmt = $db->query("SELECT id, name, default_url FROM courier_services WHERE is_active = 1 ORDER BY name ASC");
             $couriers = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             echo json_encode(['success' => true, 'couriers' => $couriers]);
