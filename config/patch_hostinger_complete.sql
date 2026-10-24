@@ -137,3 +137,10 @@ ALTER TABLE `products`
     ADD COLUMN IF NOT EXISTS `num_reviews` INT NOT NULL DEFAULT 0 AFTER `stock_quantity`,
     ADD COLUMN IF NOT EXISTS `average_rating` DECIMAL(3, 2) NOT NULL DEFAULT 0.00 AFTER `num_reviews`;
 
+-- 12. Update order_modification_items table schema
+ALTER TABLE `order_modification_items`
+    MODIFY `order_item_id` BIGINT NULL,
+    ADD COLUMN IF NOT EXISTS `product_id` BIGINT NULL AFTER `order_item_id`,
+    ADD COLUMN IF NOT EXISTS `variant_id` BIGINT NULL AFTER `product_id`,
+    MODIFY `change_type` ENUM('removed', 'qty_changed', 'price_changed', 'replaced', 'unchanged', 'added') NOT NULL DEFAULT 'unchanged';
+

@@ -605,14 +605,24 @@ class Product extends Model
             // 4. Delete product variants
             $this->db->prepare("DELETE FROM product_variants WHERE product_id = :id")->execute(['id' => $id]);
             
-            // 5. Clean up cart items, wishlists, reviews, volume tiers, fabric customizations
+            // 5. Clean up cart items, wishlists, reviews, volume tiers, and fabric customizations
             $this->db->prepare("DELETE FROM cart_items WHERE product_id = :id")->execute(['id' => $id]);
             $this->db->prepare("DELETE FROM wishlists WHERE product_id = :id")->execute(['id' => $id]);
             $this->db->prepare("DELETE FROM reviews WHERE product_id = :id")->execute(['id' => $id]);
             $this->db->prepare("DELETE FROM product_volume_tiers WHERE product_id = :id")->execute(['id' => $id]);
-            $this->db->prepare("DELETE FROM fabric_customizations WHERE fabric_id = :id")->execute(['id' => $id]);
-            $this->db->prepare("UPDATE order_items SET product_id = NULL, variant_id = NULL WHERE product_id = :id")->execute(['id' => $id]);
-            $this->db->prepare("UPDATE order_modification_items SET product_id = NULL, variant_id = NULL WHERE product_id = :id")->execute(['id' => $id]);
+
+            // Clean up fabric customizations and related sub-tables if any
+            $stmtFc = $this->db->prepare("SELECT id FROM fabric_customizations WHERE fabric_id = :id");
+            $stmtFc->execute(['id' => $id]);
+            $fcIds = $stmtFc->fetchAll(\PDO::FETCH_COLUMN);
+            if (!empty($fcIds)) {
+                $fcPlaceholders = implode(',', array_fill(0, count($fcIds), '?'));
+                try {
+                    $this->db->prepare("DELETE FROM fabric_customization_label_rel WHERE customization_id IN ($fcPlaceholders)")->execute($fcIds);
+                    $this->db->prepare("DELETE FROM fabric_customization_sizes WHERE customization_id IN ($fcPlaceholders)")->execute($fcIds);
+                } catch (\Exception $eIgnored) {}
+                $this->db->prepare("DELETE FROM fabric_customizations WHERE id IN ($fcPlaceholders)")->execute($fcIds);
+            }
             
             // 6. Delete product
             $stmt = $this->db->prepare("DELETE FROM products WHERE id = :id");
