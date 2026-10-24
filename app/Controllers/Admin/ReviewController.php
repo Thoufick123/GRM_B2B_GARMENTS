@@ -83,13 +83,14 @@ class ReviewController extends Controller
         $isApproved = ($status === 'approve');
         
         try {
-            if ($this->reviewModel->updateStatus($reviewId, $isApproved)) {
+            if ($this->reviewModel->updateStatus((int)$reviewId, $isApproved)) {
                 echo json_encode(['success' => true, 'message' => 'Review status updated.']);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to update status.']);
             }
-        } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => 'An error occurred.']);
+        } catch (\Throwable $e) {
+            error_log("Review status update error: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Failed to update review status: ' . $e->getMessage()]);
         }
     }
 }

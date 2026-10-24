@@ -384,6 +384,8 @@ try {
             `weight` DECIMAL(10, 2) NULL,
             `weight_unit` VARCHAR(10) DEFAULT 'kg',
             `stock_quantity` INT NOT NULL DEFAULT 0,
+            `num_reviews` INT NOT NULL DEFAULT 0,
+            `average_rating` DECIMAL(3, 2) NOT NULL DEFAULT 0.00,
             `moq_override` INT NULL,
             `max_amount` DECIMAL(10, 2) DEFAULT 0.00,
             `commission_rate` DECIMAL(5, 2) NULL,

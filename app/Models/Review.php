@@ -172,7 +172,7 @@ class Review extends Model
                 u.name AS reviewer_name,
                 u.email AS reviewer_email
             FROM reviews r
-            JOIN products p ON r.product_id = p.id
+            LEFT JOIN products p ON r.product_id = p.id
             JOIN users u ON r.user_id = u.id
             LEFT JOIN fabric_customizations fc ON r.customization_id = fc.id
             {$where}
@@ -235,16 +235,26 @@ class Review extends Model
         $success = $stmt->execute([$isApproved ? 1 : 0, $reviewId]);
         
         if ($success) {
-            // Fetch the product_id for this review
-            $stmt = $this->db->prepare("SELECT product_id FROM reviews WHERE id = ?");
-            $stmt->execute([$reviewId]);
-            $review = $stmt->fetch();
-            
-            if ($review) {
-                $this->recalculateProductRating($review['product_id']);
-                if (class_exists('\Core\Cache')) {
-                    \Core\Cache::delete('approved_reviews_' . $review['product_id']);
+            try {
+                // Fetch product_id and customization_id for this review
+                $stmt = $this->db->prepare("SELECT product_id, customization_id FROM reviews WHERE id = ?");
+                $stmt->execute([$reviewId]);
+                $review = $stmt->fetch();
+                
+                if ($review && !empty($review['product_id'])) {
+                    $this->recalculateProductRating((int)$review['product_id']);
+                    if (class_exists('\Core\Cache')) {
+                        \Core\Cache::delete('approved_reviews_' . $review['product_id']);
+                    }
                 }
+
+                if ($review && !empty($review['customization_id'])) {
+                    if (class_exists('\Core\Cache')) {
+                        \Core\Cache::delete('approved_reviews_cst_' . $review['customization_id']);
+                    }
+                }
+            } catch (\Throwable $e) {
+                error_log("Non-fatal error in review post-approval rating hook: " . $e->getMessage());
             }
         }
         
@@ -252,30 +262,70 @@ class Review extends Model
     }
 
     /**
+     * Ensure num_reviews and average_rating exist on products table (self-healing migration)
+     */
+    private function ensureProductRatingColumns(): void
+    {
+        static $checked = false;
+        if ($checked) return;
+
+        try {
+            $colStmt = $this->db->query("SHOW COLUMNS FROM products LIKE 'num_reviews'");
+            if (!$colStmt->fetch()) {
+                $this->db->exec("ALTER TABLE products ADD COLUMN num_reviews INT NOT NULL DEFAULT 0 AFTER stock_quantity");
+            }
+        } catch (\Throwable $e) {
+            // Ignore if already added or insufficient permissions
+        }
+
+        try {
+            $colStmt = $this->db->query("SHOW COLUMNS FROM products LIKE 'average_rating'");
+            if (!$colStmt->fetch()) {
+                $this->db->exec("ALTER TABLE products ADD COLUMN average_rating DECIMAL(3,2) NOT NULL DEFAULT 0.00 AFTER num_reviews");
+            }
+        } catch (\Throwable $e) {
+            // Ignore if already added or insufficient permissions
+        }
+
+        $checked = true;
+    }
+
+    /**
      * Recalculate average rating and number of reviews for a product
      */
     public function recalculateProductRating(int $productId)
     {
-        $sql = "
-            SELECT 
-                COUNT(*) as num_reviews,
-                AVG(rating) as average_rating
-            FROM reviews 
-            WHERE product_id = ? AND is_approved = 1
-        ";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$productId]);
-        $stats = $stmt->fetch();
+        if ($productId <= 0) {
+            return false;
+        }
 
-        $numReviews = $stats['num_reviews'] ?? 0;
-        $avgRating = $stats['average_rating'] ?? 0.00;
+        try {
+            $this->ensureProductRatingColumns();
 
-        $updateStmt = $this->db->prepare("
-            UPDATE products 
-            SET num_reviews = ?, average_rating = ?
-            WHERE id = ?
-        ");
-        return $updateStmt->execute([$numReviews, round($avgRating, 2), $productId]);
+            $sql = "
+                SELECT 
+                    COUNT(*) as num_reviews,
+                    AVG(rating) as average_rating
+                FROM reviews 
+                WHERE product_id = ? AND is_approved = 1
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$productId]);
+            $stats = $stmt->fetch();
+
+            $numReviews = (int)($stats['num_reviews'] ?? 0);
+            $avgRating = (float)($stats['average_rating'] ?? 0.00);
+
+            $updateStmt = $this->db->prepare("
+                UPDATE products 
+                SET num_reviews = ?, average_rating = ?
+                WHERE id = ?
+            ");
+            return $updateStmt->execute([$numReviews, round($avgRating, 2), $productId]);
+        } catch (\Throwable $e) {
+            error_log("recalculateProductRating failed for product #{$productId}: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**

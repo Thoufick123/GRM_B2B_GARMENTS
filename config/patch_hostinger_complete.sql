@@ -131,3 +131,8 @@ ALTER TABLE `users`
 ALTER TABLE `product_variants`
     ADD COLUMN IF NOT EXISTS `reserve_stock` INT NOT NULL DEFAULT 0 AFTER `current_stock`;
 
+-- 11. Add num_reviews and average_rating columns to products table
+ALTER TABLE `products`
+    ADD COLUMN IF NOT EXISTS `num_reviews` INT NOT NULL DEFAULT 0 AFTER `stock_quantity`,
+    ADD COLUMN IF NOT EXISTS `average_rating` DECIMAL(3, 2) NOT NULL DEFAULT 0.00 AFTER `num_reviews`;
+
