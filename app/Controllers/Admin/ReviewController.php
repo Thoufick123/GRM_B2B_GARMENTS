@@ -84,6 +84,10 @@ class ReviewController extends Controller
         
         try {
             if ($this->reviewModel->updateStatus((int)$reviewId, $isApproved)) {
+                if (class_exists('\Core\Cache')) {
+                    \Core\Cache::deleteByPrefix('product_details_bundle_');
+                    \Core\Cache::deleteByPrefix('approved_reviews_');
+                }
                 echo json_encode(['success' => true, 'message' => 'Review status updated.']);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to update status.']);

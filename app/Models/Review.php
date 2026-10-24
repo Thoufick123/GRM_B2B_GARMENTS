@@ -242,15 +242,20 @@ class Review extends Model
                 $review = $stmt->fetch();
                 
                 if ($review && !empty($review['product_id'])) {
-                    $this->recalculateProductRating((int)$review['product_id']);
+                    $pid = (int)$review['product_id'];
+                    $this->recalculateProductRating($pid);
                     if (class_exists('\Core\Cache')) {
-                        \Core\Cache::delete('approved_reviews_' . $review['product_id']);
+                        \Core\Cache::delete('approved_reviews_' . $pid);
+                        \Core\Cache::delete('product_details_bundle_' . $pid);
+                        \Core\Cache::delete('rel_prods_diff_' . $pid);
                     }
                 }
 
                 if ($review && !empty($review['customization_id'])) {
+                    $cid = (int)$review['customization_id'];
                     if (class_exists('\Core\Cache')) {
-                        \Core\Cache::delete('approved_reviews_cst_' . $review['customization_id']);
+                        \Core\Cache::delete('approved_reviews_cst_' . $cid);
+                        \Core\Cache::delete('fabric_customization_bundle_' . $cid);
                     }
                 }
             } catch (\Throwable $e) {
@@ -344,9 +349,10 @@ class Review extends Model
         $sql = "
             SELECT 
                 r.*,
-                u.name AS reviewer_name
+                COALESCE(u.name, 'Customer') AS reviewer_name,
+                u.email AS reviewer_email
             FROM reviews r
-            JOIN users u ON r.user_id = u.id
+            LEFT JOIN users u ON r.user_id = u.id
             WHERE r.product_id = ? AND r.is_approved = 1
             ORDER BY r.created_at DESC
         ";
@@ -356,7 +362,7 @@ class Review extends Model
         $reviews = $stmt->fetchAll();
 
         if (class_exists('\Core\Cache')) {
-            \Core\Cache::set($cacheKey, $reviews, 3600);
+            \Core\Cache::set($cacheKey, $reviews, 300);
         }
 
         return $reviews;
@@ -377,11 +383,11 @@ class Review extends Model
         $sql = "
             SELECT 
                 r.*,
-                u.name AS reviewer_name,
+                COALESCE(u.name, 'Customer') AS reviewer_name,
                 fc.program_name,
                 fc.garment_type
             FROM reviews r
-            JOIN users u ON r.user_id = u.id
+            LEFT JOIN users u ON r.user_id = u.id
             LEFT JOIN fabric_customizations fc ON r.customization_id = fc.id
             WHERE (r.customization_id = :cid {$whereFabric})
               AND r.is_approved = 1

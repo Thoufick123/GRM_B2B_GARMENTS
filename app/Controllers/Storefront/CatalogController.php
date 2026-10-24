@@ -195,9 +195,10 @@ class CatalogController extends Controller
             Session::set('return_to', $currentUri);
         }
 
-        // Cache the entire product view bundle for 5 minutes (invalidated on product/review updates)
+        // Cache the product view bundle (invalidated on product/review updates, bypassable with nocache)
         $prodCacheKey = 'product_details_bundle_' . $id;
-        $bundle = class_exists('\Core\Cache') ? \Core\Cache::get($prodCacheKey) : null;
+        $nocache = isset($_GET['nocache']) || isset($_GET['refresh']);
+        $bundle = (class_exists('\Core\Cache') && !$nocache) ? \Core\Cache::get($prodCacheKey) : null;
 
         if ($bundle === null) {
             $productModel = new Product();
@@ -383,9 +384,18 @@ class CatalogController extends Controller
             $images = $bundle['images'];
             $variants = $bundle['variants'];
             $relatedProducts = $bundle['relatedProducts'];
-            $reviews = $bundle['reviews'];
             $categoryOfferRule = $bundle['categoryOfferRule'];
             $volumeTiers = $bundle['volumeTiers'];
+        }
+
+        // Reviews are dynamic customer submissions: ALWAYS fetch latest approved reviews directly!
+        $reviewModel = new Review();
+        $reviews = $reviewModel->getApprovedProductReviews($id);
+
+        // Keep product rating & count in sync with verified reviews
+        if (!empty($reviews)) {
+            $product['num_reviews'] = count($reviews);
+            $product['average_rating'] = round(array_sum(array_column($reviews, 'rating')) / count($reviews), 2);
         }
 
         // User-specific data (not cached across users)
