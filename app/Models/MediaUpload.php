@@ -211,6 +211,13 @@ class MediaUpload
 
                 UNION ALL
 
+                SELECT 'product_variant' as source, pvi.image_path as ref, CONCAT('Product Variant #', pvi.variant_id, IFNULL(CONCAT(' (', pv.name, ')'), '')) as detail
+                FROM product_variant_images pvi
+                LEFT JOIN product_variants pv ON pvi.variant_id = pv.id
+                WHERE pvi.image_path IS NOT NULL AND pvi.image_path != ''
+
+                UNION ALL
+
                 SELECT 'category' as source, c.image_path as ref, CONCAT('Category: ', c.name) as detail
                 FROM categories c
                 WHERE c.image_path IS NOT NULL AND c.image_path != ''
@@ -264,6 +271,24 @@ class MediaUpload
 
                 UNION ALL
 
+                SELECT 'order_modification' as source, om.payment_screenshot as ref, CONCAT('Order Mod Proof: Order #', om.order_id) as detail
+                FROM order_modifications om
+                WHERE om.payment_screenshot IS NOT NULL AND om.payment_screenshot != ''
+
+                UNION ALL
+
+                SELECT 'support_ticket' as source, st.attachment as ref, CONCAT('Support Ticket: ', st.ticket_number) as detail
+                FROM support_tickets st
+                WHERE st.attachment IS NOT NULL AND st.attachment != ''
+
+                UNION ALL
+
+                SELECT 'support_message' as source, stm.attachment as ref, CONCAT('Support Message: Ticket #', stm.ticket_id) as detail
+                FROM support_ticket_messages stm
+                WHERE stm.attachment IS NOT NULL AND stm.attachment != ''
+
+                UNION ALL
+
                 SELECT 'user' as source, u.profile_picture as ref, CONCAT('User Profile: ', u.name) as detail
                 FROM users u
                 WHERE u.profile_picture IS NOT NULL AND u.profile_picture != ''
@@ -272,7 +297,25 @@ class MediaUpload
             return $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
         } catch (\Exception $e) {
             error_log('[MediaUpload::getAllDatabaseMediaReferences] Error: ' . $e->getMessage());
-            return [];
+            // Safe fallback if some optional tables are missing
+            try {
+                $fallbackSql = "
+                    SELECT 'product' as source, pi.image_path as ref, CONCAT('Product: ', IFNULL(p.name, 'Unknown')) as detail
+                    FROM product_images pi
+                    LEFT JOIN products p ON pi.product_id = p.id
+                    WHERE pi.image_path IS NOT NULL AND pi.image_path != ''
+
+                    UNION ALL
+
+                    SELECT 'category' as source, c.image_path as ref, CONCAT('Category: ', c.name) as detail
+                    FROM categories c
+                    WHERE c.image_path IS NOT NULL AND c.image_path != ''
+                ";
+                $stmt = $this->db->query($fallbackSql);
+                return $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            } catch (\Exception $e2) {
+                return [];
+            }
         }
     }
 
@@ -286,53 +329,109 @@ class MediaUpload
             return ['in_use' => false, 'count' => 0, 'usages' => [], 'summary' => ''];
         }
 
-        $tokens = [];
+        $rawTokens = [];
         $rawUrl = trim($media['cloudinary_url'] ?? '');
         if (!empty($rawUrl)) {
-            $tokens[] = $rawUrl;
+            $rawTokens[] = $rawUrl;
             $parsedPath = parse_url($rawUrl, PHP_URL_PATH);
             if (!empty($parsedPath)) {
                 $cleanPath = ltrim($parsedPath, '/');
                 if (strlen($cleanPath) >= 4) {
-                    $tokens[] = $cleanPath;
+                    $rawTokens[] = $cleanPath;
+                }
+            }
+            $fileBase = basename($rawUrl);
+            if (strlen($fileBase) >= 5) {
+                $rawTokens[] = $fileBase;
+                $nameNoExt = pathinfo($fileBase, PATHINFO_FILENAME);
+                if (strlen($nameNoExt) >= 5) {
+                    $rawTokens[] = $nameNoExt;
                 }
             }
         }
 
         $publicId = trim($media['public_id'] ?? '');
         if (!empty($publicId) && strlen($publicId) >= 3) {
-            $tokens[] = $publicId;
+            $rawTokens[] = $publicId;
             if (strpos($publicId, '/') !== false) {
                 $subId = basename($publicId);
                 if (strlen($subId) >= 4) {
-                    $tokens[] = $subId;
+                    $rawTokens[] = $subId;
                 }
             }
-        }
-
-        if (!empty($rawUrl)) {
-            $fileBase = basename($rawUrl);
-            if (strlen($fileBase) >= 6 && strpos($fileBase, '.') !== false) {
-                $tokens[] = $fileBase;
+            $pubNoExt = pathinfo($publicId, PATHINFO_FILENAME);
+            if (strlen($pubNoExt) >= 4) {
+                $rawTokens[] = $pubNoExt;
             }
         }
 
-        $tokens = array_unique(array_filter($tokens));
+        $origName = trim($media['original_filename'] ?? '');
+        if (!empty($origName) && strlen($origName) >= 4) {
+            $rawTokens[] = $origName;
+            $origNoExt = pathinfo($origName, PATHINFO_FILENAME);
+            if (strlen($origNoExt) >= 4) {
+                $rawTokens[] = $origNoExt;
+            }
+        }
+
+        // Expand tokens with variations: url-decoded, spaces vs underscores vs hyphens
+        $tokens = [];
+        foreach ($rawTokens as $t) {
+            $t = trim($t);
+            if (strlen($t) < 4) continue;
+            $tokens[] = $t;
+            $decoded = urldecode($t);
+            if ($decoded !== $t && strlen($decoded) >= 4) {
+                $tokens[] = $decoded;
+            }
+            $withSpaces = str_replace(['_', '+', '%20'], ' ', $decoded);
+            if ($withSpaces !== $decoded && strlen($withSpaces) >= 4) {
+                $tokens[] = $withSpaces;
+            }
+            $withUnderscores = str_replace([' ', '+', '%20'], '_', $decoded);
+            if ($withUnderscores !== $decoded && strlen($withUnderscores) >= 4) {
+                $tokens[] = $withUnderscores;
+            }
+        }
+
+        $tokens = array_values(array_unique(array_filter($tokens, fn($v) => strlen($v) >= 4)));
         if (empty($tokens)) {
             return ['in_use' => false, 'count' => 0, 'usages' => [], 'summary' => ''];
         }
 
         $dbReferences = $preloadedReferences ?? $this->getAllDatabaseMediaReferences();
         $matched = [];
+
         foreach ($dbReferences as $ref) {
-            $refText = $ref['ref'] ?? '';
+            $refText = trim($ref['ref'] ?? '');
             if (empty($refText)) continue;
 
+            $isMatch = false;
+            $refNorm = $this->normalizeForMatch($refText);
+
             foreach ($tokens as $token) {
+                // 1. Direct contains
                 if (str_contains($refText, $token)) {
-                    $matched[] = $ref['detail'];
+                    $isMatch = true;
                     break;
                 }
+                // 2. Reverse contains if DB reference is a sub-path or filename of a full URL token
+                if (strlen($refText) >= 6 && str_contains($token, $refText)) {
+                    $isMatch = true;
+                    break;
+                }
+                // 3. Normalized matching (handles URL encoding, spaces, underscores, domain variations)
+                $tokNorm = $this->normalizeForMatch($token);
+                if (strlen($tokNorm) >= 4) {
+                    if (str_contains($refNorm, $tokNorm) || (strlen($refNorm) >= 5 && str_contains($tokNorm, $refNorm))) {
+                        $isMatch = true;
+                        break;
+                    }
+                }
+            }
+
+            if ($isMatch) {
+                $matched[] = $ref['detail'];
             }
         }
 
@@ -347,6 +446,20 @@ class MediaUpload
             'usages'  => $uniqueMatched,
             'summary' => $summary
         ];
+    }
+
+    /**
+     * Normalize a path, URL or filename for comparison
+     */
+    private function normalizeForMatch(string $str): string
+    {
+        $str = urldecode($str);
+        $str = preg_replace('#^https?://[^/]+/#i', '', $str);
+        $str = preg_replace('#\?.*$#', '', $str);
+        $str = strtolower(trim($str));
+        $str = str_replace(['_', '+', '%20', '-'], ' ', $str);
+        $str = preg_replace('/\s+/', ' ', $str);
+        return trim($str);
     }
 
     /**
