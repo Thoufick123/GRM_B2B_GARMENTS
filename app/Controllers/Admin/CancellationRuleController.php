@@ -54,35 +54,49 @@ class CancellationRuleController extends Controller
 
     public function add(): void
     {
-        $this->requirePermission('cancellation_rules', 'create');
+        $role = Session::get('user_role');
+        if (!in_array($role, ['super_admin', 'admin', 'manager'])) {
+            $this->requirePermission('cancellation_rules', 'create');
+        }
         header('Content-Type: application/json');
         $input = $this->parseJsonInput();
 
-        $ruleName = trim($input['rule_name'] ?? '');
+        $ruleName = strtolower(trim($input['rule_name'] ?? ''));
         if (!$ruleName) {
             $this->json(['success' => false, 'message' => 'Rule Name (Order Status) is required.'], 422);
         }
         
-        $paymentMethod = in_array($input['payment_method'] ?? '', ['cod', 'prepaid']) ? $input['payment_method'] : 'prepaid';
+        $paymentMethod = in_array(strtolower($input['payment_method'] ?? ''), ['cod', 'prepaid', 'online', 'both', 'all']) ? strtolower($input['payment_method']) : 'prepaid';
 
         $model = new CancellationRule();
+        
+        // Prevent duplicate rules for the same order status
+        $existing = $model->findByStatus($ruleName);
+        if ($existing) {
+            $this->json([
+                'success' => false, 
+                'message' => 'A cancellation rule for "' . ucfirst(str_replace('_', ' ', $ruleName)) . '" already exists. You can edit the existing rule.'
+            ], 422);
+            return;
+        }
+
         try {
             $id = $model->create([
                 'rule_name'         => $ruleName,
                 'payment_method'    => $paymentMethod,
-                'cancellation_fee'  => (float)($input['cancellation_fee'] ?? 0),
-                'refund_percentage' => (int)($input['refund_percentage'] ?? 100),
-                'sla_days'          => (int)($input['sla_days'] ?? 0),
-                'is_active'         => (int)($input['is_active'] ?? 1),
-                'created_by'        => (int)Session::get('user_id'),
+                'cancellation_fee'  => max(0, (float)($input['cancellation_fee'] ?? 0)),
+                'refund_percentage' => max(0, min(100, (int)($input['refund_percentage'] ?? 100))),
+                'sla_days'          => max(0, (int)($input['sla_days'] ?? 0)),
+                'is_active'         => isset($input['is_active']) ? (int)$input['is_active'] : 1,
+                'created_by'        => (int)(Session::get('user_id') ?: 1),
             ]);
             $this->json(['success' => true, 'message' => 'Rule created successfully.', 'id' => $id]);
         } catch (\PDOException $e) {
             // Check for duplicate key
             if ($e->getCode() === '23000') {
-                $this->json(['success' => false, 'message' => 'A rule for this status and payment method already exists.'], 422);
+                $this->json(['success' => false, 'message' => 'A rule for this status already exists.'], 422);
             }
-            $this->json(['success' => false, 'message' => 'Database error.'], 500);
+            $this->json(['success' => false, 'message' => 'Database error: ' . $e->getMessage()], 500);
         }
     }
 
@@ -92,7 +106,10 @@ class CancellationRuleController extends Controller
 
     public function update(): void
     {
-        $this->requirePermission('cancellation_rules', 'edit');
+        $role = Session::get('user_role');
+        if (!in_array($role, ['super_admin', 'admin', 'manager'])) {
+            $this->requirePermission('cancellation_rules', 'edit');
+        }
         header('Content-Type: application/json');
         $input = $this->parseJsonInput();
         $id    = (int)($input['id'] ?? 0);
@@ -101,33 +118,43 @@ class CancellationRuleController extends Controller
             $this->json(['success' => false, 'message' => 'Invalid rule ID.'], 422);
         }
 
-        $ruleName = trim($input['rule_name'] ?? '');
+        $ruleName = strtolower(trim($input['rule_name'] ?? ''));
         if (!$ruleName) {
             $this->json(['success' => false, 'message' => 'Rule Name (Order Status) is required.'], 422);
         }
 
-        $paymentMethod = in_array($input['payment_method'] ?? '', ['cod', 'prepaid']) ? $input['payment_method'] : 'prepaid';
+        $paymentMethod = in_array(strtolower($input['payment_method'] ?? ''), ['cod', 'prepaid', 'online', 'both', 'all']) ? strtolower($input['payment_method']) : 'prepaid';
 
         $model = new CancellationRule();
         if (!$model->findById($id)) {
             $this->json(['success' => false, 'message' => 'Rule not found.'], 404);
         }
 
+        // Check if another rule already has this status
+        $existing = $model->findByStatus($ruleName);
+        if ($existing && (int)$existing['id'] !== $id) {
+            $this->json([
+                'success' => false, 
+                'message' => 'Another rule for status "' . ucfirst(str_replace('_', ' ', $ruleName)) . '" already exists.'
+            ], 422);
+            return;
+        }
+
         try {
             $model->update($id, [
                 'rule_name'         => $ruleName,
                 'payment_method'    => $paymentMethod,
-                'cancellation_fee'  => (float)($input['cancellation_fee'] ?? 0),
-                'refund_percentage' => (int)($input['refund_percentage'] ?? 100),
-                'sla_days'          => (int)($input['sla_days'] ?? 0),
-                'is_active'         => (int)($input['is_active'] ?? 1),
+                'cancellation_fee'  => max(0, (float)($input['cancellation_fee'] ?? 0)),
+                'refund_percentage' => max(0, min(100, (int)($input['refund_percentage'] ?? 100))),
+                'sla_days'          => max(0, (int)($input['sla_days'] ?? 0)),
+                'is_active'         => isset($input['is_active']) ? (int)$input['is_active'] : 1,
             ]);
             $this->json(['success' => true, 'message' => 'Rule updated successfully.']);
         } catch (\PDOException $e) {
             if ($e->getCode() === '23000') {
-                $this->json(['success' => false, 'message' => 'A rule for this status and payment method already exists.'], 422);
+                $this->json(['success' => false, 'message' => 'A rule for this status already exists.'], 422);
             }
-            $this->json(['success' => false, 'message' => 'Database error.'], 500);
+            $this->json(['success' => false, 'message' => 'Database error: ' . $e->getMessage()], 500);
         }
     }
 
@@ -137,7 +164,10 @@ class CancellationRuleController extends Controller
 
     public function toggle(): void
     {
-        $this->requirePermission('cancellation_rules', 'edit');
+        $role = Session::get('user_role');
+        if (!in_array($role, ['super_admin', 'admin', 'manager'])) {
+            $this->requirePermission('cancellation_rules', 'edit');
+        }
         header('Content-Type: application/json');
         $input = $this->parseJsonInput();
         $id    = (int)($input['id'] ?? 0);
@@ -152,7 +182,7 @@ class CancellationRuleController extends Controller
         $rule = $model->findById($id);
         $state = $rule && $rule['is_active'] ? 'enabled' : 'disabled';
 
-        $this->json(['success' => true, 'message' => "Rule {$state}.", 'is_active' => (int)$rule['is_active']]);
+        $this->json(['success' => true, 'message' => "Rule {$state}.", 'is_active' => (int)($rule['is_active'] ?? 0)]);
     }
 
     // -------------------------------------------------------------------------
@@ -161,7 +191,10 @@ class CancellationRuleController extends Controller
 
     public function delete(): void
     {
-        $this->requirePermission('cancellation_rules', 'delete');
+        $role = Session::get('user_role');
+        if (!in_array($role, ['super_admin', 'admin', 'manager'])) {
+            $this->requirePermission('cancellation_rules', 'delete');
+        }
         header('Content-Type: application/json');
         $input = $this->parseJsonInput();
         $id    = (int)($input['id'] ?? 0);
@@ -171,7 +204,7 @@ class CancellationRuleController extends Controller
         }
 
         (new CancellationRule())->delete($id);
-        $this->json(['success' => true, 'message' => 'Rule deleted.']);
+        $this->json(['success' => true, 'message' => 'Rule deleted successfully.']);
     }
 
     // -------------------------------------------------------------------------

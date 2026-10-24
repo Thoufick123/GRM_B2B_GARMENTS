@@ -16,6 +16,20 @@ class CancellationRule
     public function __construct()
     {
         $this->db = Database::getInstance();
+        $this->ensureSchema();
+    }
+
+    /**
+     * Ensure database schema supports varchar payment_method to prevent enum truncation errors
+     */
+    private function ensureSchema(): void
+    {
+        try {
+            $col = $this->db->query("SHOW COLUMNS FROM cancellation_rules LIKE 'payment_method'")->fetch(\PDO::FETCH_ASSOC);
+            if ($col && strpos(strtolower($col['Type']), 'varchar') === false) {
+                $this->db->exec("ALTER TABLE cancellation_rules MODIFY COLUMN payment_method VARCHAR(50) NOT NULL DEFAULT 'prepaid'");
+            }
+        } catch (\Throwable $e) {}
     }
 
     // ---------------------------------------------------------------------------
@@ -26,7 +40,7 @@ class CancellationRule
     public function getAll(): array
     {
         $stmt = $this->db->query(
-            "SELECT * FROM cancellation_rules ORDER BY payment_method ASC, rule_name ASC"
+            "SELECT * FROM cancellation_rules ORDER BY id DESC"
         );
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
@@ -35,6 +49,24 @@ class CancellationRule
     {
         $stmt = $this->db->prepare("SELECT * FROM cancellation_rules WHERE id = :id LIMIT 1");
         $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function findByStatus(string $status): ?array
+    {
+        $status = strtolower(trim($status));
+        $statuses = [$status];
+        if ($status === 'shipped') $statuses[] = 'shipping';
+        if ($status === 'shipping') $statuses[] = 'shipped';
+        if ($status === 'delivered') $statuses[] = 'delivery';
+        if ($status === 'delivery') $statuses[] = 'delivered';
+        if ($status === 'out_for_delivery') $statuses[] = 'out of delivery';
+        if ($status === 'out of delivery') $statuses[] = 'out_for_delivery';
+
+        $placeholders = implode(',', array_fill(0, count($statuses), '?'));
+        $stmt = $this->db->prepare("SELECT * FROM cancellation_rules WHERE LOWER(TRIM(rule_name)) IN ($placeholders) LIMIT 1");
+        $stmt->execute($statuses);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $row ?: null;
     }
@@ -140,7 +172,7 @@ class CancellationRule
         $stmt = $this->db->prepare("
             SELECT * FROM cancellation_rules 
             WHERE is_active = 1 
-              AND (payment_method = ? OR payment_method = 'all' OR payment_method = 'prepaid')
+              AND (payment_method IN (?, 'all', 'both', 'prepaid', 'online') OR payment_method IS NULL OR payment_method = '')
               AND LOWER(TRIM(rule_name)) IN ($placeholders)
             ORDER BY id DESC
             LIMIT 1
