@@ -507,6 +507,7 @@ $router->post('/admin/cms/reels/toggle-status', 'App\Controllers\Admin\ReelsCont
 
 $router->get('/admin/media', 'App\Controllers\Admin\MediaController@index');
 $router->get('/admin/media/ajax-get', 'App\Controllers\Admin\MediaController@ajaxGet');
+$router->get('/admin/media/check-usage', 'App\Controllers\Admin\MediaController@checkUsage');
 
 // Admin Orders
 $router->get('/admin/orders', 'App\Controllers\Admin\OrderController@index');

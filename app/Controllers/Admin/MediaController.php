@@ -27,6 +27,7 @@ class MediaController extends Controller
         
         $mediaModel = new MediaUpload();
         $mediaFiles = $mediaModel->getAll($vendorId, $isVendor ? null : $scope);
+        $mediaModel->attachUsageStatus($mediaFiles);
 
         $vendors = [];
         if (!$isVendor && is_vendor_module_enabled()) {
@@ -69,19 +70,63 @@ class MediaController extends Controller
                     return;
                 }
 
+                // Strict usage validation: Assets in active use CANNOT be deleted
+                $usage = $mediaModel->getAssetUsage($media);
+                if ($usage['in_use']) {
+                    $detailSummary = !empty($usage['summary']) ? $usage['summary'] : (implode(', ', array_slice($usage['usages'], 0, 3)));
+                    $errorMsg = "Cannot delete '{$media['original_filename']}': This media asset is currently in active use ({$detailSummary}). You must remove or replace it in the corresponding item(s) before deleting.";
+                    
+                    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => false, 'error' => $errorMsg, 'usages' => $usage['usages']]);
+                        exit;
+                    }
+                    Session::setFlash('error', $errorMsg);
+                    $this->redirect('/admin/media');
+                    return;
+                }
+
+                // Asset is NOT in use -> proceed with deletion
                 if (!empty($media['public_id'])) {
                     require_once BASE_PATH . '/app/Core/CloudinaryUploader.php';
                     $uploader = new \App\Core\CloudinaryUploader();
                     $resourceType = ($media['file_type'] === 'video') ? 'video' : 'image';
                     $uploader->deleteMedia($media['public_id'], $resourceType);
                 }
+
+                // Delete local fallback files if present
+                if (!empty($media['cloudinary_url']) && strpos($media['cloudinary_url'], 'uploads/') === 0) {
+                    $localPublic = BASE_PATH . '/public/' . ltrim($media['cloudinary_url'], '/');
+                    $localRoot   = BASE_PATH . '/' . ltrim($media['cloudinary_url'], '/');
+                    if (file_exists($localPublic)) @unlink($localPublic);
+                    if (file_exists($localRoot)) @unlink($localRoot);
+                }
                 
                 $mediaModel->delete($id);
-                Session::setFlash('success', 'Media deleted successfully.');
+                Session::setFlash('success', "Media asset '{$media['original_filename']}' deleted successfully.");
             }
         }
 
         $this->redirect('/admin/media');
+    }
+
+    public function checkUsage()
+    {
+        header('Content-Type: application/json');
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid ID']);
+            exit;
+        }
+        $mediaModel = new MediaUpload();
+        $media = $mediaModel->findById($id);
+        if (!$media) {
+            echo json_encode(['success' => false, 'message' => 'Media not found']);
+            exit;
+        }
+        $usage = $mediaModel->getAssetUsage($media);
+        echo json_encode(['success' => true, 'data' => $usage]);
+        exit;
     }
 
     public function upload()
@@ -248,6 +293,7 @@ class MediaController extends Controller
         
         $mediaModel = new MediaUpload();
         $mediaFiles = $mediaModel->getAll($vendorId, $isVendor ? null : $scope);
+        $mediaModel->attachUsageStatus($mediaFiles);
         
         echo json_encode(['success' => true, 'data' => $mediaFiles]);
         exit;
