@@ -687,10 +687,10 @@ class InvoiceService
   .totals-table tr.tax-row td { background-color: #f8fafc; color: #475569; }
   .totals-table tr.grand-total td { background-color: #1e293b; font-weight: 900; font-size: 10px; color: #ffffff; }
 
-  .terms-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; font-size: 6.5px; color: #334155; line-height: 1.25; }
-  .terms-box h4 { margin: 0 0 3px 0; font-size: 8px; text-transform: uppercase; color: #0f172a; font-weight: 800; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px; }
-  .terms-box .terms-intro { font-size: 6.5px; color: #475569; margin: 0 0 3px 0; line-height: 1.25; }
-  .terms-box .term-item { margin-bottom: 2px; }
+  .terms-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 7px 9px; font-size: 8.2px; color: #334155; line-height: 1.28; }
+  .terms-box h4 { margin: 0 0 4px 0; font-size: 10px; text-transform: uppercase; color: #0f172a; font-weight: 800; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; }
+  .terms-box .terms-intro { font-size: 8.2px; color: #475569; margin: 0 0 4px 0; line-height: 1.28; }
+  .terms-box .term-item { margin-bottom: 2.2px; }
   .terms-box .term-item strong { color: #0f172a; font-weight: 700; }
   .terms-box ol { margin: 0; padding-left: 10px; }
   .terms-box li { margin-bottom: 1px; }
@@ -698,9 +698,9 @@ class InvoiceService
   .terms-sublist { margin: 1px 0 2px 0; padding-left: 0; list-style: none; }
   .terms-sublist div { margin-bottom: 1px; }
 
-  .declaration-box { margin-top: 5px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 5px 7px; }
-  .declaration-box h4 { margin: 0 0 2px 0; font-size: 7.5px; text-transform: uppercase; color: #0f172a; font-weight: 800; letter-spacing: 0.5px; }
-  .declaration-box p { margin: 0; font-size: 6.5px; color: #475569; line-height: 1.25; }
+  .declaration-box { margin-top: 5px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 5px 8px; }
+  .declaration-box h4 { margin: 0 0 2px 0; font-size: 9.5px; text-transform: uppercase; color: #0f172a; font-weight: 800; letter-spacing: 0.5px; }
+  .declaration-box p { margin: 0; font-size: 8.2px; color: #475569; line-height: 1.28; }
 
   .seal-box { text-align: center; padding: 4px 0; }
   .seal-box .seal-company { font-size: 8.5px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
