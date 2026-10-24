@@ -38,10 +38,10 @@
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
     <?php
     $cards = [
-        ['filter' => 'pending',  'label' => 'Awaiting Review', 'count' => $counts['Pending_Admin_Approval'], 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',  'bg' => 'bg-amber-50',   'text' => 'text-amber-700',   'border' => 'border-amber-200'],
-        ['filter' => 'all',      'label' => 'Total Requests',  'count' => $counts['total'],                  'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', 'bg' => 'bg-gray-50', 'text' => 'text-gray-700', 'border' => 'border-gray-200'],
-        ['filter' => 'all',      'label' => 'Approved',        'count' => $counts['Processing'],             'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', 'bg' => 'bg-sky-50',    'text' => 'text-sky-700',    'border' => 'border-sky-200'],
-        ['filter' => 'rejected', 'label' => 'Rejected',        'count' => $counts['Rejected'],               'icon' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z', 'bg' => 'bg-rose-50', 'text' => 'text-rose-700', 'border' => 'border-rose-200'],
+        ['filter' => 'pending',  'label' => 'Awaiting Review', 'count' => $counts['pending_admin_approval'] ?? $counts['Pending_Admin_Approval'] ?? 0, 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',  'bg' => 'bg-amber-50',   'text' => 'text-amber-700',   'border' => 'border-amber-200'],
+        ['filter' => 'all',      'label' => 'Total Requests',  'count' => $counts['total'] ?? 0,                                                 'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', 'bg' => 'bg-gray-50', 'text' => 'text-gray-700', 'border' => 'border-gray-200'],
+        ['filter' => 'all',      'label' => 'Approved',        'count' => $counts['processing'] ?? $counts['Processing'] ?? 0,                   'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', 'bg' => 'bg-sky-50',    'text' => 'text-sky-700',    'border' => 'border-sky-200'],
+        ['filter' => 'rejected', 'label' => 'Rejected',        'count' => $counts['rejected'] ?? $counts['Rejected'] ?? 0,                       'icon' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z', 'bg' => 'bg-rose-50', 'text' => 'text-rose-700', 'border' => 'border-rose-200'],
     ];
     foreach ($cards as $card):
         $active = ($filter === $card['filter'] && $card['filter'] !== 'all') || ($filter === 'all' && $card['label'] === 'Total Requests');
@@ -58,14 +58,14 @@
 </div>
 
 <!-- Quick-action button to Refunds -->
-<?php if ($counts['Processing'] > 0): ?>
+<?php $approvedCount = $counts['processing'] ?? $counts['Processing'] ?? 0; ?>
+<?php if ($approvedCount > 0): ?>
 <div class="mb-5 flex items-center gap-3 bg-sky-50 border border-sky-200 rounded-xl px-4 py-3">
     <svg class="w-5 h-5 text-sky-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
     <p class="text-sm text-sky-800 font-medium flex-1">
-        <!-- <strong><?= $counts['Processing'] ?> approved request<?= $counts['Processing'] !== 1 ? 's' : '' ?></strong> <?= $counts['Processing'] !== 1 ? 'are' : 'is' ?> ready for payment refund via Cashfree. -->
-        <strong><?= $counts['Processing'] ?> approved request<?= $counts['Processing'] !== 1 ? 's' : '' ?></strong> <?= $counts['Processing'] !== 1 ? 'are' : 'is' ?> ready for refund processing.
+        <strong><?= $approvedCount ?> approved request<?= $approvedCount !== 1 ? 's' : '' ?></strong> <?= $approvedCount !== 1 ? 'are' : 'is' ?> ready for refund processing.
     </p>
-    <?php if ($this->hasPermission('all_cancellations', 'edit')): ?>
+    <?php if ($this->hasPermission('all_cancellations', 'edit') || $this->hasPermission('cancellations', 'edit')): ?>
     <a href="<?= BASE_URL ?>/admin/cancellations/refunds" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg transition-colors flex-shrink-0">
         Process Refunds →
     </a>
@@ -79,9 +79,9 @@
 <div class="flex gap-1 mb-0 border-b border-gray-200">
     <?php
     $tabs = [
-        ['key' => 'pending',  'label' => 'Pending Review',      'badge' => $counts['Pending_Admin_Approval']],
-        ['key' => 'all',      'label' => 'All Requests',        'badge' => $counts['total']],
-        ['key' => 'rejected', 'label' => 'Rejected',            'badge' => $counts['Rejected']],
+        ['key' => 'pending',  'label' => 'Pending Review',      'badge' => $counts['pending_admin_approval'] ?? $counts['Pending_Admin_Approval'] ?? 0],
+        ['key' => 'all',      'label' => 'All Requests',        'badge' => $counts['total'] ?? 0],
+        ['key' => 'rejected', 'label' => 'Rejected',            'badge' => $counts['rejected'] ?? $counts['Rejected'] ?? 0],
     ];
     foreach ($tabs as $t):
         $isActive = $filter === $t['key'];
@@ -141,21 +141,22 @@
                         ];
                         $avatarClr = $colors[ord($initials[0]) % count($colors)];
 
+                        $normStatus = strtolower(trim($req['status']));
                         $statusColors = [
-                            'Pending_Admin_Approval' => 'bg-amber-50 text-amber-700 border-amber-200',
-                            'Processing'             => 'bg-sky-50 text-sky-700 border-sky-200',
-                            'Completed'              => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                            'Rejected'               => 'bg-rose-50 text-rose-700 border-rose-200',
+                            'pending_admin_approval' => 'bg-amber-50 text-amber-700 border-amber-200',
+                            'processing'             => 'bg-sky-50 text-sky-700 border-sky-200',
+                            'completed'              => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                            'rejected'               => 'bg-rose-50 text-rose-700 border-rose-200',
                         ];
-                        $statusBadge = $statusColors[$req['status']] ?? 'bg-gray-50 text-gray-600 border-gray-200';
+                        $statusBadge = $statusColors[$normStatus] ?? 'bg-gray-50 text-gray-600 border-gray-200';
 
                         $statusLabels = [
-                            'Pending_Admin_Approval' => 'Pending Review',
-                            'Processing'             => 'Approved (Processing Refund)',
-                            'Completed'              => 'Refunded',
-                            'Rejected'               => 'Rejected',
+                            'pending_admin_approval' => 'Pending Review',
+                            'processing'             => 'Approved (Processing Refund)',
+                            'completed'              => 'Refunded',
+                            'rejected'               => 'Rejected',
                         ];
-                        $statusLabel = $statusLabels[$req['status']] ?? $req['status'];
+                        $statusLabel = $statusLabels[$normStatus] ?? ucwords(str_replace('_', ' ', $normStatus));
                     ?>
                     <tr class="hover:bg-gray-50 transition-colors group">
                         <td class="px-5 py-4 text-xs text-gray-400 font-mono"><?= $req['id'] ?></td>
@@ -221,30 +222,34 @@
 
                         <td class="px-5 py-4 text-right">
                             <div class="flex justify-end gap-2 items-center">
-                                <?php if ($req['status'] === 'Pending_Admin_Approval'): ?>
+                                <?php if ($normStatus === 'pending_admin_approval'): ?>
                                     <?php if ($this->hasPermission('all_cancellations', 'edit')): ?>
                                     <button
                                         onclick="openApproveModal(<?= $req['id'] ?>, '<?= htmlspecialchars(addslashes($req['order_number'])) ?>', <?= $req['amount'] ?>, '<?= htmlspecialchars(addslashes($req['user_name'])) ?>')"
-                                        class="px-3 py-1.5 bg-[#1e1b4b] hover:bg-indigo-900 text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
+                                        class="px-3 py-1.5 bg-[#1e1b4b] hover:bg-indigo-900 text-white text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-1 cursor-pointer">
+                                        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                         Approve
                                     </button>
                                     <button
                                         onclick="openRejectModal(<?= $req['id'] ?>, '<?= htmlspecialchars(addslashes($req['order_number'])) ?>')"
-                                        class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg transition-colors">
+                                        class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer">
+                                        <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                         Reject
                                     </button>
                                     <?php endif; ?>
-                                <?php elseif ($req['status'] === 'processing'): ?>
-                                    <?php if ($this->hasPermission('cancellations', 'edit')): ?>
+                                <?php elseif ($normStatus === 'processing'): ?>
+                                    <?php if ($this->hasPermission('cancellations', 'edit') || $this->hasPermission('all_cancellations', 'edit')): ?>
                                     <a href="<?= BASE_URL ?>/admin/cancellations/refunds"
                                        class="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-xs font-bold rounded-lg transition-colors">
                                         → Process Refund
                                     </a>
                                     <?php endif; ?>
-                                <?php elseif ($req['status'] === 'completed'): ?>
+                                <?php elseif ($normStatus === 'completed'): ?>
                                     <span class="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-lg cursor-default">✓ Refunded</span>
+                                <?php elseif ($normStatus === 'rejected'): ?>
+                                    <span class="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg cursor-default">Rejected</span>
                                 <?php else: ?>
-                                    <span class="px-3 py-1.5 bg-gray-50 text-gray-400 border border-gray-200 text-xs rounded-lg cursor-default">Rejected</span>
+                                    <span class="px-3 py-1.5 bg-gray-50 text-gray-400 border border-gray-200 text-xs rounded-lg cursor-default"><?= htmlspecialchars($statusLabel) ?></span>
                                 <?php endif; ?>
                             </div>
                         </td>

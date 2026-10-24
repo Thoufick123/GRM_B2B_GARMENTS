@@ -51,11 +51,11 @@ class CancellationController extends Controller
 
         // Map tab filter → DB statuses shown on Cancellations page
         $statusMap = [
-            'pending'  => ['Pending_Admin_Approval'],
-            'all'      => ['Pending_Admin_Approval', 'Processing', 'Completed', 'Rejected'],
-            'rejected' => ['Rejected'],
+            'pending'  => ['pending_admin_approval'],
+            'all'      => ['pending_admin_approval', 'processing', 'completed', 'rejected'],
+            'rejected' => ['rejected'],
         ];
-        $statuses = $statusMap[$filter] ?? ['Pending_Admin_Approval'];
+        $statuses = $statusMap[$filter] ?? ['pending_admin_approval'];
 
         $result = $refundModel->getPaginatedByStatuses($statuses, $page, 15);
 
@@ -76,7 +76,7 @@ class CancellationController extends Controller
 
     /**
      * Approve the cancellation request.
-     * Moves status to 'processing' — the refund payment is handled in RefundController.
+     * Restores inventory immediately and queues refund.
      */
     public function approve(): void
     {
@@ -90,6 +90,7 @@ class CancellationController extends Controller
 
         if (!$reqId) {
             $this->json(['success' => false, 'message' => 'Invalid request ID.'], 422);
+            return;
         }
 
         $refundModel = new RefundRequest();
@@ -97,28 +98,51 @@ class CancellationController extends Controller
 
         if (!$req) {
             $this->json(['success' => false, 'message' => 'Cancellation request not found.'], 404);
+            return;
         }
 
-        if ($req['status'] !== 'Pending_Admin_Approval') {
+        $currentStatus = strtolower(trim($req['status']));
+        if ($currentStatus !== 'pending_admin_approval') {
             $this->json([
                 'success' => false,
                 'message' => "Cannot approve — current status is: " . str_replace('_', ' ', $req['status']),
             ], 409);
+            return;
         }
 
-        // Mark as 'processing' (approved, ready for Cashfree refund)
-        $success = $refundModel->updateStatus($reqId, 'Processing', [
+        $orderModel = new Order();
+        $orderId = (int)$req['order_id'];
+        $amount = (float)($req['amount'] ?? 0);
+
+        // Always restore inventory upon cancellation approval
+        $orderModel->restoreStockForOrderId($orderId);
+
+        if ($amount <= 0) {
+            // ₹0 refund (e.g. COD without advance) → mark completed and cancel order immediately
+            $refundModel->updateStatus($reqId, 'completed', [
+                'admin_notes'  => $adminNote ?: 'Cancellation approved (₹0 refund). Order cancelled.',
+                'processed_by' => $adminId,
+            ]);
+            $orderModel->updateOrderCancellationStatus($orderId, 'cancelled', $adminNote ?: 'Cancellation approved by admin', 'admin');
+
+            $this->json([
+                'success' => true,
+                'message' => "Cancellation approved! Order #{$req['order_number']} has been cancelled and stock restored to inventory.",
+            ]);
+            return;
+        }
+
+        // Amount > 0 → move to 'processing' and order to 'refund_processing'
+        $refundModel->updateStatus($reqId, 'processing', [
             'admin_notes'  => $adminNote ?: 'Cancellation approved. Pending payment refund.',
             'processed_by' => $adminId,
         ]);
 
-        // Update order → refund_processing
-        $orderModel = new Order();
-        $orderModel->updateOrderCancellationStatus((int)$req['order_id'], 'refund_processing');
+        $orderModel->updateOrderCancellationStatus($orderId, 'refund_processing', $adminNote, 'admin');
 
         $this->json([
             'success' => true,
-            'message' => "Cancellation approved. The refund is now queued — go to Refunds to process the payment.",
+            'message' => "Cancellation approved! Inventory has been restored and refund is queued for confirmation.",
         ]);
     }
 
@@ -138,10 +162,12 @@ class CancellationController extends Controller
 
         if (!$reqId) {
             $this->json(['success' => false, 'message' => 'Invalid request ID.'], 422);
+            return;
         }
 
         if (empty($adminNote) || strlen($adminNote) < 5) {
             $this->json(['success' => false, 'message' => 'A rejection reason (min 5 characters) is required.'], 422);
+            return;
         }
 
         $refundModel = new RefundRequest();
@@ -149,23 +175,26 @@ class CancellationController extends Controller
 
         if (!$req) {
             $this->json(['success' => false, 'message' => 'Request not found.'], 404);
+            return;
         }
 
-        if (!in_array($req['status'], ['Pending_Admin_Approval'])) {
+        $currentStatus = strtolower(trim($req['status']));
+        if ($currentStatus !== 'pending_admin_approval') {
             $this->json([
                 'success' => false,
                 'message' => "Cannot reject — current status is: " . str_replace('_', ' ', $req['status']),
             ], 422);
+            return;
         }
 
-        $success = $refundModel->updateStatus($reqId, 'Rejected', [
+        $refundModel->updateStatus($reqId, 'rejected', [
             'admin_notes'  => $adminNote,
             'processed_by' => $adminId,
         ]);
 
-        // Revert order to 'cancelled'
-        $orderModel = new Order();
-        $orderModel->updateOrderCancellationStatus((int)$req['order_id'], 'cancelled');
+        // Revert order back to active 'placed' status (order is NOT cancelled because cancellation request was rejected)
+        $db = \Core\Database::getInstance();
+        $db->prepare("UPDATE orders SET status = 'placed', updated_at = NOW() WHERE id = ? AND status = 'refund_pending'")->execute([(int)$req['order_id']]);
 
         // Email user
         try {
@@ -178,7 +207,7 @@ class CancellationController extends Controller
             error_log('[Admin\CancellationController::reject] Email: ' . $e->getMessage());
         }
 
-        $this->json(['success' => true, 'message' => 'Cancellation rejected and the buyer has been notified by email.']);
+        $this->json(['success' => true, 'message' => 'Cancellation request rejected. Order remains active and buyer has been notified.']);
     }
 
     // -------------------------------------------------------------------------

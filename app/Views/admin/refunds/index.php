@@ -167,7 +167,8 @@
                         </td>
 
                         <td class="px-5 py-4">
-                            <?php if ($req['status'] === 'Processing'): ?>
+                            <?php $normStatus = strtolower(trim($req['status'])); ?>
+                            <?php if ($normStatus === 'processing'): ?>
                                 <span class="px-3 py-1 text-xs font-bold rounded-full bg-sky-50 text-sky-700 border border-sky-200">Awaiting Refund</span>
                             <?php else: ?>
                                 <span class="px-3 py-1 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">✓ Refunded</span>
@@ -180,11 +181,11 @@
                         </td>
 
                         <td class="px-5 py-4 text-right">
-                            <?php if ($req['status'] === 'Processing'): ?>
+                            <?php if ($normStatus === 'processing'): ?>
                                 <?php if ($this->hasPermission('refunds', 'edit')): ?>
                                 <button
                                     onclick="openProcessModal(<?= $req['id'] ?>, '<?= htmlspecialchars(addslashes($req['order_number'])) ?>', <?= $req['amount'] ?>, '<?= htmlspecialchars(addslashes($req['user_name'])) ?>', '<?= htmlspecialchars(addslashes($req['refund_method'] ?? '')) ?>', '<?= htmlspecialchars(addslashes($req['refund_details'] ?? '')) ?>')"
-                                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-1.5 ml-auto">
+                                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-1.5 ml-auto cursor-pointer">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                                     Refund Confirm
                                 </button>

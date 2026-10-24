@@ -135,10 +135,10 @@ class OrderController extends Controller
 
         $currentStatus = $order['status'];
 
-        // Strict Forward-Only Transition map: Once moved, status can NEVER be changed backwards.
+        // Strict Forward-Only Transition map: Placed and Packed orders can be cancelled by Admin.
         $allowedTransitions = [
-            'placed'           => ['packed'],
-            'packed'           => ['shipped'],
+            'placed'           => ['packed', 'cancelled'],
+            'packed'           => ['shipped', 'cancelled'],
             'shipped'          => ['out_for_delivery'],
             'out_for_delivery' => ['delivered'],
             'delivered'        => [],
@@ -152,27 +152,49 @@ class OrderController extends Controller
                 $formatTarget = ucwords(str_replace('_', ' ', $status));
                 echo json_encode([
                     'success' => false,
-                    'message' => "Invalid transition: Cannot change status from {$formatCurrent} to {$formatTarget}. Order status follows a strictly forward workflow (Placed → Packed → Shipped → Out for Delivery → Delivered) and cannot be reverted backwards."
+                    'message' => "Invalid transition: Cannot change status from {$formatCurrent} to {$formatTarget}."
                 ]);
                 return;
             }
         }
 
-        if ($status === 'cancelled' && $order['status'] !== 'cancelled') {
-            $db = \Core\Database::getInstance();
-            $db->prepare("UPDATE orders SET status = 'cancelled', cancelled_by_role = 'admin', cancelled_at = NOW() WHERE id = ?")->execute([$order['id']]);
-            $result = true;
-        } else {
-            // $orderId here is already the order_number string (passed from JS as data-id)
-            $result = $orderModel->updateStatus($orderId, $status);
-        }
-
-        if ($result) {
-            // Restore inventory stock if transitioned to cancelled
-            if ($status === 'cancelled' && $order['status'] !== 'cancelled') {
-                $orderModel->restoreStockForOrderId($order['id']);
+        if ($status === 'cancelled') {
+            // Check customized order cancellation restriction
+            if ($orderModel->isCustomOrder($order['id'])) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Customized and custom fabric orders cannot be cancelled.'
+                ]);
+                return;
             }
 
+            if ($order['status'] !== 'cancelled') {
+                $db = \Core\Database::getInstance();
+                $db->prepare("UPDATE orders SET status = 'cancelled', cancelled_by_role = 'admin', cancelled_at = NOW() WHERE id = ?")->execute([$order['id']]);
+                
+                // Restore inventory stock immediately
+                $orderModel->restoreStockForOrderId($order['id']);
+
+                // If a pending refund request exists for this order, mark it completed
+                $db->prepare("UPDATE refund_requests SET status = 'completed', admin_notes = 'Cancelled directly by admin', updated_at = NOW() WHERE order_id = ? AND status = 'pending_admin_approval'")->execute([$order['id']]);
+
+                // Invalidate admin dashboard cached stats
+                \Core\Cache::delete('admin_dashboard_stats_30');
+                \Core\Cache::delete('admin_dashboard_stats_7');
+                \Core\Cache::delete('admin_dashboard_stats_all');
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Order successfully cancelled and inventory stock restored.'
+                ]);
+                return;
+            }
+        }
+
+        // $orderId here is already the order_number string (passed from JS as data-id)
+        $result = $orderModel->updateStatus($orderId, $status);
+
+        if ($result) {
             // If transitioned to packed, set packed_at and send invoice email to buyer
             if ($status === 'packed') {
                 $db->prepare("UPDATE orders SET packed_at = IFNULL(packed_at, NOW()) WHERE id = ?")->execute([$order['id']]);

@@ -180,7 +180,7 @@ class RefundRequest extends Model
     public function create(array $data): int
     {
         $cols = ['order_id', 'user_id', 'amount', 'reason', 'cancellation_type', 'status', 'created_at', 'updated_at'];
-        $vals = [':order_id', ':user_id', ':amount', ':reason', ':cancellation_type', "'Pending_Admin_Approval'", 'NOW()', 'NOW()'];
+        $vals = [':order_id', ':user_id', ':amount', ':reason', ':cancellation_type', "'pending_admin_approval'", 'NOW()', 'NOW()'];
         $params = [
             'order_id'          => $data['order_id'],
             'user_id'           => $data['user_id'],
@@ -340,23 +340,34 @@ class RefundRequest extends Model
         $rows   = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         $counts = [
             'all'                    => 0,
+            'total'                  => 0,
+            'pending_admin_approval' => 0,
             'Pending_Admin_Approval' => 0,
+            'processing'             => 0,
             'Processing'             => 0,
+            'completed'              => 0,
             'Completed'              => 0,
+            'rejected'               => 0,
             'Rejected'               => 0,
         ];
-        $map = [
-            'pending_admin_approval' => 'Pending_Admin_Approval',
-            'processing'             => 'Processing',
-            'completed'              => 'Completed',
-            'rejected'               => 'Rejected',
-        ];
         foreach ($rows as $row) {
-            $normalizedStatus = $map[strtolower($row['status'])] ?? $row['status'];
-            if (array_key_exists($normalizedStatus, $counts)) {
-                $counts[$normalizedStatus] += (int)$row['cnt'];
+            $st = strtolower(trim($row['status']));
+            $cnt = (int)$row['cnt'];
+            if ($st === 'pending_admin_approval') {
+                $counts['pending_admin_approval'] += $cnt;
+                $counts['Pending_Admin_Approval'] += $cnt;
+            } elseif ($st === 'processing') {
+                $counts['processing'] += $cnt;
+                $counts['Processing'] += $cnt;
+            } elseif ($st === 'completed') {
+                $counts['completed'] += $cnt;
+                $counts['Completed'] += $cnt;
+            } elseif ($st === 'rejected') {
+                $counts['rejected'] += $cnt;
+                $counts['Rejected'] += $cnt;
             }
-            $counts['all'] += (int)$row['cnt'];
+            $counts['all']   += $cnt;
+            $counts['total'] += $cnt;
         }
         return $counts;
     }
@@ -421,6 +432,16 @@ class RefundRequest extends Model
             return ['data' => [], 'total' => 0, 'pages' => 0, 'current' => 1];
         }
 
+        // Expand statuses so query matches lowercase, uppercase, or PascalCase in DB
+        $expandedStatuses = [];
+        foreach ($statuses as $st) {
+            $lower = strtolower(trim($st));
+            $expandedStatuses[] = $lower;
+            $expandedStatuses[] = ucwords(str_replace('_', ' ', $lower));
+            $expandedStatuses[] = str_replace(' ', '_', ucwords(str_replace('_', ' ', $lower)));
+        }
+        $statuses = array_values(array_unique($expandedStatuses));
+
         $namedPlaceholders = [];
         foreach ($statuses as $i => $status) {
             $namedPlaceholders[] = ":status_$i";
@@ -472,7 +493,7 @@ class RefundRequest extends Model
 
     /**
      * Count rows per status for the Cancellations dashboard badges.
-     * Returns: pending_admin_approval, processing, completed, rejected, total
+     * Returns both lowercase and PascalCase keys for full compatibility.
      */
     public function getCancellationStatusCounts(): array
     {
@@ -481,24 +502,33 @@ class RefundRequest extends Model
         ");
         $rows   = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         $counts = [
+            'pending_admin_approval' => 0,
             'Pending_Admin_Approval' => 0,
+            'processing'             => 0,
             'Processing'             => 0,
+            'completed'              => 0,
             'Completed'              => 0,
+            'rejected'               => 0,
             'Rejected'               => 0,
             'total'                  => 0,
         ];
-        $map = [
-            'pending_admin_approval' => 'Pending_Admin_Approval',
-            'processing'             => 'Processing',
-            'completed'              => 'Completed',
-            'rejected'               => 'Rejected',
-        ];
         foreach ($rows as $r) {
-            $normalizedStatus = $map[strtolower($r['status'])] ?? $r['status'];
-            if (array_key_exists($normalizedStatus, $counts)) {
-                $counts[$normalizedStatus] += (int)$r['cnt'];
+            $st  = strtolower(trim($r['status']));
+            $cnt = (int)$r['cnt'];
+            if ($st === 'pending_admin_approval') {
+                $counts['pending_admin_approval'] += $cnt;
+                $counts['Pending_Admin_Approval'] += $cnt;
+            } elseif ($st === 'processing') {
+                $counts['processing'] += $cnt;
+                $counts['Processing'] += $cnt;
+            } elseif ($st === 'completed') {
+                $counts['completed'] += $cnt;
+                $counts['Completed'] += $cnt;
+            } elseif ($st === 'rejected') {
+                $counts['rejected'] += $cnt;
+                $counts['Rejected'] += $cnt;
             }
-            $counts['total'] += (int)$r['cnt'];
+            $counts['total'] += $cnt;
         }
         return $counts;
     }
@@ -513,24 +543,33 @@ class RefundRequest extends Model
         ");
         $rows   = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         $amounts = [
+            'pending_admin_approval' => 0.0,
             'Pending_Admin_Approval' => 0.0,
+            'processing'             => 0.0,
             'Processing'             => 0.0,
+            'completed'              => 0.0,
             'Completed'              => 0.0,
+            'rejected'               => 0.0,
             'Rejected'               => 0.0,
             'total'                  => 0.0,
         ];
-        $map = [
-            'pending_admin_approval' => 'Pending_Admin_Approval',
-            'processing'             => 'Processing',
-            'completed'              => 'Completed',
-            'rejected'               => 'Rejected',
-        ];
         foreach ($rows as $r) {
-            $normalizedStatus = $map[strtolower($r['status'])] ?? $r['status'];
-            if (array_key_exists($normalizedStatus, $amounts)) {
-                $amounts[$normalizedStatus] += (float)$r['sum_amt'];
+            $st  = strtolower(trim($r['status']));
+            $amt = (float)$r['sum_amt'];
+            if ($st === 'pending_admin_approval') {
+                $amounts['pending_admin_approval'] += $amt;
+                $amounts['Pending_Admin_Approval'] += $amt;
+            } elseif ($st === 'processing') {
+                $amounts['processing'] += $amt;
+                $amounts['Processing'] += $amt;
+            } elseif ($st === 'completed') {
+                $amounts['completed'] += $amt;
+                $amounts['Completed'] += $amt;
+            } elseif ($st === 'rejected') {
+                $amounts['rejected'] += $amt;
+                $amounts['Rejected'] += $amt;
             }
-            $amounts['total'] += (float)$r['sum_amt'];
+            $amounts['total'] += $amt;
         }
         return $amounts;
     }

@@ -48,11 +48,11 @@ class RefundController extends Controller
 
         // Map tab → statuses shown
         $statusMap = [
-            'pending'   => ['Processing'],
-            'completed' => ['Completed'],
-            'all'       => ['Processing', 'Completed'],
+            'pending'   => ['processing'],
+            'completed' => ['completed'],
+            'all'       => ['processing', 'completed'],
         ];
-        $statuses = $statusMap[$tab] ?? ['Processing'];
+        $statuses = $statusMap[$tab] ?? ['processing'];
 
         $result = $refundModel->getPaginatedByStatuses($statuses, $page, 15);
         $counts  = $refundModel->getCancellationStatusCounts();
@@ -86,6 +86,7 @@ class RefundController extends Controller
 
         if (!$refundReqId) {
             $this->json(['success' => false, 'message' => 'Invalid request ID.'], 422);
+            return;
         }
 
         $refundModel = new RefundRequest();
@@ -93,20 +94,23 @@ class RefundController extends Controller
 
         if (!$req) {
             $this->json(['success' => false, 'message' => 'Refund request not found.'], 404);
+            return;
         }
 
-        if ($req['status'] !== 'Processing') {
+        if (strtolower(trim($req['status'])) !== 'processing') {
             $this->json([
                 'success' => false,
                 'message' => "Only approved (processing) requests can be refunded. Current status: {$req['status']}",
             ], 409);
+            return;
         }
 
-        // ---- Force Manual Refund (Bypass Cashfree) ----
-        $refundModel->updateStatus($refundReqId, 'Completed', [
+        // ---- Force Manual / Direct Refund ----
+        $refundModel->updateStatus($refundReqId, 'completed', [
             'admin_notes'  => $adminNote ?: 'Manual refund processed.',
             'processed_by' => $adminId,
-            'cashfree_refund_id' => 'MANUAL-' . time()
+            'cashfree_refund_id' => 'MANUAL-' . time(),
+            'razorpay_refund_id' => 'MANUAL-' . time()
         ]);
         
         $orderModel = new Order();

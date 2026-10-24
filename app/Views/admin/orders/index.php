@@ -274,8 +274,8 @@
                                     $isRefundStatus = in_array($order['status'], $refundStatuses);
                                     
                                     $nextTransitions = [
-                                        'placed'           => ['packed' => 'Packed'],
-                                        'packed'           => ['shipped' => 'Shipped'],
+                                        'placed'           => ['packed' => 'Packed', 'cancelled' => 'Cancel Order'],
+                                        'packed'           => ['shipped' => 'Shipped', 'cancelled' => 'Cancel Order'],
                                         'shipped'          => ['out_for_delivery' => 'Out for Delivery'],
                                         'out_for_delivery' => ['delivered' => 'Delivered']
                                     ];
@@ -935,12 +935,13 @@ document.addEventListener('DOMContentLoaded', function() {
         'packed': { label: 'Packed', icon: '📦', desc: 'Videos & Invoice dispatched', badge: 'bg-purple-100 text-purple-800' },
         'shipped': { label: 'Shipped', icon: '🚚', desc: 'Courier & Tracking added', badge: 'bg-blue-100 text-blue-800' },
         'out_for_delivery': { label: 'Out for Delivery', icon: '🛵', desc: 'Out for customer delivery', badge: 'bg-indigo-100 text-indigo-800' },
-        'delivered': { label: 'Delivered', icon: '✅', desc: 'Successfully delivered', badge: 'bg-emerald-100 text-emerald-800' }
+        'delivered': { label: 'Delivered', icon: '✅', desc: 'Successfully delivered', badge: 'bg-emerald-100 text-emerald-800' },
+        'cancelled': { label: 'Cancelled', icon: '❌', desc: 'Order cancelled & stock restored', badge: 'bg-rose-100 text-rose-800' }
     };
 
     const ALLOWED_TRANSITIONS = {
-        'placed': ['packed'],
-        'packed': ['shipped'],
+        'placed': ['packed', 'cancelled'],
+        'packed': ['shipped', 'cancelled'],
         'shipped': ['out_for_delivery'],
         'out_for_delivery': ['delivered'],
         'delivered': [],
@@ -996,8 +997,11 @@ document.addEventListener('DOMContentLoaded', function() {
             html += `<div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 py-0.5">Advance Status To:</div>`;
             allowed.forEach(st => {
                 const conf = STATUS_CONFIG[st] || { label: st, icon: '•' };
-                const btnStyle = 'hover:bg-pink-50 text-gray-800 hover:text-pink-700 border-gray-100 hover:border-pink-200';
-                const actionLabel = `Advance to ${conf.label}`;
+                const isCancel = st === 'cancelled';
+                const btnStyle = isCancel
+                    ? 'hover:bg-red-50 text-red-700 border-red-100 hover:border-red-200'
+                    : 'hover:bg-pink-50 text-gray-800 hover:text-pink-700 border-gray-100 hover:border-pink-200';
+                const actionLabel = isCancel ? 'Cancel Order' : `Advance to ${conf.label}`;
 
                 html += `
                     <button type="button" 
@@ -1049,17 +1053,20 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        const isCancel = newStatus === 'cancelled';
         const formatCurrent = currentStatus.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
         const formatTarget = newStatus.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
 
         Swal.fire({
-            title: 'Update Order Status?',
-            html: `Are you sure you want to transition Order <b>#${orderId}</b> from <span class="text-gray-600 font-semibold">${formatCurrent}</span> to <span class="text-[#F25996] font-bold">${formatTarget}</span>?`,
-            icon: 'question',
+            title: isCancel ? 'Cancel this Order?' : 'Update Order Status?',
+            html: isCancel 
+                ? `Are you sure you want to <span class="text-rose-600 font-bold">cancel</span> Order <b>#${orderId}</b>? This will restore inventory stock.`
+                : `Are you sure you want to transition Order <b>#${orderId}</b> from <span class="text-gray-600 font-semibold">${formatCurrent}</span> to <span class="text-[#F25996] font-bold">${formatTarget}</span>?`,
+            icon: isCancel ? 'warning' : 'question',
             showCancelButton: true,
-            confirmButtonColor: '#F25996',
+            confirmButtonColor: isCancel ? '#dc2626' : '#F25996',
             cancelButtonColor: '#f3f4f6',
-            confirmButtonText: 'Yes, Update Status',
+            confirmButtonText: isCancel ? 'Yes, Cancel Order' : 'Yes, Update Status',
             cancelButtonText: '<span style="color: #6b7280; font-weight: bold;">Keep as ' + formatCurrent + '</span>',
             reverseButtons: true,
             customClass: {
