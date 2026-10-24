@@ -98,9 +98,10 @@ class RefundController extends Controller
         $rule = $ruleModel->getRuleForOrder($order);
 
         if (!$rule['eligible']) {
+            $msg = !empty($rule['reason']) ? $rule['reason'] : "This order cannot be cancelled under status '" . ucwords(str_replace('_', ' ', $order['status'])) . "' based on active cancellation policy.";
             $this->json([
                 'success' => false,
-                'message' => "This order cannot be cancelled under status '" . ucwords(str_replace('_', ' ', $order['status'])) . "' based on active cancellation policy."
+                'message' => $msg
             ], 422);
         }
 

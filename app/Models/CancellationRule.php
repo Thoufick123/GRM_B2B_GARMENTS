@@ -157,6 +157,18 @@ class CancellationRule
      */
     public function getRuleForOrder(array $order): array
     {
+        // Customized orders can NEVER be cancelled
+        $orderModel = new Order();
+        if ($orderModel->isCustomOrder($order)) {
+            return [
+                'eligible'          => false,
+                'cancellation_fee'  => 0.00,
+                'refund_percentage' => 0,
+                'sla_days'          => 0,
+                'reason'            => 'Customized orders are manufactured exclusively for you and cannot be cancelled.'
+            ];
+        }
+
         $pm = strtolower($order['payment_method'] ?? '');
         $pmType = ($pm === 'cod') ? 'cod' : 'prepaid';
         

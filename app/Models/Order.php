@@ -208,6 +208,71 @@ class Order extends Model
     }
 
     /**
+     * Check if an order is a custom/customized order
+     *
+     * @param array|string|int $order Order array, order number string, or order ID
+     * @return bool True if order is custom/customized, false otherwise
+     */
+    public function isCustomOrder($order): bool
+    {
+        $orderNumber = '';
+        $orderId = 0;
+
+        if (is_array($order)) {
+            $orderNumber = $order['order_number'] ?? '';
+            $orderId = (int)($order['id'] ?? 0);
+            if (!empty($order['customization_id']) || !empty($order['is_custom'])) {
+                return true;
+            }
+            if (!empty($order['notes']) && (stripos($order['notes'], 'Custom Order') !== false || stripos($order['notes'], 'customization') !== false)) {
+                return true;
+            }
+        } elseif (is_string($order)) {
+            $orderNumber = $order;
+        } elseif (is_numeric($order)) {
+            $orderId = (int)$order;
+        }
+
+        $cleanNum = strtoupper(trim(ltrim($orderNumber, '#')));
+        if ($cleanNum !== '' && (str_starts_with($cleanNum, 'GBC') || str_starts_with($cleanNum, 'GRM-CUST-') || str_contains($cleanNum, 'CUST'))) {
+            return true;
+        }
+
+        if ($orderId > 0) {
+            try {
+                // If orderNumber was empty, check orders table
+                if ($cleanNum === '') {
+                    $stmtOrd = $this->db->prepare("SELECT order_number, notes FROM orders WHERE id = ? LIMIT 1");
+                    $stmtOrd->execute([$orderId]);
+                    $ordRow = $stmtOrd->fetch(\PDO::FETCH_ASSOC);
+                    if ($ordRow) {
+                        $cNum = strtoupper(trim(ltrim($ordRow['order_number'] ?? '', '#')));
+                        if (str_starts_with($cNum, 'GBC') || str_starts_with($cNum, 'GRM-CUST-') || str_contains($cNum, 'CUST')) {
+                            return true;
+                        }
+                        if (!empty($ordRow['notes']) && (stripos($ordRow['notes'], 'Custom Order') !== false || stripos($ordRow['notes'], 'customization') !== false)) {
+                            return true;
+                        }
+                    }
+                }
+
+                $stmt = $this->db->prepare("
+                    SELECT 1 FROM order_items 
+                    WHERE order_id = ? 
+                      AND (customization_id IS NOT NULL OR customization_data IS NOT NULL)
+                    LIMIT 1
+                ");
+                $stmt->execute([$orderId]);
+                if ($stmt->fetch()) {
+                    return true;
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        return false;
+    }
+
+    /**
      * Get all custom/customized orders.
      */
     public function getCustomOrders($statusFilter = 'all'): array

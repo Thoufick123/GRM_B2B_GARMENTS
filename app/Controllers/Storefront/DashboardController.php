@@ -536,7 +536,7 @@ class DashboardController extends Controller
         }
 
         $db = \Core\Database::getInstance();
-        $stmt = $db->prepare("SELECT id, status FROM orders WHERE id = ? AND user_id = ?");
+        $stmt = $db->prepare("SELECT * FROM orders WHERE id = ? AND user_id = ?");
         $stmt->execute([$orderId, $userId]);
         $order = $stmt->fetch();
 
@@ -558,7 +558,7 @@ class DashboardController extends Controller
             
             Session::setFlash('success', 'Order cancelled successfully.');
         } else {
-            Session::setFlash('error', 'This order cannot be cancelled under its current status.');
+            Session::setFlash('error', $rule['reason'] ?? 'This order cannot be cancelled under its current status.');
         }
 
         $this->redirect('/dashboard/orders');

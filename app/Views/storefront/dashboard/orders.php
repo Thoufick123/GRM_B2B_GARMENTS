@@ -87,6 +87,8 @@ function orderStatusLabel(string $status): string
                 <div class="lg:hidden space-y-3 sm:space-y-4">
                     <?php foreach ($orders as $order): 
                         $refundReq = $refundRequests[$order['id']] ?? null;
+                        $cNum = strtoupper(trim(ltrim($order['order_number'] ?? '', '#')));
+                        $isCustomOrder = (str_starts_with($cNum, 'GBC') || str_starts_with($cNum, 'GRM-CUST-') || str_contains($cNum, 'CUST') || !empty($order['customization_id']) || !empty($order['is_custom']) || (!empty($order['notes']) && (stripos($order['notes'], 'Custom Order') !== false || stripos($order['notes'], 'customization') !== false)));
                     ?>
                         <div class="bg-white border border-gray-100 rounded-2xl p-3.5 sm:p-4 shadow-sm relative">
                             <!-- Header: Order ID & Status Badge -->
@@ -120,7 +122,7 @@ function orderStatusLabel(string $status): string
                                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     <span>View Details</span>
                                 </button>
-                                <?php if (!empty($orderRules[$order['id']]['eligible']) && !$refundReq && $cancellationsEnabled): ?>
+                                <?php if (!$isCustomOrder && !empty($orderRules[$order['id']]['eligible']) && !$refundReq && $cancellationsEnabled): ?>
                                     <?php $listRuleData = $orderRules[$order['id']]; ?>
                                     <button type="button" 
                                         onclick="openCancelModal(<?= $order['id'] ?>, '<?= htmlspecialchars($order['order_number']) ?>', <?= number_format($order['grand_total'] ?? $order['total_amount'], 2, '.', '') ?>, <?= number_format($listRuleData['refund_amount'], 2, '.', '') ?>, <?= number_format($listRuleData['fee_amount'], 2, '.', '') ?>, <?= $listRuleData['fee_percent'] ?>, '<?= number_format($order['weight_fee'] ?? 0, 2, '.', '') ?>', '<?= number_format($order['packaging_fee'] ?? 0, 2, '.', '') ?>', '<?= number_format($order['shipping_fee'] ?? 0, 2, '.', '') ?>', '<?= number_format($order['platform_fee'] ?? 0, 2, '.', '') ?>', <?= (int)($listRuleData['sla_days'] ?? 0) ?>)"
@@ -172,6 +174,8 @@ function orderStatusLabel(string $status): string
                             <tbody class="bg-white divide-y divide-gray-100">
                                 <?php foreach ($orders as $order):
                                     $refundReq = $refundRequests[$order['id']] ?? null;
+                                    $cNum = strtoupper(trim(ltrim($order['order_number'] ?? '', '#')));
+                                    $isCustomOrder = (str_starts_with($cNum, 'GBC') || str_starts_with($cNum, 'GRM-CUST-') || str_contains($cNum, 'CUST') || !empty($order['customization_id']) || !empty($order['is_custom']) || (!empty($order['notes']) && (stripos($order['notes'], 'Custom Order') !== false || stripos($order['notes'], 'customization') !== false)));
                                 ?>
                                     <tr class="hover:bg-gray-50 transition-colors">
                                         <td class="px-6 py-5 whitespace-nowrap text-sm font-bold text-gray-900">
@@ -223,7 +227,7 @@ function orderStatusLabel(string $status): string
                                                         Pay Now
                                                     </a>
                                                 <?php endif; ?>
-                                                <?php if (!empty($orderRules[$order['id']]['eligible']) && !$refundReq && $cancellationsEnabled): ?>
+                                                <?php if (!$isCustomOrder && !empty($orderRules[$order['id']]['eligible']) && !$refundReq && $cancellationsEnabled): ?>
                                                     <?php $listRuleData = $orderRules[$order['id']]; ?>
                                                     <button type="button" 
                                                         onclick="openCancelModal(<?= $order['id'] ?>, '<?= htmlspecialchars($order['order_number']) ?>', <?= number_format($order['grand_total'] ?? $order['total_amount'], 2, '.', '') ?>, <?= number_format($listRuleData['refund_amount'], 2, '.', '') ?>, <?= number_format($listRuleData['fee_amount'], 2, '.', '') ?>, <?= $listRuleData['fee_percent'] ?>, '<?= number_format($order['weight_fee'] ?? 0, 2, '.', '') ?>', '<?= number_format($order['packaging_fee'] ?? 0, 2, '.', '') ?>', '<?= number_format($order['shipping_fee'] ?? 0, 2, '.', '') ?>', '<?= number_format($order['platform_fee'] ?? 0, 2, '.', '') ?>', <?= (int)($listRuleData['sla_days'] ?? 0) ?>)"
@@ -255,6 +259,16 @@ function orderStatusLabel(string $status): string
         <?php foreach ($orders as $order):
             $items     = $orderItems[$order['id']] ?? [];
             $refundReq = $refundRequests[$order['id']] ?? null;
+            $cNum = strtoupper(trim(ltrim($order['order_number'] ?? '', '#')));
+            $isCustomOrder = (str_starts_with($cNum, 'GBC') || str_starts_with($cNum, 'GRM-CUST-') || str_contains($cNum, 'CUST') || !empty($order['customization_id']) || !empty($order['is_custom']) || (!empty($order['notes']) && (stripos($order['notes'], 'Custom Order') !== false || stripos($order['notes'], 'customization') !== false)));
+            if (!$isCustomOrder && !empty($items)) {
+                foreach ($items as $item) {
+                    if (!empty($item['customization_id']) || !empty($item['customization_data'])) {
+                        $isCustomOrder = true;
+                        break;
+                    }
+                }
+            }
         ?>
             <div id="order-modal-<?= $order['id'] ?>" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-2.5 sm:p-4 md:p-6" role="dialog" aria-modal="true">
                 <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onclick="closeOrderModal('<?= $order['id'] ?>')"></div>
@@ -711,7 +725,7 @@ function orderStatusLabel(string $status): string
                     <!-- Footer -->
                     <div class="p-3 sm:p-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2.5 sm:gap-4 shrink-0 rounded-b-2xl sm:rounded-b-3xl">
                         <div class="flex items-center justify-center sm:justify-start">
-                            <?php if (!empty($orderRules[$order['id']]['eligible']) && !$refundReq && $cancellationsEnabled): ?>
+                            <?php if (!$isCustomOrder && !empty($orderRules[$order['id']]['eligible']) && !$refundReq && $cancellationsEnabled): ?>
                                 <?php $ruleData = $orderRules[$order['id']]; ?>
                                 <button
                                     onclick="closeOrderModal('<?= $order['id'] ?>'); openCancelModal(<?= $order['id'] ?>, '<?= htmlspecialchars($order['order_number']) ?>', <?= number_format($order['grand_total'] ?? $order['total_amount'], 2, '.', '') ?>, <?= number_format($ruleData['refund_amount'], 2, '.', '') ?>, <?= number_format($ruleData['fee_amount'], 2, '.', '') ?>, <?= $ruleData['fee_percent'] ?>, '<?= number_format($order['weight_fee'] ?? 0, 2, '.', '') ?>', '<?= number_format($order['packaging_fee'] ?? 0, 2, '.', '') ?>', '<?= number_format($order['shipping_fee'] ?? 0, 2, '.', '') ?>', '<?= number_format($order['platform_fee'] ?? 0, 2, '.', '') ?>', <?= (int)($ruleData['sla_days'] ?? 0) ?>)"
