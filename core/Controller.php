@@ -106,43 +106,64 @@ class Controller
             return false;
         }
 
-        // Fabric Customization Rules: check explicit perms, then customization_labels, then customize_products
+        // Fabric Customization Rules: check explicit perms, then customization_labels, then customize_products, then products
         if ($module === 'fabric_customizations') {
-            if (!empty($this->userPermissions['fabric_customizations'][$action])) {
-                return true;
-            }
-            if (!empty($this->userPermissions['customization_labels'][$action])) {
-                return true;
-            }
-            if (!empty($this->userPermissions['customize_products'][$action])) {
-                return true;
-            }
-            if (!empty($this->userPermissions['products'][$action])) {
-                return true;
+            $relevant = ['fabric_customizations', 'customization_labels', 'customize_products', 'products'];
+            foreach ($relevant as $rel) {
+                if (!empty($this->userPermissions[$rel][$action])) {
+                    return true;
+                }
+                // Write actions inherently grant view permission
+                if ($action === 'view' && (
+                    !empty($this->userPermissions[$rel]['create']) ||
+                    !empty($this->userPermissions[$rel]['edit']) ||
+                    !empty($this->userPermissions[$rel]['delete'])
+                )) {
+                    return true;
+                }
+                // Create permission allows editing rules (configuration)
+                if ($action === 'edit' && !empty($this->userPermissions[$rel]['create'])) {
+                    return true;
+                }
             }
             return false;
         }
 
-        // Customization Labels: check explicit perms, then fabric_customizations, then customize_products
+        // Customization Labels: check explicit perms, then fabric_customizations, then customize_products, then products
         if ($module === 'customization_labels') {
-            if (!empty($this->userPermissions['customization_labels'][$action])) {
-                return true;
-            }
-            if (!empty($this->userPermissions['fabric_customizations'][$action])) {
-                return true;
-            }
-            if (!empty($this->userPermissions['customize_products'][$action])) {
-                return true;
-            }
-            if (!empty($this->userPermissions['products'][$action])) {
-                return true;
+            $relevant = ['customization_labels', 'fabric_customizations', 'customize_products', 'products'];
+            foreach ($relevant as $rel) {
+                if (!empty($this->userPermissions[$rel][$action])) {
+                    return true;
+                }
+                if ($action === 'view' && (
+                    !empty($this->userPermissions[$rel]['create']) ||
+                    !empty($this->userPermissions[$rel]['edit']) ||
+                    !empty($this->userPermissions[$rel]['delete'])
+                )) {
+                    return true;
+                }
+                if ($action === 'edit' && !empty($this->userPermissions[$rel]['create'])) {
+                    return true;
+                }
             }
             return false;
         }
 
         // If the specific module key is set in userPermissions, strictly use its configured permissions
         if (isset($this->userPermissions[$module])) {
-            return !empty($this->userPermissions[$module][$action]);
+            if (!empty($this->userPermissions[$module][$action])) {
+                return true;
+            }
+            // Write actions inherently grant view permission
+            if ($action === 'view') {
+                foreach (['create', 'edit', 'delete'] as $wAct) {
+                    if (!empty($this->userPermissions[$module][$wAct])) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         // Fallback mappings for legacy roles

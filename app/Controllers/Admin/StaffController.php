@@ -410,9 +410,15 @@ class StaffController extends Controller
             }
         }
 
-        // If fabric_customizations was not explicitly set but customization_labels has permissions, sync it
+        // If fabric_customizations was not explicitly set but customization_labels or customize_products has permissions, sync it
         if (empty($sanitized['fabric_customizations']) && !empty($sanitized['customization_labels'])) {
             $sanitized['fabric_customizations'] = $sanitized['customization_labels'];
+        }
+        if (empty($sanitized['fabric_customizations']) && !empty($sanitized['customize_products'])) {
+            $sanitized['fabric_customizations'] = $sanitized['customize_products'];
+        }
+        if (empty($sanitized['customize_products']) && !empty($sanitized['fabric_customizations'])) {
+            $sanitized['customize_products'] = $sanitized['fabric_customizations'];
         }
 
         return $sanitized;

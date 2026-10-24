@@ -88,12 +88,6 @@ class FabricCustomizationController extends Controller
         $products = !empty($availableProducts) ? $availableProducts : $allProducts;
         $defaultProduct = !empty($products[0]) ? $products[0] : null;
 
-        // If no unassigned fabrics remain and user navigated without fabric_id, redirect to edit first existing rule
-        if ($fabricId === 0 && empty($availableProducts) && !empty($defaultProduct['rule_id'])) {
-            $this->redirect('/admin/fabric-customizations/edit?id=' . $defaultProduct['rule_id']);
-            return;
-        }
-        
         $this->render('admin/fabric_customizations/create', [
             'title'          => 'Add New Fabric Rule',
             'products'       => $products,
@@ -226,7 +220,9 @@ class FabricCustomizationController extends Controller
      */
     public function edit()
     {
-        $this->requirePermission('fabric_customizations', 'edit');
+        if (!$this->hasPermission('fabric_customizations', 'edit') && !$this->hasPermission('fabric_customizations', 'create')) {
+            $this->requirePermission('fabric_customizations', 'edit');
+        }
         $id = (int)($_GET['id'] ?? 0);
         if (!$id) {
             Session::setFlash('error', 'Invalid Fabric Rule ID.');
@@ -259,7 +255,9 @@ class FabricCustomizationController extends Controller
      */
     public function update()
     {
-        $this->requirePermission('fabric_customizations', 'edit');
+        if (!$this->hasPermission('fabric_customizations', 'edit') && !$this->hasPermission('fabric_customizations', 'create')) {
+            $this->requirePermission('fabric_customizations', 'edit');
+        }
         $id = (int)($_POST['id'] ?? 0);
         $rule = $id > 0 ? $this->model->getById($id) : null;
         if (!$id || !$rule) {
