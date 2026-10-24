@@ -565,93 +565,439 @@
 </div>
 
 <!-- Tracking Details Modal -->
-<div id="trackingModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+<div id="trackingModal" class="fixed inset-0 items-center justify-center p-4 transition-all" style="display: none; z-index: 99990;">
     <!-- Backdrop -->
-    <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity backdrop-blur-sm" onclick="closeTrackingModal()"></div>
+    <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onclick="closeTrackingModal()" style="z-index: 99989;"></div>
     
     <!-- Modal Content -->
-    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 transform transition-all">
-        <div class="flex items-center space-x-2 mb-6">
-            <svg class="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-            <h3 class="text-xl font-bold text-gray-900">Enter Tracking Details</h3>
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 transform transition-all border border-gray-100" style="z-index: 99990;">
+        <div class="flex items-center space-x-2.5 mb-6">
+            <div class="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-lg">📦</div>
+            <div>
+                <h3 class="text-xl font-bold text-gray-900">Enter Tracking Details</h3>
+                <p class="text-xs text-gray-500 font-medium">Add courier and tracking information</p>
+            </div>
         </div>
         
         <form id="trackingForm" onsubmit="submitTrackingDetails(event)">
             <input type="hidden" id="trackOrderId">
             
             <div class="mb-4">
-                <div class="flex justify-between items-end mb-1">
+                <div class="flex justify-between items-end mb-1.5">
                     <label class="block text-sm font-bold text-gray-700">Courier Service</label>
-                    <button type="button" onclick="openManageCouriersModal()" class="text-xs font-bold text-[#F25996] hover:underline focus:outline-none cursor-pointer">+ Add / Manage</button>
+                    <button type="button" onclick="openManageCouriersModal()" class="text-xs font-bold text-[#F25996] hover:underline focus:outline-none cursor-pointer flex items-center gap-1">
+                        <span>+ Add / Manage</span>
+                    </button>
                 </div>
-                <select id="trackCourier" required class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#F25996] bg-white">
+                <select id="trackCourier" required class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#F25996] bg-white shadow-2xs">
                     <option value="" disabled selected>Select Courier Service</option>
                 </select>
             </div>
             
             <div class="mb-4">
                 <label class="block text-sm font-bold text-gray-700 mb-1">Tracking ID</label>
-                <input type="text" id="trackId" placeholder="e.g. TRK123456789" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-300">
+                <input type="text" id="trackId" placeholder="e.g. TRK123456789" class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#F25996] text-gray-900 font-medium shadow-2xs">
             </div>
             
             <div class="mb-6">
                 <label class="block text-sm font-bold text-gray-700 mb-1">Tracking URL</label>
-                <input type="url" id="trackUrl" placeholder="https://tracker.com/TRK123" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-300">
+                <input type="url" id="trackUrl" placeholder="https://tracker.com/TRK123" class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#F25996] text-gray-900 font-medium shadow-2xs">
             </div>
             
-            <div class="flex space-x-4" style="display: flex; gap: 1rem; width: 100%;">
-                <button type="button" onclick="closeTrackingModal()" class="font-bold transition-colors" style="flex: 1; padding: 0.625rem 0; background-color: #f3f4f6; color: #111827; border-radius: 0.75rem; text-align: center; border: 1px solid #e5e7eb;">Cancel</button>
-                <button type="submit" class="font-bold transition-colors shadow-sm" style="flex: 1; padding: 0.625rem 0; background-color: #22c55e; color: #ffffff; border-radius: 0.75rem; text-align: center; border: 1px solid #22c55e;">Save</button>
+            <div class="flex space-x-3" style="display: flex; gap: 0.75rem; width: 100%;">
+                <button type="button" onclick="closeTrackingModal()" class="font-bold transition-all cursor-pointer hover:bg-gray-200" style="flex: 1; padding: 0.65rem 0; background-color: #f3f4f6; color: #111827; border-radius: 9999px; text-align: center; border: 1px solid #e5e7eb;">Cancel</button>
+                <button type="submit" class="font-bold transition-all shadow-sm cursor-pointer hover:opacity-95" style="flex: 1; padding: 0.65rem 0; background-color: #F25996; color: #ffffff; border-radius: 9999px; text-align: center; border: 1px solid #F25996;">Save</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Manage Couriers Modal -->
-<div id="manageCouriersModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4">
+<div id="manageCouriersModal" class="fixed inset-0 items-center justify-center p-4 transition-all" style="display: none; z-index: 99999;">
     <!-- Backdrop -->
-    <div class="fixed inset-0 bg-gray-900 bg-opacity-60 transition-opacity backdrop-blur-xs" onclick="closeManageCouriersModal()"></div>
+    <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onclick="closeManageCouriersModal()" style="z-index: 99998;"></div>
     
     <!-- Modal Content -->
-    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform transition-all z-10">
-        <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
-            <div class="flex items-center gap-2">
-                <span class="text-xl">🚚</span>
-                <h3 class="text-lg font-bold text-gray-900">Manage Courier Services</h3>
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 transform transition-all border border-gray-100" style="z-index: 99999;">
+        <div class="flex items-center justify-between pb-3.5 border-b border-gray-100 mb-4">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-lg">🚚</div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900 leading-tight">Manage Courier Services</h3>
+                    <p class="text-[11px] text-gray-500 font-medium">Add new or delete dropdown couriers</p>
+                </div>
             </div>
-            <button type="button" onclick="closeManageCouriersModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-xl hover:bg-gray-100 transition-colors">
+            <button type="button" onclick="closeManageCouriersModal()" class="text-gray-400 hover:text-gray-600 p-2 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
 
         <!-- Add New Courier Form -->
-        <div class="mb-5 bg-gray-50/80 p-3.5 rounded-2xl border border-gray-200/80">
+        <div class="mb-5 bg-gradient-to-br from-pink-50/50 to-purple-50/30 p-4 rounded-2xl border border-pink-100/70">
             <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Add New Courier</label>
             <div class="flex gap-2">
-                <input type="text" id="newCourierName" placeholder="e.g. DTDC, Delhivery..." class="flex-1 px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#F25996]">
-                <button type="button" onclick="addNewCourierService()" class="px-4 py-2 bg-[#F25996] hover:bg-[#e04481] text-white text-xs font-bold rounded-xl shadow-xs transition-all shrink-0">
-                    + Add
+                <input type="text" id="newCourierName" placeholder="e.g. ST Courier, Delhivery, DTDC..." 
+                       onkeydown="if(event.key==='Enter'){event.preventDefault();addNewCourierService();}"
+                       class="flex-1 px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#F25996] shadow-2xs">
+                <button type="button" onclick="addNewCourierService()" 
+                        class="px-4 py-2.5 bg-[#F25996] hover:bg-[#e04481] active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs transition-all shrink-0 cursor-pointer flex items-center gap-1">
+                    <span>+ Add</span>
                 </button>
             </div>
         </div>
 
         <!-- List of Couriers -->
-        <div class="flex items-center justify-between mb-2">
-            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Available Dropdown Couriers</label>
-            <span id="couriersCountBadge" class="text-[11px] font-bold text-gray-400"></span>
+        <div class="flex items-center justify-between mb-2.5 px-0.5">
+            <label class="text-xs font-bold text-gray-600 uppercase tracking-wider">Available Dropdown Couriers</label>
+            <span id="couriersCountBadge" class="text-[11px] font-bold text-pink-600 bg-pink-50 px-2.5 py-0.5 rounded-full border border-pink-100">0 couriers</span>
         </div>
         
         <div id="couriersListContainer" class="max-h-60 overflow-y-auto space-y-1.5 pr-1 divide-y divide-gray-100">
             <!-- Dynamically populated rows with delete buttons -->
         </div>
 
-        <div class="mt-6 pt-3 border-t border-gray-100 flex justify-end">
-            <button type="button" onclick="closeManageCouriersModal()" class="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-colors shadow-xs">
+        <div class="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between">
+            <span class="text-[11px] text-gray-400 italic">Deleted couriers are removed from dropdown</span>
+            <button type="button" onclick="closeManageCouriersModal()" class="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer">
                 Done
             </button>
         </div>
     </div>
 </div>
+
+<style>
+.swal2-container {
+    z-index: 100001 !important;
+}
+</style>
+
+<script>
+// Standalone Global Courier & Tracking Services Script for Order View
+let currentTrackingSelect = null;
+let currentTrackingOrderId = null;
+let globalCouriersList = [];
+
+function escapeHtmlLocal(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+    });
+}
+
+function loadCourierServices(selectedCourier = '') {
+    return fetch('<?= BASE_URL ?>/admin/orders/courier-services', {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success && Array.isArray(res.couriers)) {
+            globalCouriersList = res.couriers;
+            renderCourierDropdown(selectedCourier);
+            renderCourierManagerList();
+        }
+    })
+    .catch(err => console.error('Failed to load couriers', err));
+}
+
+function renderCourierDropdown(selectedCourier = '') {
+    const select = document.getElementById('trackCourier');
+    if (!select) return;
+
+    const currentVal = selectedCourier || select.value;
+    select.innerHTML = '<option value="" disabled selected>Select Courier Service</option>';
+
+    let foundCurrent = false;
+    globalCouriersList.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = c.name;
+        if (currentVal && currentVal.toLowerCase() === c.name.toLowerCase()) {
+            opt.selected = true;
+            foundCurrent = true;
+        }
+        select.appendChild(opt);
+    });
+
+    if (currentVal && !foundCurrent && selectedCourier) {
+        const customOpt = document.createElement('option');
+        customOpt.value = currentVal;
+        customOpt.textContent = currentVal;
+        customOpt.selected = true;
+        select.appendChild(customOpt);
+    }
+}
+
+function renderCourierManagerList() {
+    const container = document.getElementById('couriersListContainer');
+    const badge = document.getElementById('couriersCountBadge');
+    if (!container) return;
+
+    if (badge) badge.textContent = `${globalCouriersList.length} couriers`;
+
+    if (globalCouriersList.length === 0) {
+        container.innerHTML = '<p class="text-xs text-gray-400 py-3 text-center italic">No courier services configured yet.</p>';
+        return;
+    }
+
+    container.innerHTML = globalCouriersList.map(c => `
+        <div class="flex items-center justify-between py-2 px-2.5 hover:bg-gray-50 rounded-xl transition-colors group">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <span class="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-sm shrink-0">🚚</span>
+                <span class="text-sm font-bold text-gray-800 truncate">${escapeHtmlLocal(c.name)}</span>
+            </div>
+            <button type="button" onclick="deleteCourierServiceItem(${c.id}, '${escapeHtmlLocal(c.name).replace(/'/g, "\\'")}')" 
+                    class="px-2.5 py-1 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 hover:text-rose-700 border border-rose-200/80 rounded-lg transition-all cursor-pointer flex items-center gap-1 shrink-0" 
+                    title="Delete ${escapeHtmlLocal(c.name)}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <span>Delete</span>
+            </button>
+        </div>
+    `).join('');
+}
+
+window.openManageCouriersModal = function() {
+    const modal = document.getElementById('manageCouriersModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        loadCourierServices();
+        setTimeout(() => {
+            const input = document.getElementById('newCourierName');
+            if (input) input.focus();
+        }, 100);
+    }
+};
+
+window.closeManageCouriersModal = function() {
+    const modal = document.getElementById('manageCouriersModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+    }
+};
+
+window.addNewCourierService = function() {
+    const input = document.getElementById('newCourierName');
+    const name = input ? input.value.trim() : '';
+    if (!name) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Courier Name Required',
+            text: 'Please enter a name for the courier service.',
+            confirmButtonColor: '#F25996'
+        });
+        return;
+    }
+
+    fetch('<?= BASE_URL ?>/admin/orders/courier-services/add', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ name: name })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            input.value = '';
+            globalCouriersList = res.couriers || [];
+            renderCourierManagerList();
+            renderCourierDropdown(res.added_name || name);
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: `'${name}' added to couriers`,
+                showConfirmButton: false,
+                timer: 2000
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: res.message || 'Failed to add courier.',
+                confirmButtonColor: '#F25996'
+            });
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to communicate with server.',
+            confirmButtonColor: '#F25996'
+        });
+    });
+};
+
+window.deleteCourierServiceItem = function(id, name) {
+    Swal.fire({
+        title: 'Delete Courier?',
+        html: `Are you sure you want to remove <b>${name}</b> from the courier dropdown options?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#f3f4f6',
+        confirmButtonText: 'Yes, Delete',
+        cancelButtonText: '<span style="color: #4b5563; font-weight: bold;">Cancel</span>',
+        reverseButtons: true,
+        customClass: { popup: 'rounded-2xl' }
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch('<?= BASE_URL ?>/admin/orders/courier-services/delete', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ id: id, name: name })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    globalCouriersList = res.couriers || [];
+                    renderCourierManagerList();
+                    renderCourierDropdown();
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: `'${name}' deleted from dropdown`,
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: res.message || 'Failed to delete courier.',
+                        confirmButtonColor: '#F25996'
+                    });
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to communicate with server.',
+                    confirmButtonColor: '#F25996'
+                });
+            });
+        }
+    });
+};
+
+window.openTrackingModal = function(orderId, selectEl, courier = '', tracking = '', url = '') {
+    currentTrackingOrderId = orderId;
+    currentTrackingSelect = selectEl;
+    
+    document.getElementById('trackOrderId').value = orderId;
+    document.getElementById('trackId').value = tracking || '';
+    document.getElementById('trackUrl').value = url || '';
+    
+    loadCourierServices(courier).then(() => {
+        const courierEl = document.getElementById('trackCourier');
+        if (courierEl) courierEl.value = courier || '';
+    });
+    
+    const modal = document.getElementById('trackingModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+    }
+};
+
+window.closeTrackingModal = function() {
+    const modal = document.getElementById('trackingModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+    }
+    if (currentTrackingSelect && currentTrackingSelect.getAttribute && currentTrackingSelect.getAttribute('data-original')) {
+        currentTrackingSelect.value = currentTrackingSelect.getAttribute('data-original');
+        if (typeof updateDropdownStyle === 'function') {
+            updateDropdownStyle(currentTrackingSelect);
+        }
+    }
+    currentTrackingSelect = null;
+    currentTrackingOrderId = null;
+};
+
+window.submitTrackingDetails = function(e) {
+    e.preventDefault();
+    
+    const orderId = currentTrackingOrderId;
+    const selectEl = currentTrackingSelect;
+    const courier = document.getElementById('trackCourier').value;
+    const trackingNum = document.getElementById('trackId').value;
+    const trackingUrl = document.getElementById('trackUrl') ? document.getElementById('trackUrl').value : '';
+    
+    if (!courier) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Courier Required',
+            text: 'Please select a Courier Service.',
+            confirmButtonColor: '#F25996'
+        });
+        return;
+    }
+
+    fetch('<?= BASE_URL ?>/admin/orders/update-courier', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ 
+            order_id: orderId, 
+            courier_name: courier, 
+            tracking_number: trackingNum, 
+            tracking_url: trackingUrl 
+        })
+    }).then(r => r.json()).then(res => {
+        if(res.success) {
+            closeTrackingModal();
+            Swal.fire({
+                title: 'Tracking Details Saved!',
+                text: 'Courier tracking details have been saved successfully.',
+                icon: 'success',
+                confirmButtonColor: '#F25996'
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: res.message || 'Failed to save tracking details.',
+                confirmButtonColor: '#F25996'
+            });
+            closeTrackingModal();
+        }
+    }).catch(err => {
+        console.error(err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to save tracking details.',
+            confirmButtonColor: '#F25996'
+        });
+        closeTrackingModal();
+    });
+};
+
+// Initial load of courier services
+loadCourierServices();
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
@@ -744,303 +1090,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-
-    let currentTrackingSelect = null;
-    let currentTrackingOrderId = null;
-    let globalCouriersList = [];
-
-    function escapeHtmlLocal(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>"']/g, function(m) {
-            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-        });
-    }
-
-    function loadCourierServices(selectedCourier = '') {
-        return fetch('<?= BASE_URL ?>/admin/orders/courier-services')
-            .then(r => r.json())
-            .then(res => {
-                if (res.success && Array.isArray(res.couriers)) {
-                    globalCouriersList = res.couriers;
-                    renderCourierDropdown(selectedCourier);
-                    renderCourierManagerList();
-                }
-            })
-            .catch(err => console.error('Failed to load couriers', err));
-    }
-
-    function renderCourierDropdown(selectedCourier = '') {
-        const select = document.getElementById('trackCourier');
-        if (!select) return;
-
-        const currentVal = selectedCourier || select.value;
-        select.innerHTML = '<option value="" disabled selected>Select Courier Service</option>';
-
-        let foundCurrent = false;
-        globalCouriersList.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.name;
-            opt.textContent = c.name;
-            if (currentVal && currentVal.toLowerCase() === c.name.toLowerCase()) {
-                opt.selected = true;
-                foundCurrent = true;
-            }
-            select.appendChild(opt);
-        });
-
-        if (currentVal && !foundCurrent) {
-            const customOpt = document.createElement('option');
-            customOpt.value = currentVal;
-            customOpt.textContent = currentVal;
-            customOpt.selected = true;
-            select.appendChild(customOpt);
-        }
-    }
-
-    function renderCourierManagerList() {
-        const container = document.getElementById('couriersListContainer');
-        const badge = document.getElementById('couriersCountBadge');
-        if (!container) return;
-
-        if (badge) badge.textContent = `${globalCouriersList.length} options`;
-
-        if (globalCouriersList.length === 0) {
-            container.innerHTML = '<p class="text-xs text-gray-400 py-3 text-center italic">No courier services configured yet.</p>';
-            return;
-        }
-
-        container.innerHTML = globalCouriersList.map(c => `
-            <div class="flex items-center justify-between py-2 px-2 hover:bg-gray-50 rounded-xl transition-colors group">
-                <div class="flex items-center gap-2.5 min-w-0">
-                    <span class="text-gray-400 text-sm">🚚</span>
-                    <span class="text-sm font-semibold text-gray-800 truncate">${escapeHtmlLocal(c.name)}</span>
-                </div>
-                <button type="button" onclick="deleteCourierServiceItem(${c.id}, '${escapeHtmlLocal(c.name).replace(/'/g, "\\'")}')" 
-                        class="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" 
-                        title="Delete ${escapeHtmlLocal(c.name)}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                </button>
-            </div>
-        `).join('');
-    }
-
-    window.openManageCouriersModal = function() {
-        const modal = document.getElementById('manageCouriersModal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            renderCourierManagerList();
-            setTimeout(() => {
-                const input = document.getElementById('newCourierName');
-                if (input) input.focus();
-            }, 100);
-        }
-    };
-
-    window.closeManageCouriersModal = function() {
-        const modal = document.getElementById('manageCouriersModal');
-        if (modal) modal.classList.add('hidden');
-    };
-
-    window.addNewCourierService = function() {
-        const input = document.getElementById('newCourierName');
-        const name = input ? input.value.trim() : '';
-        if (!name) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Courier Name Required',
-                text: 'Please enter a name for the courier service.',
-                confirmButtonColor: '#F25996'
-            });
-            return;
-        }
-
-        fetch('<?= BASE_URL ?>/admin/orders/courier-services/add', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: name })
-        })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                input.value = '';
-                globalCouriersList = res.couriers || [];
-                renderCourierManagerList();
-                renderCourierDropdown(res.added_name || name);
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'success',
-                    title: `'${name}' added to couriers`,
-                    showConfirmButton: false,
-                    timer: 2000
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: res.message || 'Failed to add courier.',
-                    confirmButtonColor: '#F25996'
-                });
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Failed to communicate with server.',
-                confirmButtonColor: '#F25996'
-            });
-        });
-    };
-
-    window.deleteCourierServiceItem = function(id, name) {
-        Swal.fire({
-            title: 'Delete Courier?',
-            html: `Are you sure you want to remove <b>${name}</b> from the courier dropdown options?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc2626',
-            cancelButtonColor: '#f3f4f6',
-            confirmButtonText: 'Yes, Delete',
-            cancelButtonText: '<span style="color: #4b5563; font-weight: bold;">Cancel</span>',
-            reverseButtons: true,
-            customClass: { popup: 'rounded-2xl' }
-        }).then(result => {
-            if (result.isConfirmed) {
-                fetch('<?= BASE_URL ?>/admin/orders/courier-services/delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: id, name: name })
-                })
-                .then(r => r.json())
-                .then(res => {
-                    if (res.success) {
-                        globalCouriersList = res.couriers || [];
-                        renderCourierManagerList();
-                        renderCourierDropdown();
-                        Swal.fire({
-                            toast: true,
-                            position: 'top-end',
-                            icon: 'success',
-                            title: `'${name}' deleted`,
-                            showConfirmButton: false,
-                            timer: 2000
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: res.message || 'Failed to delete courier.',
-                            confirmButtonColor: '#F25996'
-                        });
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Failed to communicate with server.',
-                        confirmButtonColor: '#F25996'
-                    });
-                });
-            }
-        });
-    };
-
-    // Pre-load couriers on initial load
-    loadCourierServices();
-
-    window.openTrackingModal = function(orderId, selectEl, courier = '', tracking = '', url = '') {
-        currentTrackingOrderId = orderId;
-        currentTrackingSelect = selectEl;
-        
-        document.getElementById('trackOrderId').value = orderId;
-        document.getElementById('trackId').value = tracking || '';
-        document.getElementById('trackUrl').value = url || '';
-        
-        loadCourierServices(courier).then(() => {
-            const courierEl = document.getElementById('trackCourier');
-            if (courierEl) courierEl.value = courier || '';
-        });
-        
-        const modal = document.getElementById('trackingModal');
-        modal.classList.remove('hidden');
-    };
-
-    window.closeTrackingModal = function() {
-        const modal = document.getElementById('trackingModal');
-        modal.classList.add('hidden');
-        if (currentTrackingSelect && currentTrackingSelect.getAttribute && currentTrackingSelect.getAttribute('data-original')) {
-            currentTrackingSelect.value = currentTrackingSelect.getAttribute('data-original');
-            if (typeof updateDropdownStyle === 'function') {
-                updateDropdownStyle(currentTrackingSelect);
-            }
-        }
-        currentTrackingSelect = null;
-        currentTrackingOrderId = null;
-    };
-
-    window.submitTrackingDetails = function(e) {
-        e.preventDefault();
-        
-        const orderId = currentTrackingOrderId;
-        const selectEl = currentTrackingSelect;
-        const courier = document.getElementById('trackCourier').value;
-        const trackingNum = document.getElementById('trackId').value;
-        const trackingUrl = document.getElementById('trackUrl') ? document.getElementById('trackUrl').value : '';
-        
-        if (!courier) {
-            Swal.fire({
-                title: 'Courier Required',
-                text: 'Please select a Courier Service.',
-                icon: 'warning',
-                confirmButtonColor: '#F25996'
-            });
-            return;
-        }
-
-        fetch('<?= BASE_URL ?>/admin/orders/update-courier', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                order_id: orderId, 
-                courier_name: courier, 
-                tracking_number: trackingNum,
-                tracking_url: trackingUrl
-            })
-        }).then(r => r.json()).then(res => {
-            if(res.success) {
-                document.getElementById('trackingModal').classList.add('hidden');
-                Swal.fire({
-                    title: 'Tracking Details Saved!',
-                    text: 'Courier tracking details have been saved successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F25996'
-                }).then(() => {
-                    location.reload();
-                });
-            } else {
-                Swal.fire({
-                    title: 'Error',
-                    text: res.message || 'Failed to save tracking details.',
-                    icon: 'error',
-                    confirmButtonColor: '#F25996'
-                });
-                closeTrackingModal();
-            }
-        }).catch(err => {
-            console.error(err);
-            Swal.fire({
-                title: 'Error',
-                text: 'Failed to save tracking details.',
-                icon: 'error',
-                confirmButtonColor: '#F25996'
-            });
-            closeTrackingModal();
-        });
-    };
 
     // --- Packing Videos Modal Handlers ---
     let currentPackingSelect = null;

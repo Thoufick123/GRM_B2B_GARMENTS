@@ -356,12 +356,12 @@
 
 
 <!-- Tracking Details Modal -->
-<div id="trackingModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+<div id="trackingModal" class="fixed inset-0 items-center justify-center p-4 transition-all" style="display: none; z-index: 99990;">
     <!-- Backdrop -->
-    <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity backdrop-blur-sm" onclick="closeTrackingModal()"></div>
+    <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onclick="closeTrackingModal()" style="z-index: 99989;"></div>
     
     <!-- Modal Content -->
-    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 sm:p-7 transform transition-all z-10 border border-gray-100">
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 sm:p-7 transform transition-all border border-gray-100" style="z-index: 99990;">
         <div class="flex items-center space-x-2.5 mb-6">
             <div class="w-8 h-8 rounded-xl bg-pink-50 text-[#F25996] flex items-center justify-center">
                 <svg class="w-5 h-5 text-[#F25996]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
@@ -402,50 +402,63 @@
 </div>
 
 <!-- Manage Couriers Modal -->
-<div id="manageCouriersModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4">
+<div id="manageCouriersModal" class="fixed inset-0 items-center justify-center p-4 transition-all" style="display: none; z-index: 99999;">
     <!-- Backdrop -->
-    <div class="fixed inset-0 bg-gray-900 bg-opacity-60 transition-opacity backdrop-blur-xs" onclick="closeManageCouriersModal()"></div>
+    <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onclick="closeManageCouriersModal()" style="z-index: 99998;"></div>
     
     <!-- Modal Content -->
-    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform transition-all z-10">
-        <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
-            <div class="flex items-center gap-2">
-                <span class="text-xl">🚚</span>
-                <h3 class="text-lg font-bold text-gray-900">Manage Courier Services</h3>
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 transform transition-all border border-gray-100" style="z-index: 99999;">
+        <div class="flex items-center justify-between pb-3.5 border-b border-gray-100 mb-4">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-lg">🚚</div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900 leading-tight">Manage Courier Services</h3>
+                    <p class="text-[11px] text-gray-500 font-medium">Add new or delete dropdown couriers</p>
+                </div>
             </div>
-            <button type="button" onclick="closeManageCouriersModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-xl hover:bg-gray-100 transition-colors">
+            <button type="button" onclick="closeManageCouriersModal()" class="text-gray-400 hover:text-gray-600 p-2 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
 
         <!-- Add New Courier Form -->
-        <div class="mb-5 bg-gray-50/80 p-3.5 rounded-2xl border border-gray-200/80">
+        <div class="mb-5 bg-gradient-to-br from-pink-50/50 to-purple-50/30 p-4 rounded-2xl border border-pink-100/70">
             <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Add New Courier</label>
             <div class="flex gap-2">
-                <input type="text" id="newCourierName" placeholder="e.g. DTDC, Delhivery..." class="flex-1 px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#F25996]">
-                <button type="button" onclick="addNewCourierService()" class="px-4 py-2 bg-[#F25996] hover:bg-[#e04481] text-white text-xs font-bold rounded-xl shadow-xs transition-all shrink-0">
-                    + Add
+                <input type="text" id="newCourierName" placeholder="e.g. ST Courier, Delhivery, DTDC..." 
+                       onkeydown="if(event.key==='Enter'){event.preventDefault();addNewCourierService();}"
+                       class="flex-1 px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#F25996] shadow-2xs">
+                <button type="button" onclick="addNewCourierService()" 
+                        class="px-4 py-2.5 bg-[#F25996] hover:bg-[#e04481] active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs transition-all shrink-0 cursor-pointer flex items-center gap-1">
+                    <span>+ Add</span>
                 </button>
             </div>
         </div>
 
         <!-- List of Couriers -->
-        <div class="flex items-center justify-between mb-2">
-            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Available Dropdown Couriers</label>
-            <span id="couriersCountBadge" class="text-[11px] font-bold text-gray-400"></span>
+        <div class="flex items-center justify-between mb-2.5 px-0.5">
+            <label class="text-xs font-bold text-gray-600 uppercase tracking-wider">Available Dropdown Couriers</label>
+            <span id="couriersCountBadge" class="text-[11px] font-bold text-pink-600 bg-pink-50 px-2.5 py-0.5 rounded-full border border-pink-100">0 couriers</span>
         </div>
         
         <div id="couriersListContainer" class="max-h-60 overflow-y-auto space-y-1.5 pr-1 divide-y divide-gray-100">
             <!-- Dynamically populated rows with delete buttons -->
         </div>
 
-        <div class="mt-6 pt-3 border-t border-gray-100 flex justify-end">
-            <button type="button" onclick="closeManageCouriersModal()" class="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-colors shadow-xs">
+        <div class="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between">
+            <span class="text-[11px] text-gray-400 italic">Deleted couriers are removed from dropdown</span>
+            <button type="button" onclick="closeManageCouriersModal()" class="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer">
                 Done
             </button>
         </div>
     </div>
 </div>
+
+<style>
+.swal2-container {
+    z-index: 100001 !important;
+}
+</style>
 
 <!-- Packing Videos Modal -->
 <div id="packingModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
@@ -761,7 +774,7 @@ function renderCourierManagerList() {
     const badge = document.getElementById('couriersCountBadge');
     if (!container) return;
 
-    if (badge) badge.textContent = `${globalCouriersList.length} options`;
+    if (badge) badge.textContent = `${globalCouriersList.length} couriers`;
 
     if (globalCouriersList.length === 0) {
         container.innerHTML = '<p class="text-xs text-gray-400 py-3 text-center italic">No courier services configured yet.</p>';
@@ -769,15 +782,16 @@ function renderCourierManagerList() {
     }
 
     container.innerHTML = globalCouriersList.map(c => `
-        <div class="flex items-center justify-between py-2 px-2 hover:bg-gray-50 rounded-xl transition-colors group">
+        <div class="flex items-center justify-between py-2 px-2.5 hover:bg-gray-50 rounded-xl transition-colors group">
             <div class="flex items-center gap-2.5 min-w-0">
-                <span class="text-gray-400 text-sm">🚚</span>
-                <span class="text-sm font-semibold text-gray-800 truncate">${escapeHtmlLocal(c.name)}</span>
+                <span class="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-sm shrink-0">🚚</span>
+                <span class="text-sm font-bold text-gray-800 truncate">${escapeHtmlLocal(c.name)}</span>
             </div>
             <button type="button" onclick="deleteCourierServiceItem(${c.id}, '${escapeHtmlLocal(c.name).replace(/'/g, "\\'")}')" 
-                    class="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" 
+                    class="px-2.5 py-1 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 hover:text-rose-700 border border-rose-200/80 rounded-lg transition-all cursor-pointer flex items-center gap-1 shrink-0" 
                     title="Delete ${escapeHtmlLocal(c.name)}">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <span>Delete</span>
             </button>
         </div>
     `).join('');
@@ -786,8 +800,9 @@ function renderCourierManagerList() {
 window.openManageCouriersModal = function() {
     const modal = document.getElementById('manageCouriersModal');
     if (modal) {
+        modal.style.display = 'flex';
         modal.classList.remove('hidden');
-        renderCourierManagerList();
+        loadCourierServices();
         setTimeout(() => {
             const input = document.getElementById('newCourierName');
             if (input) input.focus();
@@ -797,7 +812,10 @@ window.openManageCouriersModal = function() {
 
 window.closeManageCouriersModal = function() {
     const modal = document.getElementById('manageCouriersModal');
-    if (modal) modal.classList.add('hidden');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+    }
 };
 
 window.addNewCourierService = function() {
@@ -815,7 +833,11 @@ window.addNewCourierService = function() {
 
     fetch('<?= BASE_URL ?>/admin/orders/courier-services/add', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
         body: JSON.stringify({ name: name })
     })
     .then(r => r.json())
@@ -869,7 +891,11 @@ window.deleteCourierServiceItem = function(id, name) {
         if (result.isConfirmed) {
             fetch('<?= BASE_URL ?>/admin/orders/courier-services/delete', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 body: JSON.stringify({ id: id, name: name })
             })
             .then(r => r.json())
@@ -882,7 +908,7 @@ window.deleteCourierServiceItem = function(id, name) {
                         toast: true,
                         position: 'top-end',
                         icon: 'success',
-                        title: `'${name}' deleted`,
+                        title: `'${name}' deleted from dropdown`,
                         showConfirmButton: false,
                         timer: 2000
                     });
@@ -928,12 +954,18 @@ function openTrackingModal(orderId, orderNumber, courier = '', tracking = '', ur
     });
     
     const modal = document.getElementById('trackingModal');
-    modal.classList.remove('hidden');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+    }
 }
 
 function closeTrackingModal() {
     const modal = document.getElementById('trackingModal');
-    modal.classList.add('hidden');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+    }
 }
 
 function submitTrackingDetails(e) {

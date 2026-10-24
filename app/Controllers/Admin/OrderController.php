@@ -273,7 +273,12 @@ class OrderController extends Controller
 
     public function addCourierService()
     {
-        $this->requirePermission('all_orders', 'edit');
+        $role = \Core\Session::get('user_role');
+        if (!in_array($role, ['super_admin', 'admin', 'manager', 'staff', 'vendor'])) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit;
+        }
         header('Content-Type: application/json');
         
         $input = json_decode(file_get_contents('php://input'), true);
@@ -315,7 +320,12 @@ class OrderController extends Controller
 
     public function deleteCourierService()
     {
-        $this->requirePermission('all_orders', 'edit');
+        $role = \Core\Session::get('user_role');
+        if (!in_array($role, ['super_admin', 'admin', 'manager', 'staff', 'vendor'])) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit;
+        }
         header('Content-Type: application/json');
         
         $input = json_decode(file_get_contents('php://input'), true);
