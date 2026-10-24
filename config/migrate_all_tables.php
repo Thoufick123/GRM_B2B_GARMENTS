@@ -418,6 +418,7 @@ try {
             `weight_unit` VARCHAR(10) DEFAULT 'kg',
             `inventory` INT NOT NULL DEFAULT 0,
             `current_stock` INT NOT NULL DEFAULT 0,
+            `reserve_stock` INT NOT NULL DEFAULT 0,
             `stock` INT NOT NULL DEFAULT 0,
             `low_stock_alert` INT DEFAULT 5,
             `status` VARCHAR(50) DEFAULT 'active',
@@ -1030,6 +1031,11 @@ try {
     }
     if (!in_array('refund_details', $refundCols)) {
         $db->exec("ALTER TABLE `refund_requests` ADD COLUMN `refund_details` TEXT NULL AFTER `refund_method`");
+    }
+
+    $pvCols = array_map('strtolower', $db->query("SHOW COLUMNS FROM `product_variants`")->fetchAll(PDO::FETCH_COLUMN));
+    if (!in_array('reserve_stock', $pvCols)) {
+        $db->exec("ALTER TABLE `product_variants` ADD COLUMN `reserve_stock` INT NOT NULL DEFAULT 0 AFTER `current_stock`");
     }
 
     // Seed default couriers if empty

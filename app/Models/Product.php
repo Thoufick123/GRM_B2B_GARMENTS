@@ -5,6 +5,29 @@ use Core\Model;
 
 class Product extends Model
 {
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureSchema();
+    }
+
+    private function ensureSchema(): void
+    {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+
+        try {
+            $cols = $this->db->query("SHOW COLUMNS FROM `product_variants`")->fetchAll(\PDO::FETCH_COLUMN);
+            $colsLower = array_map('strtolower', $cols);
+            if (!empty($colsLower) && !in_array('reserve_stock', $colsLower)) {
+                $this->db->exec("ALTER TABLE `product_variants` ADD COLUMN `reserve_stock` INT NOT NULL DEFAULT 0 AFTER `current_stock`");
+            }
+        } catch (\Throwable $e) {
+            error_log("Product::ensureSchema notice: " . $e->getMessage());
+        }
+    }
+
     public function getAllActive($search = null, $categoryId = null, $subCategoryId = null, $attributeFilters = [], $sort = 'newest', ?int $isCustomizable = 0)
     {
         $sql = "
@@ -772,7 +795,7 @@ class Product extends Model
                 c.name as category_name,
                 COUNT(pv.id) as variant_count,
                 CASE WHEN p.is_customizable = 1 THEN GREATEST(p.stock_quantity, 0) ELSE SUM(GREATEST(pv.inventory, 0)) END as total_stock,
-                CASE WHEN p.is_customizable = 1 THEN 0 ELSE SUM(GREATEST(pv.reserve_stock, 0)) END as reserve_stock,
+                CASE WHEN p.is_customizable = 1 THEN 0 ELSE SUM(GREATEST(GREATEST(pv.inventory, 0) - GREATEST(pv.current_stock, 0), 0)) END as reserve_stock,
                 CASE WHEN p.is_customizable = 1 THEN GREATEST(p.stock_quantity, 0) ELSE GREATEST(SUM(GREATEST(pv.current_stock, 0)), 0) END as current_stock,
                 MIN(COALESCE(pv.low_stock_alert, 5)) as low_stock_alert,
                 MIN(pv.sku) as sku,
@@ -806,7 +829,7 @@ class Product extends Model
             SELECT 
                 pv.id, pv.product_id, pv.sku, p.name as product_name,
                 GREATEST(pv.inventory, 0) as inventory,
-                GREATEST(pv.reserve_stock, 0) as reserve_stock,
+                GREATEST(GREATEST(pv.inventory, 0) - GREATEST(pv.current_stock, 0), 0) as reserve_stock,
                 GREATEST(pv.current_stock, 0) as current_stock
             FROM product_variants pv
             JOIN products p ON pv.product_id = p.id

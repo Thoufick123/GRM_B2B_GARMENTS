@@ -126,3 +126,8 @@ ALTER TABLE `business_profiles`
 -- 9. Add profile picture to users table
 ALTER TABLE `users`
     ADD COLUMN IF NOT EXISTS `profile_picture` VARCHAR(500) NULL AFTER `phone`;
+
+-- 10. Add reserve_stock column to product_variants table
+ALTER TABLE `product_variants`
+    ADD COLUMN IF NOT EXISTS `reserve_stock` INT NOT NULL DEFAULT 0 AFTER `current_stock`;
+
