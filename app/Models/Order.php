@@ -479,16 +479,17 @@ class Order extends Model
         ]);
     }
 
-    public function updateCourier(string $orderNumber, string $courierName, string $trackingNumber)
+    public function updateCourier(string $orderNumber, string $courierName, string $trackingNumber, string $trackingUrl = '')
     {
         $stmt = $this->db->prepare("
             UPDATE orders 
-            SET courier_name = :cn, tracking_number = :tn 
+            SET courier_name = :cn, tracking_number = :tn, tracking_url = :tu
             WHERE order_number = :id
         ");
         return $stmt->execute([
             'cn' => $courierName,
             'tn' => $trackingNumber,
+            'tu' => $trackingUrl,
             'id' => $orderNumber
         ]);
     }

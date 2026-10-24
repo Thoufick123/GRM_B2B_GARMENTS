@@ -220,6 +220,7 @@ class OrderController extends Controller
         $orderId = $input['order_id'] ?? null;
         $courierName = trim($input['courier_name'] ?? '');
         $trackingNumber = trim($input['tracking_number'] ?? '');
+        $trackingUrl = trim($input['tracking_url'] ?? '');
 
         if (!$orderId || empty($courierName)) {
             echo json_encode(['success' => false, 'message' => 'Order ID and Courier Name are required']);
@@ -247,7 +248,7 @@ class OrderController extends Controller
         }
 
         $orderModel = new Order();
-        $result = $orderModel->updateCourier($orderId, $courierName, $trackingNumber);
+        $result = $orderModel->updateCourier($orderId, $courierName, $trackingNumber, $trackingUrl);
 
         if ($result) {
             echo json_encode(['success' => true, 'message' => 'Courier updated']);

@@ -348,15 +348,34 @@
                 <?php endif; ?>
             </div>
 
-            <?php if ($order['status'] === 'shipped' || $order['status'] === 'out_for_delivery' || $order['status'] === 'delivered'): ?>
             <div class="mt-6 pt-4 border-t border-gray-100">
-                <h4 class="text-xs font-semibold text-gray-500 mb-1">Courier Information</h4>
-                <p class="text-sm font-bold text-gray-900"><?= htmlspecialchars($order['courier_name'] ?: 'Not Specified') ?></p>
-                <?php if ($order['tracking_number']): ?>
-                    <p class="text-xs text-gray-500 mt-1">Tracking: <span class="font-medium text-gray-700"><?= htmlspecialchars($order['tracking_number']) ?></span></p>
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Courier Information</h4>
+                    <?php if ($this->hasPermission('all_orders', 'edit') && !$isTerminal): ?>
+                    <button type="button" 
+                            onclick="openTrackingModal('<?= htmlspecialchars($order['order_number']) ?>', this, '<?= htmlspecialchars(addslashes($order['courier_name'] ?? '')) ?>', '<?= htmlspecialchars(addslashes($order['tracking_number'] ?? '')) ?>', '<?= htmlspecialchars(addslashes($order['tracking_url'] ?? '')) ?>')"
+                            class="inline-flex items-center gap-1 text-xs font-bold text-purple-600 hover:text-purple-800 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        <span><?= (!empty($order['courier_name']) || !empty($order['tracking_number'])) ? 'Edit Details' : 'Enter Details' ?></span>
+                    </button>
+                    <?php endif; ?>
+                </div>
+                <?php if (!empty($order['courier_name']) || !empty($order['tracking_number'])): ?>
+                    <p class="text-sm font-bold text-gray-900"><?= htmlspecialchars($order['courier_name'] ?: 'Not Specified') ?></p>
+                    <?php if (!empty($order['tracking_number'])): ?>
+                        <p class="text-xs text-gray-500 mt-1">Tracking ID: <span class="font-medium text-gray-700"><?= htmlspecialchars($order['tracking_number']) ?></span></p>
+                    <?php endif; ?>
+                    <?php if (!empty($order['tracking_url'])): ?>
+                        <p class="text-xs text-purple-600 mt-1">
+                            <a href="<?= htmlspecialchars($order['tracking_url']) ?>" target="_blank" rel="noopener noreferrer" class="hover:underline inline-flex items-center gap-1 font-semibold">
+                                Track Package &rarr;
+                            </a>
+                        </p>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <p class="text-xs text-gray-400 italic">No courier details added yet.</p>
                 <?php endif; ?>
             </div>
-            <?php endif; ?>
         </div>
 
         <!-- Floating Status Portal -->
@@ -656,11 +675,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // If moving to Shipped, open tracking modal directly
-            if (newStatus === 'shipped') {
-                openTrackingModal(orderId, select);
-                return;
-            }
             
             Swal.fire({
                 title: 'Update Order Status?',
@@ -691,14 +705,14 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentTrackingSelect = null;
     let currentTrackingOrderId = null;
 
-    window.openTrackingModal = function(orderId, selectEl) {
+    window.openTrackingModal = function(orderId, selectEl, courier = '', tracking = '', url = '') {
         currentTrackingOrderId = orderId;
         currentTrackingSelect = selectEl;
         
         document.getElementById('trackOrderId').value = orderId;
-        document.getElementById('trackCourier').value = '';
-        document.getElementById('trackId').value = '';
-        document.getElementById('trackUrl').value = '';
+        document.getElementById('trackCourier').value = courier || '';
+        document.getElementById('trackId').value = tracking || '';
+        document.getElementById('trackUrl').value = url || '';
         
         const modal = document.getElementById('trackingModal');
         modal.classList.remove('hidden');
@@ -707,9 +721,11 @@ document.addEventListener('DOMContentLoaded', function() {
     window.closeTrackingModal = function() {
         const modal = document.getElementById('trackingModal');
         modal.classList.add('hidden');
-        if (currentTrackingSelect) {
+        if (currentTrackingSelect && currentTrackingSelect.getAttribute && currentTrackingSelect.getAttribute('data-original')) {
             currentTrackingSelect.value = currentTrackingSelect.getAttribute('data-original');
-            updateDropdownStyle(currentTrackingSelect);
+            if (typeof updateDropdownStyle === 'function') {
+                updateDropdownStyle(currentTrackingSelect);
+            }
         }
         currentTrackingSelect = null;
         currentTrackingOrderId = null;
@@ -722,27 +738,55 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectEl = currentTrackingSelect;
         const courier = document.getElementById('trackCourier').value;
         const trackingNum = document.getElementById('trackId').value;
+        const trackingUrl = document.getElementById('trackUrl') ? document.getElementById('trackUrl').value : '';
         
         if (!courier) {
-            alert("Please select a Courier Service.");
+            Swal.fire({
+                title: 'Courier Required',
+                text: 'Please select a Courier Service.',
+                icon: 'warning',
+                confirmButtonColor: '#F25996'
+            });
             return;
         }
 
         fetch('<?= BASE_URL ?>/admin/orders/update-courier', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ order_id: orderId, courier_name: courier, tracking_number: trackingNum })
+            body: JSON.stringify({ 
+                order_id: orderId, 
+                courier_name: courier, 
+                tracking_number: trackingNum,
+                tracking_url: trackingUrl
+            })
         }).then(r => r.json()).then(res => {
             if(res.success) {
                 document.getElementById('trackingModal').classList.add('hidden');
-                updateStatusAjax(orderId, 'shipped', selectEl);
+                Swal.fire({
+                    title: 'Tracking Details Saved!',
+                    text: 'Courier tracking details have been saved successfully.',
+                    icon: 'success',
+                    confirmButtonColor: '#F25996'
+                }).then(() => {
+                    location.reload();
+                });
             } else {
-                alert(res.message);
+                Swal.fire({
+                    title: 'Error',
+                    text: res.message || 'Failed to save tracking details.',
+                    icon: 'error',
+                    confirmButtonColor: '#F25996'
+                });
                 closeTrackingModal();
             }
         }).catch(err => {
             console.error(err);
-            alert("Failed to save tracking details.");
+            Swal.fire({
+                title: 'Error',
+                text: 'Failed to save tracking details.',
+                icon: 'error',
+                confirmButtonColor: '#F25996'
+            });
             closeTrackingModal();
         });
     };
@@ -1017,13 +1061,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Shipped → open tracking modal
-        if (newStatus === 'shipped') {
-            if (typeof openTrackingModal === 'function') {
-                openTrackingModal(orderId, _activeBtn);
-            }
-            return;
-        }
 
         const curLabel  = (VIEW_STATUS_CONFIG[currentStatus] || {}).label || currentStatus;
         const nextLabel = (VIEW_STATUS_CONFIG[newStatus] || {}).label || newStatus;
