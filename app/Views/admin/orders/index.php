@@ -448,7 +448,7 @@
     <!-- Modal Content -->
     <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 transform transition-all border border-gray-100" style="z-index: 99990;">
         <div class="flex items-center space-x-2.5 mb-6">
-            <div class="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-lg">📦</div>
+            <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-lg">🚚</div>
             <div>
                 <h3 class="text-xl font-bold text-gray-900">Enter Tracking Details</h3>
                 <p class="text-xs text-gray-500 font-medium">Add courier and tracking information</p>
@@ -457,6 +457,7 @@
         
         <form id="trackingForm" onsubmit="submitTrackingDetails(event)">
             <input type="hidden" id="trackOrderId">
+            <input type="hidden" id="trackUpdateStatus" value="0">
             
             <div class="mb-4">
                 <div class="flex justify-between items-end mb-1.5">
@@ -771,13 +772,16 @@ window.deleteCourierServiceItem = function(id, name) {
     });
 };
 
-window.openTrackingModal = function(orderId, selectEl, courier = '', tracking = '', url = '') {
+window.openTrackingModal = function(orderId, selectEl, courier = '', tracking = '', url = '', updateStatusToShipped = false) {
     currentTrackingOrderId = orderId;
     currentTrackingSelect = selectEl;
     
     document.getElementById('trackOrderId').value = orderId;
     document.getElementById('trackId').value = tracking || '';
     document.getElementById('trackUrl').value = url || '';
+    // Flag: if opened from status portal (advance to Shipped), also update status after save
+    const updateStatusEl = document.getElementById('trackUpdateStatus');
+    if (updateStatusEl) updateStatusEl.value = updateStatusToShipped ? '1' : '0';
     
     loadCourierServices(courier).then(() => {
         const courierEl = document.getElementById('trackCourier');
@@ -815,12 +819,13 @@ window.submitTrackingDetails = function(e) {
     const courier = document.getElementById('trackCourier').value;
     const trackingNum = document.getElementById('trackId').value;
     const trackingUrl = document.getElementById('trackUrl') ? document.getElementById('trackUrl').value : '';
+    const shouldUpdateStatus = document.getElementById('trackUpdateStatus') && document.getElementById('trackUpdateStatus').value === '1';
     
     if (!courier) {
         Swal.fire({
             icon: 'warning',
             title: 'Courier Required',
-            text: 'Please select a Courier Service.',
+            text: 'Please select a Courier Service before saving tracking details.',
             confirmButtonColor: '#F25996'
         });
         return;
@@ -840,16 +845,42 @@ window.submitTrackingDetails = function(e) {
             tracking_url: trackingUrl 
         })
     }).then(r => r.json()).then(res => {
-        if(res.success) {
-            closeTrackingModal();
-            Swal.fire({
-                title: 'Tracking Details Saved!',
-                text: 'Courier tracking details have been saved successfully.',
-                icon: 'success',
-                confirmButtonColor: '#F25996'
-            }).then(() => {
-                location.reload();
-            });
+        if (res.success) {
+            if (shouldUpdateStatus) {
+                // Also advance status to Shipped now that tracking is saved
+                return fetch('<?= BASE_URL ?>/admin/orders/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: orderId, status: 'shipped' })
+                })
+                .then(r2 => r2.json())
+                .then(res2 => {
+                    closeTrackingModal();
+                    if (res2.success) {
+                        Swal.fire({
+                            title: '🚚 Shipped!',
+                            text: 'Tracking details saved and order status advanced to Shipped.',
+                            icon: 'success',
+                            confirmButtonColor: '#F25996'
+                        }).then(() => location.reload());
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Tracking Saved, Status Not Updated',
+                            text: res2.message || 'Tracking details were saved but the status could not be updated to Shipped.',
+                            confirmButtonColor: '#F25996'
+                        }).then(() => location.reload());
+                    }
+                });
+            } else {
+                closeTrackingModal();
+                Swal.fire({
+                    title: 'Tracking Details Saved!',
+                    text: 'Courier tracking details have been saved successfully.',
+                    icon: 'success',
+                    confirmButtonColor: '#F25996'
+                }).then(() => location.reload());
+            }
         } else {
             Swal.fire({
                 icon: 'error',
@@ -1009,6 +1040,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (newStatus === 'packed') {
             openPackingModal(orderId, currentActiveBtn);
+            return;
+        }
+
+        // Shipped → require tracking details first; status is updated after tracking is saved
+        if (newStatus === 'shipped') {
+            openTrackingModal(orderId, currentActiveBtn, '', '', '', true);
             return;
         }
 
