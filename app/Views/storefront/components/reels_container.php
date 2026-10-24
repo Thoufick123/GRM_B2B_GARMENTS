@@ -106,19 +106,19 @@ $uniqueId = 'reels_' . substr(md5(uniqid()), 0, 8);
                 </div>
 
                 <?php if (count($items) > 1): ?>
-                    <!-- Mobile Compact Header Arrows (Never blocks the reels!) -->
+                    <!-- Mobile Compact Header Arrows (Never locks or disables!) -->
                     <div class="flex sm:hidden items-center gap-1.5 shrink-0">
                         <button type="button" 
                                 id="reels-mob-prev-<?= $uniqueId ?>"
                                 onclick="scrollReelsTrack('<?= $uniqueId ?>', -1)" 
-                                class="w-8 h-8 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200 flex items-center justify-center active:scale-95 transition-all disabled:opacity-35 disabled:cursor-not-allowed disabled:pointer-events-none"
+                                class="w-8 h-8 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200 flex items-center justify-center active:scale-95 hover:bg-gray-50 transition-all cursor-pointer"
                                 aria-label="Previous Reel">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                         </button>
                         <button type="button" 
                                 id="reels-mob-next-<?= $uniqueId ?>"
                                 onclick="scrollReelsTrack('<?= $uniqueId ?>', 1)" 
-                                class="w-8 h-8 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200 flex items-center justify-center active:scale-95 transition-all disabled:opacity-35 disabled:cursor-not-allowed disabled:pointer-events-none"
+                                class="w-8 h-8 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200 flex items-center justify-center active:scale-95 hover:bg-gray-50 transition-all cursor-pointer"
                                 aria-label="Next Reel">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
                         </button>
@@ -142,7 +142,7 @@ $uniqueId = 'reels_' . substr(md5(uniqid()), 0, 8);
             <?php endif; ?>
 
             <!-- Horizontal Scrollable Snap Track with unrestricted touch scrolling -->
-            <div class="reels-track flex items-stretch overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 pt-1 <?= count($items) < $deskCols ? 'justify-start lg:justify-center' : 'justify-start' ?>" id="track-<?= $uniqueId ?>" style="touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;">
+            <div class="reels-track flex items-stretch overflow-x-auto scroll-smooth snap-x snap-proximity sm:snap-mandatory pb-4 pt-1 <?= count($items) < $deskCols ? 'justify-start lg:justify-center' : 'justify-start' ?>" id="track-<?= $uniqueId ?>" style="touch-action: manipulation; -webkit-overflow-scrolling: touch; overscroll-behavior: auto; scroll-behavior: smooth;">
                 <?php foreach ($items as $idx => $item): 
                     $reelTitle = !empty($item['title']) ? $item['title'] : 'Explore Style';
                     $ctaUrl = !empty($item['cta_url']) ? $item['cta_url'] : '#';
@@ -167,7 +167,7 @@ $uniqueId = 'reels_' . substr(md5(uniqid()), 0, 8);
                             $optMobImg = get_image_url($mobImg ?: $deskImg, 300, 500);
                         ?>
                         <?php if (!empty($videoUrl)): ?>
-                            <video class="reel-bg-video w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            <video class="reel-bg-video w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none"
                                    src="<?= htmlspecialchars($videoUrl) ?>"
                                    <?= $autoplay ? 'autoplay' : '' ?>
                                    <?= $isLoop ? 'loop' : '' ?>
@@ -252,7 +252,12 @@ window.reelsComponentsData['<?= $uniqueId ?>'] = {
 function getReelsCardStep(track) {
     const cards = track.querySelectorAll('.reel-card');
     if (cards.length > 1) {
-        return cards[1].offsetLeft - cards[0].offsetLeft;
+        const step = cards[1].offsetLeft - cards[0].offsetLeft;
+        if (step > 0) return step;
+        const rect0 = cards[0].getBoundingClientRect();
+        const rect1 = cards[1].getBoundingClientRect();
+        const diff = rect1.left - rect0.left;
+        if (diff > 0) return diff;
     }
     return cards.length === 1 ? cards[0].offsetWidth : (track.clientWidth * 0.85);
 }
@@ -261,39 +266,45 @@ function updateReelsLock(containerId) {
     const track = document.getElementById(`track-${containerId}`);
     const prevBtn = document.getElementById(`reels-prev-${containerId}`);
     const nextBtn = document.getElementById(`reels-next-${containerId}`);
-    const mobPrevBtn = document.getElementById(`reels-mob-prev-${containerId}`);
-    const mobNextBtn = document.getElementById(`reels-mob-next-${containerId}`);
     if (!track) return;
     
+    // Only manage desktop navigation arrows; mobile arrows never lock/disable
     const isAtStart = track.scrollLeft <= 5;
     const isAtEnd = (track.scrollLeft + track.clientWidth) >= (track.scrollWidth - 8);
     
-    [prevBtn, mobPrevBtn].forEach(btn => {
-        if (btn) {
-            btn.disabled = isAtStart;
-            btn.style.opacity = isAtStart ? '0.35' : '1';
-            btn.style.cursor = isAtStart ? 'not-allowed' : 'pointer';
-            btn.style.pointerEvents = isAtStart ? 'none' : 'auto';
-        }
-    });
-    [nextBtn, mobNextBtn].forEach(btn => {
-        if (btn) {
-            btn.disabled = isAtEnd;
-            btn.style.opacity = isAtEnd ? '0.35' : '1';
-            btn.style.cursor = isAtEnd ? 'not-allowed' : 'pointer';
-            btn.style.pointerEvents = isAtEnd ? 'none' : 'auto';
-        }
-    });
+    if (prevBtn) {
+        prevBtn.disabled = isAtStart;
+        prevBtn.style.opacity = isAtStart ? '0.35' : '1';
+        prevBtn.style.cursor = isAtStart ? 'not-allowed' : 'pointer';
+        prevBtn.style.pointerEvents = isAtStart ? 'none' : 'auto';
+    }
+    if (nextBtn) {
+        nextBtn.disabled = isAtEnd;
+        nextBtn.style.opacity = isAtEnd ? '0.35' : '1';
+        nextBtn.style.cursor = isAtEnd ? 'not-allowed' : 'pointer';
+        nextBtn.style.pointerEvents = isAtEnd ? 'none' : 'auto';
+    }
 }
 
 function scrollReelsTrack(containerId, direction) {
     const track = document.getElementById(`track-${containerId}`);
-    if (track) {
-        const step = getReelsCardStep(track);
+    if (!track) return;
+
+    const step = getReelsCardStep(track);
+    const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+    
+    // Smooth wrap-around navigation: never lock or freeze at boundaries
+    if (direction === 1 && (track.scrollLeft + track.clientWidth) >= (track.scrollWidth - 10)) {
+        track.scrollTo({ left: 0, behavior: 'smooth' });
+    } else if (direction === -1 && track.scrollLeft <= 8) {
+        track.scrollTo({ left: maxScroll, behavior: 'smooth' });
+    } else {
         track.scrollBy({ left: step * direction, behavior: 'smooth' });
-        setTimeout(() => updateReelsLock(containerId), 150);
-        setTimeout(() => updateReelsLock(containerId), 400);
     }
+    
+    setTimeout(() => updateReelsLock(containerId), 150);
+    setTimeout(() => updateReelsLock(containerId), 350);
+    setTimeout(() => updateReelsLock(containerId), 600);
 }
 
 function toggleReelCardSound(e, btn) {
