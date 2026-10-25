@@ -153,65 +153,89 @@ class Order extends Model
             throw $e;
         }
     }
-    public function getAllOrders($statusFilter = 'all')
-    {
-        if (is_bool($statusFilter)) {
-            $statusFilter = $statusFilter ? 'pending' : 'paid';
-        }
-
-        $whereClause = "";
-        $params = [];
-
-        if ($statusFilter === 'all') {
-            $whereClause = "(o.payment_status = 'paid' OR (o.status != 'pending' AND o.order_number NOT LIKE 'PENDING-%'))";
-        } elseif ($statusFilter === 'pending') {
-            $whereClause = "((o.payment_status != 'paid' AND o.status != 'cancelled') OR o.status = 'pending' OR o.order_number LIKE 'PENDING-%')";
-        } elseif ($statusFilter === 'paid') {
-            $whereClause = "o.payment_status = 'paid'";
-        } elseif ($statusFilter === 'placed') {
-            $whereClause = "o.status = 'placed' AND (o.payment_status = 'paid' OR o.order_number NOT LIKE 'PENDING-%')";
-        } elseif (in_array($statusFilter, ['packed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'])) {
-            $whereClause = "o.status = :status_filter";
-            $params['status_filter'] = $statusFilter;
-        } else {
-            $whereClause = "(o.payment_status = 'paid' OR (o.status != 'pending' AND o.order_number NOT LIKE 'PENDING-%'))";
-        }
-
-        // Exclude customize orders: customize orders are restricted to the Customize Orders page only
-        $whereClause .= " AND NOT EXISTS (
-            SELECT 1 FROM order_items oi_chk 
-            WHERE oi_chk.order_id = o.id 
-              AND (oi_chk.customization_id IS NOT NULL OR oi_chk.customization_data IS NOT NULL)
-        ) AND o.order_number NOT LIKE 'GBC%' AND o.order_number NOT LIKE 'GRM-CUST-%'";
-
-        $sql = "
-            SELECT o.*, 
-                   u.name as user_name, u.email as user_email, u.phone as user_phone,
-                   (SELECT COUNT(*) FROM order_modifications om WHERE om.order_id = o.id AND om.status IN ('accepted', 'applied') AND om.created_at >= o.created_at) as has_modification,
-                   (SELECT COUNT(*) FROM orders o_prev WHERE o_prev.user_id = o.user_id AND o_prev.payment_status = 'paid' AND o_prev.id < o.id) as repeat_count,
-                   (SELECT GROUP_CONCAT(DISTINCT vp.store_name SEPARATOR ', ') 
-                    FROM order_items oi 
-                    JOIN products p ON oi.product_id = p.id 
-                    JOIN vendor_profiles vp ON p.vendor_id = vp.user_id 
-                    WHERE oi.order_id = o.id) as vendor_names
-            FROM orders o
-            JOIN users u ON o.user_id = u.id
-            WHERE {$whereClause}
-            ORDER BY o.created_at DESC
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        $orders = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-        // Calculate repeat order badge
-        foreach ($orders as &$order) {
-            $order['repeat_count'] = (int)($order['repeat_count'] ?? 0);
-            $order['has_modification'] = (int)$order['has_modification'] > 0;
-        }
-
-        return $orders;
+    public function getAllOrders($statusFilter = 'all', int $limit = 0, int $offset = 0)
+{
+    if (is_bool($statusFilter)) {
+        $statusFilter = $statusFilter ? 'pending' : 'paid';
     }
+
+    $whereClause = "";
+    $params = [];
+
+    if ($statusFilter === 'all') {
+        $whereClause = "(o.payment_status = 'paid' OR (o.status != 'pending' AND o.order_number NOT LIKE 'PENDING-%'))";
+    } elseif ($statusFilter === 'pending') {
+        $whereClause = "((o.payment_status != 'paid' AND o.status != 'cancelled') OR o.status = 'pending' OR o.order_number LIKE 'PENDING-%')";
+    } elseif ($statusFilter === 'paid') {
+        $whereClause = "o.payment_status = 'paid'";
+    } elseif ($statusFilter === 'placed') {
+        $whereClause = "o.status = 'placed' AND (o.payment_status = 'paid' OR o.order_number NOT LIKE 'PENDING-%')";
+    } elseif (in_array($statusFilter, ['packed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'])) {
+        $whereClause = "o.status = :status_filter";
+        $params['status_filter'] = $statusFilter;
+    } else {
+        $whereClause = "(o.payment_status = 'paid' OR (o.status != 'pending' AND o.order_number NOT LIKE 'PENDING-%'))";
+    }
+
+    // Exclude customize orders: customize orders are restricted to the Customize Orders page only
+    $whereClause .= " AND NOT EXISTS (
+        SELECT 1 FROM order_items oi_chk 
+        WHERE oi_chk.order_id = o.id 
+          AND (oi_chk.customization_id IS NOT NULL OR oi_chk.customization_data IS NOT NULL)
+    ) AND o.order_number NOT LIKE 'GBC%' AND o.order_number NOT LIKE 'GRM-CUST-%'";
+
+    $limitClause = ($limit > 0) ? "LIMIT {$limit} OFFSET {$offset}" : '';
+
+    $sql = "
+        SELECT o.*, 
+               u.name as user_name, u.email as user_email, u.phone as user_phone,
+               (SELECT COUNT(*) FROM order_modifications om WHERE om.order_id = o.id AND om.status IN ('accepted', 'applied') AND om.created_at >= o.created_at) as has_modification,
+               (SELECT COUNT(*) FROM orders o_prev WHERE o_prev.user_id = o.user_id AND o_prev.payment_status = 'paid' AND o_prev.id < o.id) as repeat_count,
+               (SELECT GROUP_CONCAT(DISTINCT vp.store_name SEPARATOR ', ') 
+                FROM order_items oi 
+                JOIN products p ON oi.product_id = p.id 
+                JOIN vendor_profiles vp ON p.vendor_id = vp.user_id 
+                WHERE oi.order_id = o.id) as vendor_names
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        WHERE {$whereClause}
+        ORDER BY o.created_at DESC
+        {$limitClause}
+    ";
+    
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute($params);
+    $orders = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+    // Calculate repeat order badge
+    foreach ($orders as &$order) {
+        $order['repeat_count'] = (int)($order['repeat_count'] ?? 0);
+        $order['has_modification'] = (int)$order['has_modification'] > 0;
+    }
+
+    return $orders;
+}
+
+public function countAllOrders($statusFilter = 'all'): int
+{
+    if (is_bool($statusFilter)) { $statusFilter = $statusFilter ? 'pending' : 'paid'; }
+    $params = [];
+    if ($statusFilter === 'all') {
+        $w = "(o.payment_status = 'paid' OR (o.status != 'pending' AND o.order_number NOT LIKE 'PENDING-%'))";
+    } elseif ($statusFilter === 'pending') {
+        $w = "((o.payment_status != 'paid' AND o.status != 'cancelled') OR o.status = 'pending' OR o.order_number LIKE 'PENDING-%')";
+    } elseif ($statusFilter === 'placed') {
+        $w = "o.status = 'placed' AND (o.payment_status = 'paid' OR o.order_number NOT LIKE 'PENDING-%')";
+    } elseif (in_array($statusFilter, ['packed','shipped','out_for_delivery','delivered','cancelled'])) {
+        $w = "o.status = :status_filter"; $params['status_filter'] = $statusFilter;
+    } else {
+        $w = "(o.payment_status = 'paid' OR (o.status != 'pending' AND o.order_number NOT LIKE 'PENDING-%'))";
+    }
+    $w .= " AND NOT EXISTS (SELECT 1 FROM order_items oi_chk WHERE oi_chk.order_id = o.id AND (oi_chk.customization_id IS NOT NULL OR oi_chk.customization_data IS NOT NULL)) AND o.order_number NOT LIKE 'GBC%' AND o.order_number NOT LIKE 'GRM-CUST-%'";
+    $stmt = $this->db->prepare("SELECT COUNT(*) FROM orders o JOIN users u ON o.user_id = u.id WHERE {$w}");
+    $stmt->execute($params);
+    return (int)$stmt->fetchColumn();
+}
 
     /**
      * Check if an order is a custom/customized order
@@ -422,8 +446,8 @@ class Order extends Model
         return $counts;
     }
 
-    public function getVendorOrders(int $vendorId, $statusFilter = 'all')
-    {
+    public function getVendorOrders(int $vendorId, $statusFilter = 'all', int $limit = 0, int $offset = 0)
+{
         if (is_bool($statusFilter)) {
             $statusFilter = $statusFilter ? 'pending' : 'paid';
         }

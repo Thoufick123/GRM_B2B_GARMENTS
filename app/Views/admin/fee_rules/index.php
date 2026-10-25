@@ -179,23 +179,68 @@
 </div>
 
 <script>
+// Build fee rules data from PHP for proper export (avoids reading rendered HTML text)
+const feeRulesData = <?php
+    $exportRules = [];
+    foreach ($rules as $r) {
+        $slabs  = json_decode($r['weight_slabs'] ?? '[]', true) ?: [];
+        $states = json_decode($r['application_states'] ?? '[]', true) ?: [];
+        $exportRules[] = [
+            'fee_name'       => $r['fee_name'],
+            'category_name'  => $r['category_name'],
+            'fee_type'       => $r['fee_type'],
+            'flat_fee_value' => $r['flat_fee_value'],
+            'payment_method' => $r['payment_method'],
+            'states'         => implode(', ', $states),
+            'active'         => $r['active'] ? 'Active' : 'Inactive',
+            'slabs'          => $slabs,
+        ];
+    }
+    echo json_encode($exportRules);
+?>;
+
 function exportFeeRulesCSV() {
-    let table = document.querySelector("table");
-    if(!table) return;
-    
-    let rows = Array.from(table.querySelectorAll("tr"));
-    let csvContent = "data:text/csv;charset=utf-8,";
-    
-    rows.forEach(row => {
-        let cols = Array.from(row.querySelectorAll("th, td"));
-        let rowData = cols.map(col => '"' + col.innerText.replace(/"/g, '""').trim() + '"');
-        csvContent += rowData.join(",") + "\r\n";
+    const rows = [['Fee Name','Category','Type','Flat Value','Slab Min (kg)','Slab Max (kg)','Slab Charge (₹)','Slab Status','Payment','States','Status']];
+
+    feeRulesData.forEach(rule => {
+        if (rule.slabs && rule.slabs.length > 0) {
+            rule.slabs.forEach(slab => {
+                rows.push([
+                    rule.fee_name,
+                    rule.category_name,
+                    'Weight Slab',
+                    '',
+                    slab.minWeight ?? '',
+                    slab.maxWeight ?? '',
+                    slab.charge ?? '',
+                    slab.status ? 'Active' : 'Inactive',
+                    rule.payment_method,
+                    rule.states,
+                    rule.active
+                ]);
+            });
+        } else {
+            rows.push([
+                rule.fee_name,
+                rule.category_name,
+                rule.fee_type,
+                rule.flat_fee_value,
+                '', '', '', '',
+                rule.payment_method,
+                rule.states,
+                rule.active
+            ]);
+        }
     });
-    
-    let encodedUri = encodeURI(csvContent);
-    let link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "fee_rules_export_<?= date('Y-m-d') ?>.csv");
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    rows.forEach(row => {
+        csvContent += row.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',') + "\r\n";
+    });
+
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', 'fee_rules_export_<?= date('Y-m-d') ?>.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

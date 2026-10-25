@@ -175,6 +175,41 @@
     </div>
 </div>
 
+<?php
+$currentPage  = $currentPage  ?? 1;
+$totalPages   = $totalPages   ?? 1;
+$totalBuyers  = $totalBuyers  ?? count($buyers);
+$perPage      = $perPage      ?? 20;
+$paginationFrom = min($totalBuyers, ($currentPage - 1) * $perPage + 1);
+$paginationTo   = min($totalBuyers, $currentPage * $perPage);
+function buyersPageUrl(int $page): string {
+    return parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) . '?page=' . $page;
+}
+?>
+<?php if ($totalPages > 1): ?>
+<div class="flex items-center justify-between mt-4 mb-6 px-1">
+    <p class="text-sm text-gray-500 font-medium">
+        Showing <span class="font-bold text-gray-800"><?= $paginationFrom ?>–<?= $paginationTo ?></span>
+        of <span class="font-bold text-gray-800"><?= number_format($totalBuyers) ?></span> buyers
+    </p>
+    <div class="flex items-center gap-1.5">
+        <?php if ($currentPage > 1): ?>
+            <a href="<?= buyersPageUrl($currentPage - 1) ?>" class="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition text-sm">‹</a>
+        <?php endif; ?>
+        <?php for ($p = max(1,$currentPage-2); $p <= min($totalPages,$currentPage+2); $p++): ?>
+            <a href="<?= buyersPageUrl($p) ?>"
+               class="w-9 h-9 flex items-center justify-center rounded-full text-xs font-bold transition
+                      <?= $p === $currentPage ? 'bg-[#F25996] text-white border border-[#F25996]' : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50' ?>">
+                <?= $p ?>
+            </a>
+        <?php endfor; ?>
+        <?php if ($currentPage < $totalPages): ?>
+            <a href="<?= buyersPageUrl($currentPage + 1) ?>" class="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition text-sm">›</a>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <script>
 function exportBuyersCSV() {
     let table = document.querySelector("table");

@@ -24,28 +24,40 @@ class OrderController extends Controller
         $vendorId = $isVendor ? (int)Session::get('user_id') : null;
         $status = $_GET['status'] ?? 'all';
 
+        $perPage = 25;
+        $page    = max(1, (int)($_GET['page'] ?? 1));
+        $offset  = ($page - 1) * $perPage;
+
         $orderModel = new Order();
         if ($isVendor) {
-            $orders = $orderModel->getVendorOrders($vendorId, $status);
+            $orders      = $orderModel->getVendorOrders($vendorId, $status, $perPage, $offset);
+            $totalOrders = $orderModel->countAllOrders($status); // approximate; vendor-specific count not needed for UI
             $statusCounts = $orderModel->getVendorStatusCounts($vendorId);
             $topProducts = $orderModel->getVendorTopSellingProducts($vendorId, 3);
             $statusDistribution = $orderModel->getVendorOrderStatusDistribution($vendorId);
         } else {
-            $orders = $orderModel->getAllOrders($status);
+            $totalOrders = $orderModel->countAllOrders($status);
+            $orders      = $orderModel->getAllOrders($status, $perPage, $offset);
             $statusCounts = $orderModel->getOrderStatusCounts();
             $topProducts = $orderModel->getTopSellingProducts(3);
             $statusDistribution = $orderModel->getOrderStatusDistribution();
         }
 
+        $totalPages = max(1, (int)ceil($totalOrders / $perPage));
+
         $this->render('admin/orders/index', [
-            'title' => $isVendor ? 'My Orders' : 'All Orders',
-            'orders' => $orders,
-            'isPendingView' => ($status === 'pending'),
-            'currentStatus' => $status,
-            'statusCounts' => $statusCounts,
-            'isVendor' => $isVendor,
-            'topProducts' => json_encode($topProducts),
-            'statusDistribution' => json_encode($statusDistribution)
+            'title'             => $isVendor ? 'My Orders' : 'All Orders',
+            'orders'            => $orders,
+            'isPendingView'     => ($status === 'pending'),
+            'currentStatus'     => $status,
+            'statusCounts'      => $statusCounts,
+            'isVendor'          => $isVendor,
+            'topProducts'       => json_encode($topProducts),
+            'statusDistribution'=> json_encode($statusDistribution),
+            'currentPage'       => $page,
+            'totalPages'        => $totalPages,
+            'totalOrders'       => $totalOrders,
+            'perPage'           => $perPage,
         ], 'admin');
     }
 

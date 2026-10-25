@@ -54,8 +54,9 @@ class User extends Model
         return $stmt->execute(['status' => $status, 'id' => $userId]);
     }
 
-    public function getPendingBuyers()
+    public function getPendingBuyers(int $limit = 0, int $offset = 0)
     {
+        $limitClause = $limit > 0 ? "LIMIT {$limit} OFFSET {$offset}" : '';
         $sql = "
             SELECT u.id, u.unique_buyer_id, u.name, u.email, u.phone, u.created_at, 
                    bp.business_name, bp.shop_location, bp.gst_number, bp.pan_number, bp.no_gst_reason,
@@ -65,14 +66,20 @@ class User extends Model
             JOIN registration_requests rr ON u.id = rr.user_id
             WHERE u.status = 'pending' AND u.role = 'buyer'
             ORDER BY u.created_at DESC
+            {$limitClause}
         ";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll();
     }
 
-    public function getRejectedBuyers()
+    public function countPendingBuyers(): int {
+        return (int)$this->db->query("SELECT COUNT(*) FROM users u JOIN business_profiles bp ON u.id = bp.user_id JOIN registration_requests rr ON u.id = rr.user_id WHERE u.status = 'pending' AND u.role = 'buyer'")->fetchColumn();
+    }
+
+    public function getRejectedBuyers(int $limit = 0, int $offset = 0)
     {
+        $limitClause = $limit > 0 ? "LIMIT {$limit} OFFSET {$offset}" : '';
         $sql = "
             SELECT u.id, u.unique_buyer_id, u.name, u.email, u.phone, u.created_at, 
                    bp.business_name, bp.shop_location, bp.gst_number, bp.pan_number, bp.no_gst_reason,
@@ -82,14 +89,20 @@ class User extends Model
             LEFT JOIN registration_requests rr ON u.id = rr.user_id
             WHERE u.status = 'rejected' AND u.role = 'buyer'
             ORDER BY u.created_at DESC
+            {$limitClause}
         ";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll();
     }
 
-    public function getActiveBuyers()
+    public function countRejectedBuyers(): int {
+        return (int)$this->db->query("SELECT COUNT(*) FROM users u JOIN business_profiles bp ON u.id = bp.user_id WHERE u.status = 'rejected' AND u.role = 'buyer'")->fetchColumn();
+    }
+
+    public function getActiveBuyers(int $limit = 0, int $offset = 0)
     {
+        $limitClause = $limit > 0 ? "LIMIT {$limit} OFFSET {$offset}" : '';
         $sql = "
             SELECT u.id, u.unique_buyer_id, u.name, u.email, u.phone, u.created_at, u.status,
                    bp.business_name, bp.shop_location, bp.gst_number, bp.pan_number,
@@ -99,10 +112,15 @@ class User extends Model
             LEFT JOIN business_profiles bp ON u.id = bp.user_id
             WHERE u.status IN ('active', 'approved', 'blocked') AND u.role = 'buyer'
             ORDER BY u.created_at DESC
+            {$limitClause}
         ";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll();
+    }
+
+    public function countActiveBuyers(): int {
+        return (int)$this->db->query("SELECT COUNT(*) FROM users WHERE status IN ('active','approved','blocked') AND role = 'buyer'")->fetchColumn();
     }
 
     public function getBuyerStats()

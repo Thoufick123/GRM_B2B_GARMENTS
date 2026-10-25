@@ -27,20 +27,28 @@ class CatalogController extends Controller
         $cachedProducts = ($catCacheKey && class_exists('\Core\Cache')) ? \Core\Cache::get($catCacheKey) : null;
 
         if ($cachedProducts !== null) {
-            $products = $cachedProducts;
+            $allProducts = $cachedProducts;
         } else {
-            $products = $productModel->getAllActive($searchQuery, $categoryId, $subCategoryId, $attributeFilters, $sort);
+            $allProducts = $productModel->getAllActive($searchQuery, $categoryId, $subCategoryId, $attributeFilters, $sort);
             
             // Attach variants to each product (batch loaded in a single query to eliminate N+1 latency)
-            $pIds = array_column($products, 'id');
+            $pIds = array_column($allProducts, 'id');
             $variantsMap = $productModel->getInventoryVariantsForProducts($pIds);
-            foreach ($products as &$product) {
+            foreach ($allProducts as &$product) {
                 $product['variants'] = $variantsMap[$product['id']] ?? [];
             }
             if ($catCacheKey && class_exists('\Core\Cache')) {
-                \Core\Cache::set($catCacheKey, $products, 600);
+                \Core\Cache::set($catCacheKey, $allProducts, 600);
             }
         }
+
+        // Server-side pagination
+        $perPage     = 24;
+        $page        = max(1, (int)($_GET['page'] ?? 1));
+        $totalProducts = count($allProducts);
+        $totalPages  = max(1, (int)ceil($totalProducts / $perPage));
+        $page        = min($page, $totalPages);
+        $products    = array_slice($allProducts, ($page - 1) * $perPage, $perPage);
         
         $categoryModel = new Category();
         $categories = $categoryModel->getAllActive(null, 0);
@@ -108,7 +116,11 @@ class CatalogController extends Controller
             'currentSort' => $sort,
             'wishlist_color' => $cmsSettings['wishlist_color'] ?? '#111827',
             'subtitle_color' => $cmsSettings['subtitle_color'] ?? '#6b7280',
-            'text_color' => $cmsSettings['text_color'] ?? '#4b5563'
+            'text_color' => $cmsSettings['text_color'] ?? '#4b5563',
+            'currentPage'   => $page,
+            'totalPages'    => $totalPages,
+            'totalProducts' => $totalProducts,
+            'perPage'       => $perPage,
         ]);
     }
 

@@ -110,7 +110,46 @@
         <?php endif; ?>
     </div>
 
-    <!-- Rejected Tab -->
+<?php
+$currentPage   = $currentPage  ?? 1;
+$totalPages    = $totalPages   ?? 1;
+$totalPending  = $totalPending ?? count($buyers);
+$perPage       = $perPage      ?? 20;
+$paginationFrom = min($totalPending, ($currentPage - 1) * $perPage + 1);
+$paginationTo   = min($totalPending, $currentPage * $perPage);
+function pendingPageUrl(int $page): string {
+    $base = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $qs   = $_GET;
+    $qs['page'] = $page;
+    unset($qs['tab']);
+    return $base . '?' . http_build_query($qs);
+}
+?>
+<?php if ($totalPages > 1): ?>
+<div class="flex items-center justify-between mt-4 mb-4 px-1">
+    <p class="text-sm text-gray-500 font-medium">
+        Pending: <span class="font-bold text-gray-800"><?= $paginationFrom ?>–<?= $paginationTo ?></span>
+        of <span class="font-bold text-gray-800"><?= number_format($totalPending) ?></span>
+    </p>
+    <div class="flex items-center gap-1.5">
+        <?php if ($currentPage > 1): ?>
+            <a href="<?= pendingPageUrl($currentPage - 1) ?>" class="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition text-sm">‹</a>
+        <?php endif; ?>
+        <?php for ($p = max(1,$currentPage-2); $p <= min($totalPages,$currentPage+2); $p++): ?>
+            <a href="<?= pendingPageUrl($p) ?>"
+               class="w-9 h-9 flex items-center justify-center rounded-full text-xs font-bold transition
+                      <?= $p === $currentPage ? 'bg-[#F25996] text-white border border-[#F25996]' : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50' ?>">
+                <?= $p ?>
+            </a>
+        <?php endfor; ?>
+        <?php if ($currentPage < $totalPages): ?>
+            <a href="<?= pendingPageUrl($currentPage + 1) ?>" class="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition text-sm">›</a>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Rejected Tab -->
     <div id="tab-rejected" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hidden">
         <?php if (empty($rejectedBuyers)): ?>
             <div class="p-12 text-center text-gray-500">

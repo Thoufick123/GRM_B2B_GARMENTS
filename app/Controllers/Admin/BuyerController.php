@@ -21,13 +21,24 @@ class BuyerController extends Controller
     {
         $this->requirePermission('all_buyers', 'view');
         $userModel = new User();
-        $buyers = $userModel->getActiveBuyers();
-        $stats = $userModel->getBuyerStats();
+
+        $perPage = 20;
+        $page    = max(1, (int)($_GET['page'] ?? 1));
+        $offset  = ($page - 1) * $perPage;
+
+        $total  = $userModel->countActiveBuyers();
+        $buyers = $userModel->getActiveBuyers($perPage, $offset);
+        $stats  = $userModel->getBuyerStats();
+        $totalPages = max(1, (int)ceil($total / $perPage));
 
         $this->render('admin/buyers_list', [
-            'title' => 'Approved Buyers',
-            'buyers' => $buyers,
-            'stats' => $stats
+            'title'       => 'Approved Buyers',
+            'buyers'      => $buyers,
+            'stats'       => $stats,
+            'currentPage' => $page,
+            'totalPages'  => $totalPages,
+            'totalBuyers' => $total,
+            'perPage'     => $perPage,
         ], 'admin');
     }
 
@@ -35,13 +46,26 @@ class BuyerController extends Controller
     {
         $this->requirePermission('pending_buyers', 'view');
         $userModel = new User();
-        $buyers = $userModel->getPendingBuyers();
+
+        $perPage = 20;
+        $page    = max(1, (int)($_GET['page'] ?? 1));
+        $offset  = ($page - 1) * $perPage;
+
+        $totalPending  = $userModel->countPendingBuyers();
+        $buyers        = $userModel->getPendingBuyers($perPage, $offset);
+        $totalRejected = $userModel->countRejectedBuyers();
         $rejectedBuyers = $userModel->getRejectedBuyers();
+        $totalPages    = max(1, (int)ceil($totalPending / $perPage));
 
         $this->render('admin/buyers_pending', [
-            'title' => 'Pending Buyer Registrations',
-            'buyers' => $buyers,
-            'rejectedBuyers' => $rejectedBuyers
+            'title'          => 'Pending Buyer Registrations',
+            'buyers'         => $buyers,
+            'rejectedBuyers' => $rejectedBuyers,
+            'currentPage'    => $page,
+            'totalPages'     => $totalPages,
+            'totalPending'   => $totalPending,
+            'totalRejected'  => $totalRejected,
+            'perPage'        => $perPage,
         ], 'admin');
     }
 

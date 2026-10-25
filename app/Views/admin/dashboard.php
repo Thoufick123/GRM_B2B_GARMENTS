@@ -86,15 +86,6 @@
             }
             ?>
 
-            <!-- Refresh Button -->
-            <button onclick="
-                const url = new URL(window.location);
-                url.searchParams.set('refresh', '1');
-                window.location.href = url.toString();
-            " class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-full flex items-center gap-2 shadow-xs transition active:scale-95 group">
-                <svg class="w-3.5 h-3.5 text-slate-500 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                <span>REFRESH</span>
-            </button>
 
             <!-- Date Range & Export Pill Capsule -->
             <div class="bg-white border border-slate-200 rounded-full flex items-center p-1.5 pl-3.5 shadow-xs gap-2">

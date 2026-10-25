@@ -18,7 +18,7 @@
             <h2 class="text-5xl font-display font-extrabold text-gray-900 tracking-tight">Orders Management</h2>
             
             <div class="flex items-center space-x-3 ml-auto">
-                <button onclick="location.reload()" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-full flex items-center gap-2 shadow-xs transition active:scale-95 group">
+                <button onclick="const u=new URL(window.location);u.searchParams.set('refresh','1');window.location.href=u.toString();" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-full flex items-center gap-2 shadow-xs transition active:scale-95 group">
                     <svg class="w-3.5 h-3.5 text-slate-500 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                     <span>REFRESH</span>
                 </button>
@@ -372,7 +372,66 @@
     </div>
 </div>
 
-<!-- Packing Videos Modal -->
+<?php
+// ── Pagination Widget ────────────────────────────────────────────────────
+$currentPage  = $currentPage ?? 1;
+$totalPages   = $totalPages  ?? 1;
+$totalOrders  = $totalOrders ?? count($orders);
+$perPage      = $perPage     ?? 25;
+$curStatus    = $currentStatus ?? ($_GET['status'] ?? 'all');
+
+$paginationFrom = min($totalOrders, ($currentPage - 1) * $perPage + 1);
+$paginationTo   = min($totalOrders, $currentPage * $perPage);
+
+function ordersPageUrl(int $page, string $status): string {
+    $u = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $q = ['status' => $status, 'page' => $page];
+    return $u . '?' . http_build_query($q);
+}
+?>
+<?php if ($totalPages > 1): ?>
+<div class="flex items-center justify-between mt-4 mb-8 px-1">
+    <p class="text-sm text-gray-500 font-medium">
+        Showing <span class="font-bold text-gray-800"><?= $paginationFrom ?>–<?= $paginationTo ?></span>
+        of <span class="font-bold text-gray-800"><?= number_format($totalOrders) ?></span> orders
+    </p>
+    <div class="flex items-center gap-1.5">
+        <?php if ($currentPage > 1): ?>
+            <a href="<?= ordersPageUrl($currentPage - 1, $curStatus) ?>"
+               class="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition shadow-xs text-sm">
+                ‹
+            </a>
+        <?php endif; ?>
+        <?php
+            $start = max(1, $currentPage - 2);
+            $end   = min($totalPages, $currentPage + 2);
+            if ($start > 1): ?>
+                <a href="<?= ordersPageUrl(1, $curStatus) ?>" class="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition shadow-xs text-xs font-bold">1</a>
+                <?php if ($start > 2): ?><span class="text-gray-400 text-sm px-1">…</span><?php endif; ?>
+        <?php endif; ?>
+        <?php for ($p = $start; $p <= $end; $p++): ?>
+            <a href="<?= ordersPageUrl($p, $curStatus) ?>"
+               class="w-9 h-9 flex items-center justify-center rounded-full text-xs font-bold transition shadow-xs
+                      <?= $p === $currentPage
+                          ? 'bg-[#F25996] text-white border border-[#F25996]'
+                          : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50' ?>">
+                <?= $p ?>
+            </a>
+        <?php endfor; ?>
+        <?php if ($end < $totalPages): ?>
+            <?php if ($end < $totalPages - 1): ?><span class="text-gray-400 text-sm px-1">…</span><?php endif; ?>
+            <a href="<?= ordersPageUrl($totalPages, $curStatus) ?>" class="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition shadow-xs text-xs font-bold"><?= $totalPages ?></a>
+        <?php endif; ?>
+        <?php if ($currentPage < $totalPages): ?>
+            <a href="<?= ordersPageUrl($currentPage + 1, $curStatus) ?>"
+               class="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition shadow-xs text-sm">
+                ›
+            </a>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <div id="packingModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
     <!-- Backdrop -->
     <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity backdrop-blur-sm" onclick="closePackingModal()"></div>

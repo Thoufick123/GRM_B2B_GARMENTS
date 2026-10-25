@@ -282,7 +282,12 @@
                 
                 <!-- Results Count -->
                 <div class="text-gray-600 text-xs sm:text-sm font-medium whitespace-nowrap hidden sm:block">
-                    Showing <span class="font-bold text-gray-900"><?= count($products) ?></span> results
+                    <?php
+                    $pgFrom = min($totalProducts ?? count($products), (($currentPage ?? 1) - 1) * ($perPage ?? 24) + 1);
+                    $pgTo   = min($totalProducts ?? count($products), ($currentPage ?? 1) * ($perPage ?? 24));
+                    ?>
+                    Showing <span class="font-bold text-gray-900"><?= $pgFrom ?>–<?= $pgTo ?></span>
+                    of <span class="font-bold text-gray-900"><?= $totalProducts ?? count($products) ?></span> products
                 </div>
                 
                 <!-- Search Box, Sort Dropdown & View Toggles -->
@@ -454,6 +459,62 @@
         </div>
     </div>
 </div>
+
+<?php
+// ── Storefront Catalog Pagination ────────────────────────────────────────
+$currentPage   = $currentPage   ?? 1;
+$totalPages    = $totalPages    ?? 1;
+$totalProducts = $totalProducts ?? count($products ?? []);
+$perPage       = $perPage       ?? 24;
+
+function catalogPageUrl(int $page): string {
+    $base  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $qs    = $_GET;
+    $qs['page'] = $page;
+    return $base . '?' . http_build_query($qs);
+}
+?>
+<?php if ($totalPages > 1): ?>
+<div class="w-full max-w-full mx-auto px-3 sm:px-6 lg:px-8 pb-10">
+    <div class="flex items-center justify-center gap-2 flex-wrap pt-2">
+        <?php if ($currentPage > 1): ?>
+            <a href="<?= catalogPageUrl($currentPage - 1) ?>"
+               class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-600 text-sm font-semibold hover:bg-gray-50 hover:border-gray-300 transition shadow-xs">
+                ← Prev
+            </a>
+        <?php endif; ?>
+        <?php
+            $cStart = max(1, $currentPage - 2);
+            $cEnd   = min($totalPages, $currentPage + 2);
+            if ($cStart > 1): ?>
+                <a href="<?= catalogPageUrl(1) ?>" class="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition text-sm font-bold shadow-xs">1</a>
+                <?php if ($cStart > 2): ?><span class="text-gray-400 text-sm">…</span><?php endif; ?>
+        <?php endif; ?>
+        <?php for ($pg = $cStart; $pg <= $cEnd; $pg++): ?>
+            <a href="<?= catalogPageUrl($pg) ?>"
+               class="w-10 h-10 flex items-center justify-center rounded-full text-sm font-bold transition shadow-xs
+                      <?= $pg === $currentPage
+                          ? 'bg-[#F25996] text-white border border-[#F25996]'
+                          : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50' ?>">
+                <?= $pg ?>
+            </a>
+        <?php endfor; ?>
+        <?php if ($cEnd < $totalPages): ?>
+            <?php if ($cEnd < $totalPages - 1): ?><span class="text-gray-400 text-sm">…</span><?php endif; ?>
+            <a href="<?= catalogPageUrl($totalPages) ?>" class="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition text-sm font-bold shadow-xs"><?= $totalPages ?></a>
+        <?php endif; ?>
+        <?php if ($currentPage < $totalPages): ?>
+            <a href="<?= catalogPageUrl($currentPage + 1) ?>"
+               class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-600 text-sm font-semibold hover:bg-gray-50 hover:border-gray-300 transition shadow-xs">
+                Next →
+            </a>
+        <?php endif; ?>
+    </div>
+    <p class="text-center text-xs text-gray-400 mt-3 font-medium">
+        Page <?= $currentPage ?> of <?= $totalPages ?> &nbsp;·&nbsp; <?= number_format($totalProducts) ?> total products
+    </p>
+</div>
+<?php endif; ?>
 
 <style>
 /* ===== Hide List-specific elements in Grid View ===== */
