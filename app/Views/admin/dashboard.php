@@ -139,7 +139,7 @@
     </div>
 
     <!-- 5 Key Metric Cards with Sparklines -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5 mb-6">
         
         <!-- Total Revenue Card -->
         <div class="saas-card p-5 relative overflow-hidden flex flex-col justify-between">
@@ -252,26 +252,45 @@
             </div>
         </div>
 
-        <!-- Total Products Card -->
+        <!-- Regular Products Card -->
         <div class="saas-card p-5 relative overflow-hidden flex flex-col justify-between">
             <div>
                 <div class="flex items-center space-x-3 mb-2">
                     <div class="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                     </div>
-                    <span class="text-xs font-medium text-slate-500">Total Products</span>
+                    <span class="text-xs font-medium text-slate-500">Regular Products</span>
                 </div>
                 <div class="text-2xl font-extrabold text-slate-900 mt-2">
-                    <?= number_format($totalProducts) ?>
+                    <?= number_format($regularProducts) ?>
                 </div>
                 <div class="mt-1 flex items-center text-[11px] font-semibold text-rose-600">
-                    <span class="mr-1">↓ 2.1%</span> <span class="text-slate-400 font-normal">vs last 30 days</span>
+                    <span class="text-slate-400 font-normal">Standard catalog products</span>
                 </div>
             </div>
             <!-- Orange Sparkline -->
             <div class="w-full h-9 mt-3">
                 <canvas id="sparklineProducts"></canvas>
             </div>
+        </div>
+
+        <!-- Customized Products Card -->
+        <div class="saas-card p-5 relative overflow-hidden flex flex-col justify-between">
+            <div>
+                <div class="flex items-center space-x-3 mb-2">
+                    <div class="w-9 h-9 rounded-xl bg-pink-50 text-[#F25996] border border-pink-100 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-5.5M11 5.5l6 6M14 3l7 7"/></svg>
+                    </div>
+                    <span class="text-xs font-medium text-slate-500">Customized Products</span>
+                </div>
+                <div class="text-2xl font-extrabold text-slate-900 mt-2">
+                    <?= number_format($customizedProducts) ?>
+                </div>
+                <div class="mt-1 flex items-center text-[11px] font-semibold">
+                    <span class="text-slate-400 font-normal">Customizable catalog products</span>
+                </div>
+            </div>
+            <div class="w-full h-9 mt-3"></div>
         </div>
 
     </div>
@@ -658,7 +677,9 @@ function exportDashboardPDF() {
         ['Refunded Amount', 'Rs. <?= number_format($totalRefunds ?? 0, 2, '.', '') ?>'],
         ['Total Orders', '<?= $totalOrders ?> (<?= number_format($pendingOrders ?? 0) ?> pending)'],
         ['Total Customers', '<?= $totalBuyers ?>'],
-        ['Total Products', '<?= $totalProducts ?>']
+        ['Total Products', '<?= $totalProducts ?>'],
+        ['Regular Products', '<?= $regularProducts ?>'],
+        ['Customized Products', '<?= $customizedProducts ?>']
     ];
     
     doc.autoTable({
@@ -746,6 +767,8 @@ function exportDashboardCSV() {
     csv.push(["Pending Orders", "<?= $pendingOrders ?? 0 ?>"]);
     csv.push(["Total Customers", "<?= $totalBuyers ?>"]);
     csv.push(["Total Products", "<?= $totalProducts ?>"]);
+    csv.push(["Regular Products", "<?= $regularProducts ?>"]);
+    csv.push(["Customized Products", "<?= $customizedProducts ?>"]);
     csv.push([]);
     csv.push(["TOP SELLING PRODUCTS", "SOLD QTY", "REVENUE (Rs.)"]);
     <?php foreach($topSellingProducts as $p): ?>

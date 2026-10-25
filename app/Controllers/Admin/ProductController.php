@@ -1098,8 +1098,6 @@ class ProductController extends Controller
                 }
 
                 $productModel->delete($id);
-                \Core\Cache::delete('catalog_active');
-                \Core\Cache::delete('home_active_products');
                 \Core\Cache::delete('customizable_fabrics_default_v2');
                 \Core\Cache::delete('fabric_customization_fid_' . (int)$id);
                 
@@ -1350,4 +1348,3 @@ class ProductController extends Controller
         }
     }
 }
-

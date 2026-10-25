@@ -636,6 +636,11 @@ class Product extends Model
 
             if (class_exists('\Core\Cache')) {
                 \Core\Cache::delete('catalog_active');
+                \Core\Cache::delete('catalog_default_products');
+                \Core\Cache::delete('home_active_products');
+                \Core\Cache::deleteByPrefix('product_details_bundle_');
+                \Core\Cache::deleteByPrefix('rel_prods_diff_');
+                \Core\Cache::deleteByPrefix('admin_dashboard_stats_');
             }
             return $result;
         } catch (\Exception $e) {
@@ -1084,6 +1089,5 @@ class Product extends Model
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 }
-
 
 

@@ -113,7 +113,7 @@ class DashboardController extends Controller
             $userDateFilter = " AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
         }
         
-        $cacheKey = 'admin_dashboard_stats_' . $range;
+        $cacheKey = 'admin_dashboard_stats_v2_' . $range;
         
         if (isset($_GET['refresh'])) {
             \Core\Cache::delete($cacheKey);
@@ -131,6 +131,8 @@ class DashboardController extends Controller
             $totalBuyers = $cachedStats['totalBuyers'] ?? 0;
             $pendingRequests = $cachedStats['pendingRequests'] ?? 0;
             $totalProducts = $cachedStats['totalProducts'] ?? 0;
+            $regularProducts = $cachedStats['regularProducts'] ?? $totalProducts;
+            $customizedProducts = $cachedStats['customizedProducts'] ?? 0;
             $totalOrders = $cachedStats['totalOrders'] ?? 0;
             $pendingOrders = $cachedStats['pendingOrders'] ?? 0;
             $adminCancelledOrders = $cachedStats['adminCancelledOrders'] ?? 0;
@@ -270,10 +272,21 @@ class DashboardController extends Controller
             
             // Fetch Total Products (Not filtered by date)
             $totalProducts = 0;
+            $regularProducts = 0;
+            $customizedProducts = 0;
             try {
-                // Exclude archived products to get an accurate count of total products
-                $stmt = $db->query("SELECT count(id) as count FROM products WHERE status != 'archived'");
-                $totalProducts = $stmt->fetch()['count'] ?? 0;
+                $stmt = $db->query("
+                    SELECT
+                        COUNT(*) AS total,
+                        SUM(CASE WHEN is_customizable = 1 THEN 1 ELSE 0 END) AS customized,
+                        SUM(CASE WHEN is_customizable = 1 THEN 0 ELSE 1 END) AS regular
+                    FROM products
+                    WHERE status != 'archived'
+                ");
+                $productCounts = $stmt->fetch(\PDO::FETCH_ASSOC);
+                $totalProducts = (int)($productCounts['total'] ?? 0);
+                $regularProducts = (int)($productCounts['regular'] ?? 0);
+                $customizedProducts = (int)($productCounts['customized'] ?? 0);
             } catch (\Exception $e) {}
             
             // Fetch Total Orders
@@ -477,6 +490,8 @@ class DashboardController extends Controller
                 'totalBuyers' => $totalBuyers,
                 'pendingRequests' => $pendingRequests,
                 'totalProducts' => $totalProducts,
+                'regularProducts' => $regularProducts,
+                'customizedProducts' => $customizedProducts,
                 'totalOrders' => $totalOrders,
                 'pendingOrders' => $pendingOrders,
                 'adminCancelledOrders' => $adminCancelledOrders ?? 0,
@@ -512,6 +527,8 @@ class DashboardController extends Controller
             'totalBuyers' => $totalBuyers,
             'pendingRequests' => $pendingRequests,
             'totalProducts' => $totalProducts,
+            'regularProducts' => $regularProducts,
+            'customizedProducts' => $customizedProducts,
             'totalOrders' => $totalOrders,
             'pendingOrders' => $pendingOrders,
             'adminCancelledOrders' => $adminCancelledOrders ?? 0,
