@@ -95,9 +95,10 @@ class RefundController extends Controller
         fputcsv($output, [
             'Request ID', 'Order Number', 'Buyer Name', 'Email', 'Refund Amount',
             'Refund Method', 'Refund Details', 'Refund Reference', 'Status',
-            'Approved / Updated At'
+            'Requested At', 'Approved At', 'Refund Processed At'
         ]);
         foreach ($requests as $request) {
+            $approvedAt = $request['approved_at'] ?? $request['processed_at'] ?? $request['updated_at'] ?? '';
             fputcsv($output, [
                 $request['id'],
                 $request['order_number'],
@@ -108,7 +109,9 @@ class RefundController extends Controller
                 $request['refund_details'] ?? '',
                 $request['razorpay_refund_id'] ?? $request['cashfree_refund_id'] ?? '',
                 $request['status'],
-                $request['updated_at'],
+                $request['created_at'],
+                $approvedAt,
+                strtolower(trim($request['status'])) === 'completed' ? ($request['processed_at'] ?? '') : '',
             ]);
         }
 

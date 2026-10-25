@@ -50,14 +50,16 @@ $socialSvgMap = [
 </style>
 
 <div class="max-w-[95rem] mx-auto pb-12 px-4 sm:px-6">
-    <form id="topBarEditForm" action="<?= BASE_URL ?>/admin/cms/topbars/update" method="POST">
-        <input type="hidden" name="id" value="<?= htmlspecialchars($topbar['id']) ?>">
+    <form id="topBarEditForm" action="<?= BASE_URL ?>/admin/cms/topbars/<?= !empty($isCreate) ? 'store' : 'update' ?>" method="POST">
+        <?php if (empty($isCreate)): ?>
+            <input type="hidden" name="id" value="<?= htmlspecialchars($topbar['id']) ?>">
+        <?php endif; ?>
 
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-8">
             
             <!-- Form Top Header -->
             <div class="mb-2 flex justify-between items-center">
-                <h2 class="text-2xl font-serif text-[#0b3c7c]">Edit Top Announcement Bar</h2>
+                <h2 class="text-2xl font-serif text-[#0b3c7c]"><?= !empty($isCreate) ? 'Create Top Announcement Bar' : 'Edit Top Announcement Bar' ?></h2>
             </div>
 
             <!-- Live Preview Banner Component -->
@@ -229,7 +231,7 @@ $socialSvgMap = [
                 <div class="flex items-center gap-4">
                     <a href="<?= BASE_URL ?>/admin/cms/topbars" class="px-6 py-2.5 rounded-full border border-red-200 text-red-500 font-bold hover:bg-red-50 transition-colors bg-white text-xs uppercase tracking-wider">CANCEL</a>
                     <button type="submit" class="px-8 py-2.5 bg-gray-900 text-white font-bold text-sm rounded-full shadow-sm hover:bg-black transition-all">
-                        Update Top Bar
+                        <?= !empty($isCreate) ? 'Create Top Bar' : 'Update Top Bar' ?>
                     </button>
                 </div>
             </div>

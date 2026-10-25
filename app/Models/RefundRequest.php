@@ -37,16 +37,12 @@ class RefundRequest extends Model
      */
     private function getRefundColumns(): array
     {
-        static $cols = null;
-        if ($cols === null) {
-            try {
-                $raw = $this->db->query("SHOW COLUMNS FROM `refund_requests`")->fetchAll(\PDO::FETCH_COLUMN);
-                $cols = array_map('strtolower', $raw);
-            } catch (\Throwable $e) {
-                $cols = [];
-            }
+        try {
+            $raw = $this->db->query("SHOW COLUMNS FROM `refund_requests`")->fetchAll(\PDO::FETCH_COLUMN);
+            return array_map('strtolower', $raw);
+        } catch (\Throwable $e) {
+            return [];
         }
-        return $cols;
     }
 
     /**
@@ -83,6 +79,7 @@ class RefundRequest extends Model
                     `admin_notes` TEXT NULL,
                     `processed_by` BIGINT NULL,
                     `processed_at` DATETIME NULL,
+                    `approved_at` DATETIME NULL,
                     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     INDEX `idx_rr_order_id` (`order_id`),
@@ -126,6 +123,12 @@ class RefundRequest extends Model
                 }
                 if (!in_array('refund_details', $rrCols)) {
                     $this->db->exec("ALTER TABLE `refund_requests` ADD COLUMN `refund_details` TEXT NULL AFTER `refund_method`");
+                }
+                if (!in_array('processed_at', $rrCols)) {
+                    $this->db->exec("ALTER TABLE `refund_requests` ADD COLUMN `processed_at` DATETIME NULL");
+                }
+                if (!in_array('approved_at', $rrCols)) {
+                    $this->db->exec("ALTER TABLE `refund_requests` ADD COLUMN `approved_at` DATETIME NULL AFTER `processed_at`");
                 }
             }
 
@@ -406,6 +409,9 @@ class RefundRequest extends Model
             $sets[]          = 'processed_by = :pb';
             $sets[]          = 'processed_at = NOW()';
             $params['pb']    = $extra['processed_by'];
+        }
+        if (!empty($extra['approved_at']) && in_array('approved_at', $rrCols)) {
+            $sets[] = 'approved_at = COALESCE(approved_at, NOW())';
         }
 
         $sql  = 'UPDATE refund_requests SET ' . implode(', ', $sets) . ' WHERE id = :id';

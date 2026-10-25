@@ -29,16 +29,17 @@ $db->exec("
 CREATE TABLE IF NOT EXISTS order_modification_items (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     modification_id BIGINT NOT NULL,
-    order_item_id BIGINT NOT NULL,
-    change_type ENUM('removed','qty_changed','price_changed','replaced','unchanged') NOT NULL DEFAULT 'unchanged',
+    order_item_id BIGINT NULL,
+    product_id BIGINT NULL,
+    variant_id BIGINT NULL,
+    change_type ENUM('removed','qty_changed','price_changed','replaced','unchanged','added') NOT NULL DEFAULT 'unchanged',
     old_qty INT NOT NULL DEFAULT 0,
     new_qty INT NOT NULL DEFAULT 0,
     old_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     new_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     replacement_variant_id BIGINT NULL,
     note VARCHAR(255) NULL,
-    FOREIGN KEY (modification_id) REFERENCES order_modifications(id) ON DELETE CASCADE,
-    FOREIGN KEY (order_item_id) REFERENCES order_items(id) ON DELETE CASCADE
+    FOREIGN KEY (modification_id) REFERENCES order_modifications(id) ON DELETE CASCADE
 )
 ");
 echo "order_modification_items table created\n";

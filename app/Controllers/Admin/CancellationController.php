@@ -95,9 +95,14 @@ class CancellationController extends Controller
         fputcsv($output, [
             'Request ID', 'Order Number', 'Buyer Name', 'Email', 'Refund Amount',
             'Refund Method', 'Refund Details', 'Cancellation Type', 'Reason',
-            'Status', 'Admin Notes', 'Requested At'
+            'Status', 'Admin Notes', 'Requested At', 'Approved At'
         ]);
         foreach ($requests as $request) {
+            $status = strtolower(trim($request['status']));
+            $approvedAt = $request['approved_at'] ?? null;
+            if (!$approvedAt && !in_array($status, ['pending_admin_approval', 'rejected'], true)) {
+                $approvedAt = $request['processed_at'] ?? $request['updated_at'] ?? '';
+            }
             fputcsv($output, [
                 $request['id'],
                 $request['order_number'],
@@ -111,6 +116,7 @@ class CancellationController extends Controller
                 $request['status'],
                 $request['admin_notes'] ?? '',
                 $request['created_at'],
+                $approvedAt,
             ]);
         }
 
@@ -170,6 +176,7 @@ class CancellationController extends Controller
             $refundModel->updateStatus($reqId, 'completed', [
                 'admin_notes'  => $adminNote ?: 'Cancellation approved (₹0 refund). Order cancelled.',
                 'processed_by' => $adminId,
+                'approved_at'  => true,
             ]);
             $orderModel->updateOrderCancellationStatus($orderId, 'cancelled', $adminNote ?: 'Cancellation approved by admin', 'admin');
 
@@ -184,6 +191,7 @@ class CancellationController extends Controller
         $refundModel->updateStatus($reqId, 'processing', [
             'admin_notes'  => $adminNote ?: 'Cancellation approved. Pending payment refund.',
             'processed_by' => $adminId,
+            'approved_at'  => true,
         ]);
 
         $orderModel->updateOrderCancellationStatus($orderId, 'refund_processing', $adminNote, 'admin');

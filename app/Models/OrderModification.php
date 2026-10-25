@@ -5,11 +5,40 @@ use Core\Model;
 
 class OrderModification extends Model
 {
+    private function ensureModificationItemsSchema(): void
+    {
+        $columns = $this->db->query("SHOW COLUMNS FROM `order_modification_items`")->fetchAll(\PDO::FETCH_ASSOC);
+        $columnMap = [];
+        foreach ($columns as $column) {
+            $columnMap[strtolower($column['Field'])] = $column;
+        }
+
+        if (!isset($columnMap['order_item_id'])) {
+            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `order_item_id` BIGINT NULL");
+        } elseif (strtoupper($columnMap['order_item_id']['Null']) !== 'YES') {
+            $this->db->exec("ALTER TABLE `order_modification_items` MODIFY COLUMN `order_item_id` BIGINT NULL");
+        }
+        if (!isset($columnMap['product_id'])) {
+            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `product_id` BIGINT NULL");
+        }
+        if (!isset($columnMap['variant_id'])) {
+            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `variant_id` BIGINT NULL");
+        }
+        if (isset($columnMap['change_type']) && strpos($columnMap['change_type']['Type'], "'added'") === false) {
+            $this->db->exec("
+                ALTER TABLE `order_modification_items`
+                MODIFY COLUMN `change_type` ENUM('removed', 'qty_changed', 'price_changed', 'replaced', 'unchanged', 'added')
+                NOT NULL DEFAULT 'unchanged'
+            ");
+        }
+    }
+
     /**
      * Create a new modification record and its items.
      */
     public function createModification(int $orderId, int $adminId, string $reason, float $originalTotal, float $revisedTotal, array $itemChanges, ?string $screenshotPath = null, string $extraPaymentStatus = 'pending', ?string $extraPaymentNote = null): int
     {
+        $this->ensureModificationItemsSchema();
         $this->db->beginTransaction();
         try {
             // Insert modification header
