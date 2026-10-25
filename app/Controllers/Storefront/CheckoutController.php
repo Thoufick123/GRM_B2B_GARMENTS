@@ -81,27 +81,10 @@ class CheckoutController extends Controller
         $profileModel = new \App\Models\BusinessProfile();
         $profile = $profileModel->findByUserId($userId);
 
-        // Load saved addresses (auto-seed from shop_location if none exist)
+        // Keep the saved registration address structured, including legacy auto-seeded records.
         $db2 = \Core\Database::getInstance();
-        $addrCount = $db2->prepare("SELECT COUNT(*) FROM addresses WHERE user_id = ?");
-        $addrCount->execute([$userId]);
-        if ((int)$addrCount->fetchColumn() === 0 && !empty($profile['shop_location'])) {
-            $shopLocation = $profile['shop_location'];
-            $line1 = $shopLocation;
-            $city = 'Unknown';
-            $state = 'Unknown';
-            $postal = '000000';
-            
-            // Try to parse format: Street Address, District, State - Pincode
-            if (preg_match('/^(.*?),\s*(.*?),\s*(.*?)\s*-\s*(\d{6})$/', $shopLocation, $matches)) {
-                $line1 = trim($matches[1]);
-                $city = trim($matches[2]);
-                $state = trim($matches[3]);
-                $postal = $matches[4];
-            }
-            
-            $db2->prepare("INSERT INTO addresses (user_id, label, line1, city, state, postal_code, country, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, 1)")
-                ->execute([$userId, 'Shop Address', $line1, $city, $state, $postal, 'India']);
+        if (!empty($profile['shop_location'])) {
+            \App\Services\RegistrationAddressService::ensureShopAddress($db2, (int)$userId, $profile['shop_location']);
         }
         $addrStmt = $db2->prepare("SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC");
         $addrStmt->execute([$userId]);

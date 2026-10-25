@@ -442,6 +442,10 @@ class AuthController extends Controller
             'password'      => $password, // Plaintext, will be hashed upon final save
             'business_name' => $businessName,
             'shop_location' => $shopLocation,
+            'shop_address_line1' => $shopLocationRaw,
+            'shop_city' => $district,
+            'shop_state' => $state,
+            'shop_postal_code' => $pincode,
             'has_gst'       => $hasGst,
             'gst_number'    => $gstNumber,
             'gst_doc_url'   => $gstDocUrl,
@@ -739,6 +743,22 @@ class AuthController extends Controller
                 'no_gst_reason' => !$regData['has_gst'] ? $regData['no_gst_reason'] : null,
                 'instagram_link' => $regData['instagram_link'] ?? null,
             ]);
+
+            if (!empty($regData['shop_address_line1'])
+                && !empty($regData['shop_city'])
+                && !empty($regData['shop_state'])
+                && !empty($regData['shop_postal_code'])) {
+                $db->prepare("
+                    INSERT INTO addresses (user_id, label, line1, city, state, postal_code, country, is_default)
+                    VALUES (?, 'Shop Address', ?, ?, ?, ?, 'India', 1)
+                ")->execute([
+                    $userId,
+                    $regData['shop_address_line1'],
+                    $regData['shop_city'],
+                    $regData['shop_state'],
+                    $regData['shop_postal_code'],
+                ]);
+            }
 
             $requestModel = new RegistrationRequest();
             $requestModel->create([

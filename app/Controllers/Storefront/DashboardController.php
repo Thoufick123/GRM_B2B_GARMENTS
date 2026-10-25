@@ -41,25 +41,8 @@ class DashboardController extends Controller
         $stmt->execute([$userId]);
         $shopImages = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        // Auto-seed: if user has no addresses yet, pull from business_profiles.shop_location
-        $countStmt = $db->prepare("SELECT COUNT(*) FROM addresses WHERE user_id = ?");
-        $countStmt->execute([$userId]);
-        if ((int)$countStmt->fetchColumn() === 0 && !empty($profile['shop_location'])) {
-            $shopLocation = $profile['shop_location'];
-            $line1 = $shopLocation;
-            $city = 'Unknown';
-            $state = 'Unknown';
-            $postal = '000000';
-            
-            if (preg_match('/^(.*?),\s*(.*?),\s*(.*?)\s*-\s*(\d{6})$/', $shopLocation, $matches)) {
-                $line1 = trim($matches[1]);
-                $city = trim($matches[2]);
-                $state = trim($matches[3]);
-                $postal = $matches[4];
-            }
-            
-            $db->prepare("INSERT INTO addresses (user_id, label, line1, city, state, postal_code, country, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, 1)")
-               ->execute([$userId, 'Shop Address', $line1, $city, $state, $postal, 'India']);
+        if (!empty($profile['shop_location'])) {
+            \App\Services\RegistrationAddressService::ensureShopAddress($db, (int)$userId, $profile['shop_location']);
         }
 
         $stmt = $db->prepare("SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, id ASC LIMIT 1");
@@ -647,30 +630,11 @@ class DashboardController extends Controller
         $userId = Session::get('user_id');
         $db = \Core\Database::getInstance();
 
-        // Auto-seed: if user has no addresses yet, pull from business_profiles.shop_location
-        $countStmt = $db->prepare("SELECT COUNT(*) FROM addresses WHERE user_id = ?");
-        $countStmt->execute([$userId]);
-        if ((int)$countStmt->fetchColumn() === 0) {
-            $bpStmt = $db->prepare("SELECT shop_location FROM business_profiles WHERE user_id = ?");
-            $bpStmt->execute([$userId]);
-            $bp = $bpStmt->fetch(\PDO::FETCH_ASSOC);
-            if (!empty($bp['shop_location'])) {
-                $shopLocation = $bp['shop_location'];
-                $line1 = $shopLocation;
-                $city = 'Unknown';
-                $state = 'Unknown';
-                $postal = '000000';
-                
-                if (preg_match('/^(.*?),\s*(.*?),\s*(.*?)\s*-\s*(\d{6})$/', $shopLocation, $matches)) {
-                    $line1 = trim($matches[1]);
-                    $city = trim($matches[2]);
-                    $state = trim($matches[3]);
-                    $postal = $matches[4];
-                }
-                
-                $db->prepare("INSERT INTO addresses (user_id, label, line1, city, state, postal_code, country, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, 1)")
-                   ->execute([$userId, 'Shop Address', $line1, $city, $state, $postal, 'India']);
-            }
+        $bpStmt = $db->prepare("SELECT shop_location FROM business_profiles WHERE user_id = ?");
+        $bpStmt->execute([$userId]);
+        $bp = $bpStmt->fetch(\PDO::FETCH_ASSOC);
+        if (!empty($bp['shop_location'])) {
+            \App\Services\RegistrationAddressService::ensureShopAddress($db, (int)$userId, $bp['shop_location']);
         }
 
         $stmt = $db->prepare("SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC");
@@ -850,4 +814,3 @@ class DashboardController extends Controller
         ]);
     }
 }
-
