@@ -491,6 +491,50 @@ class RefundRequest extends Model
         ];
     }
 
+    public function getAllByStatuses(array $statuses): array
+    {
+        if (empty($statuses)) {
+            return [];
+        }
+
+        $expandedStatuses = [];
+        foreach ($statuses as $status) {
+            $lower = strtolower(trim($status));
+            $expandedStatuses[] = $lower;
+            $expandedStatuses[] = ucwords(str_replace('_', ' ', $lower));
+            $expandedStatuses[] = str_replace(' ', '_', ucwords(str_replace('_', ' ', $lower)));
+        }
+        $expandedStatuses = array_values(array_unique($expandedStatuses));
+
+        $namedPlaceholders = [];
+        foreach ($expandedStatuses as $index => $status) {
+            $namedPlaceholders[] = ":status_$index";
+        }
+        $placeholders = implode(',', $namedPlaceholders);
+        $paymentSelect = $this->getPaymentSelectFragments();
+
+        $stmt = $this->db->prepare("
+            SELECT rr.*,
+                   o.order_number, o.grand_total,
+                   {$paymentSelect},
+                   u.name AS user_name,
+                   u.email AS user_email,
+                   u.phone AS user_phone
+            FROM refund_requests rr
+            JOIN orders o ON rr.order_id = o.id
+            JOIN users u ON rr.user_id = u.id
+            WHERE rr.status IN ($placeholders)
+            ORDER BY rr.updated_at DESC
+        ");
+
+        foreach ($expandedStatuses as $index => $status) {
+            $stmt->bindValue(":status_$index", $status, \PDO::PARAM_STR);
+        }
+        $stmt->execute();
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
     /**
      * Count rows per status for the Cancellations dashboard badges.
      * Returns both lowercase and PascalCase keys for full compatibility.

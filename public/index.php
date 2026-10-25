@@ -577,6 +577,7 @@ $router->post('/admin/customize/orders/update-packed', 'App\Controllers\Admin\Cu
 
 // Admin Cancellations (Step 1: review & approve/reject)
 $router->get('/admin/cancellations', 'App\Controllers\Admin\CancellationController@index');
+$router->get('/admin/cancellations/export', 'App\Controllers\Admin\CancellationController@export');
 $router->post('/admin/cancellations/approve', 'App\Controllers\Admin\CancellationController@approve');
 $router->post('/admin/cancellations/reject', 'App\Controllers\Admin\CancellationController@reject');
 
@@ -590,6 +591,7 @@ $router->post('/admin/cancellations/rules/toggle-global', 'App\Controllers\Admin
 
 // Admin Refunds (Step 2: Cashfree payment processing — sub of Cancellations)
 $router->get('/admin/cancellations/refunds', 'App\Controllers\Admin\RefundController@index');
+$router->get('/admin/cancellations/refunds/export', 'App\Controllers\Admin\RefundController@export');
 $router->post('/admin/cancellations/refunds/process', 'App\Controllers\Admin\RefundController@process');
 
 // Legacy redirect: keep /admin/refunds working

@@ -70,6 +70,52 @@ class RefundController extends Controller
         ], 'admin');
     }
 
+    public function export(): void
+    {
+        if (!$this->hasPermission('refunds', 'view') && !$this->hasPermission('refunds', 'edit')) {
+            $this->requirePermission('refunds', 'view');
+        }
+
+        $statusMap = [
+            'pending'   => ['processing'],
+            'completed' => ['completed'],
+            'all'       => ['processing', 'completed'],
+        ];
+        $tab = $_GET['tab'] ?? 'pending';
+        $requests = (new RefundRequest())->getAllByStatuses($statusMap[$tab] ?? $statusMap['pending']);
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=refunds_export_' . date('Y-m-d') . '.csv');
+        $output = fopen('php://output', 'w');
+        if ($output === false) {
+            throw new \RuntimeException('Unable to open refund export output.');
+        }
+
+        fputs($output, "\xEF\xBB\xBF");
+        fputcsv($output, [
+            'Request ID', 'Order Number', 'Buyer Name', 'Email', 'Refund Amount',
+            'Refund Method', 'Refund Details', 'Refund Reference', 'Status',
+            'Approved / Updated At'
+        ]);
+        foreach ($requests as $request) {
+            fputcsv($output, [
+                $request['id'],
+                $request['order_number'],
+                $request['user_name'],
+                $request['user_email'],
+                $request['amount'],
+                $request['refund_method'] ?? '',
+                $request['refund_details'] ?? '',
+                $request['razorpay_refund_id'] ?? $request['cashfree_refund_id'] ?? '',
+                $request['status'],
+                $request['updated_at'],
+            ]);
+        }
+
+        fclose($output);
+        exit;
+    }
+
     // -------------------------------------------------------------------------
     // POST /admin/cancellations/refunds/process
     // -------------------------------------------------------------------------

@@ -70,6 +70,54 @@ class CancellationController extends Controller
         ], 'admin');
     }
 
+    public function export(): void
+    {
+        if (!$this->hasPermission('all_cancellations', 'view') && !$this->hasPermission('all_cancellations', 'edit')) {
+            $this->requirePermission('all_cancellations', 'view');
+        }
+
+        $statusMap = [
+            'pending'  => ['pending_admin_approval'],
+            'all'      => ['pending_admin_approval', 'processing', 'completed', 'rejected'],
+            'rejected' => ['rejected'],
+        ];
+        $filter = $_GET['filter'] ?? 'pending';
+        $requests = (new RefundRequest())->getAllByStatuses($statusMap[$filter] ?? $statusMap['pending']);
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=cancellations_export_' . date('Y-m-d') . '.csv');
+        $output = fopen('php://output', 'w');
+        if ($output === false) {
+            throw new \RuntimeException('Unable to open cancellation export output.');
+        }
+
+        fputs($output, "\xEF\xBB\xBF");
+        fputcsv($output, [
+            'Request ID', 'Order Number', 'Buyer Name', 'Email', 'Refund Amount',
+            'Refund Method', 'Refund Details', 'Cancellation Type', 'Reason',
+            'Status', 'Admin Notes', 'Requested At'
+        ]);
+        foreach ($requests as $request) {
+            fputcsv($output, [
+                $request['id'],
+                $request['order_number'],
+                $request['user_name'],
+                $request['user_email'],
+                $request['amount'],
+                $request['refund_method'] ?? '',
+                $request['refund_details'] ?? '',
+                $request['cancellation_type'],
+                $request['reason'],
+                $request['status'],
+                $request['admin_notes'] ?? '',
+                $request['created_at'],
+            ]);
+        }
+
+        fclose($output);
+        exit;
+    }
+
     // -------------------------------------------------------------------------
     // POST /admin/cancellations/approve
     // -------------------------------------------------------------------------

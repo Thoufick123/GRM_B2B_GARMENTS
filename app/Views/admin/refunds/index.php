@@ -26,10 +26,10 @@
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                     Refresh
                 </button>
-                <button onclick="exportRefundsCSV()" class="bg-[#F25996] hover:bg-[#e04481] text-white px-6 py-3 rounded-full font-bold text-sm shadow-sm transition-all flex items-center uppercase tracking-widest">
+                <a href="<?= BASE_URL ?>/admin/cancellations/refunds/export?tab=<?= urlencode($tab) ?>" class="bg-[#F25996] hover:bg-[#e04481] text-white px-6 py-3 rounded-full font-bold text-sm shadow-sm transition-all flex items-center uppercase tracking-widest">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                     Export Excel
-                </button>
+                </a>
             </div>
         </div>
     </div>
@@ -348,26 +348,5 @@ function toast(msg, type='success') {
     setTimeout(() => { el.classList.add('opacity-0','translate-y-4'); setTimeout(() => el.remove(), 300); }, 4500);
 }
 
-function exportRefundsCSV() {
-    let table = document.querySelector("table");
-    if(!table) return;
-    
-    let rows = Array.from(table.querySelectorAll("tr"));
-    let csvContent = "data:text/csv;charset=utf-8,";
-    
-    rows.forEach(row => {
-        let cols = Array.from(row.querySelectorAll("th, td"));
-        let rowData = cols.map(col => '"' + col.innerText.replace(/"/g, '""').trim() + '"');
-        csvContent += rowData.join(",") + "\r\n";
-    });
-    
-    let encodedUri = encodeURI(csvContent);
-    let link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "refunds_export_<?= date('Y-m-d') ?>.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
 </script>
 </div>
