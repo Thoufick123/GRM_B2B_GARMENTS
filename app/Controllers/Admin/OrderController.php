@@ -813,6 +813,7 @@ class OrderController extends Controller
             FROM orders o
             JOIN users u ON o.user_id = u.id
             WHERE DATE(o.created_at) >= :start_date AND DATE(o.created_at) <= :end_date
+              AND (o.payment_status = 'paid' OR (o.status != 'pending' AND o.order_number NOT LIKE 'PENDING-%'))
               AND NOT EXISTS (
                   SELECT 1 FROM order_items oi_chk 
                   WHERE oi_chk.order_id = o.id 
@@ -922,7 +923,7 @@ class OrderController extends Controller
 
             fputcsv($output, [
                 $order['order_number'],
-                $order['created_at'],
+                date('n/j/y', strtotime($order['created_at'])),
                 $order['customer_name'],
                 $order['email'],
                 $order['status'],
