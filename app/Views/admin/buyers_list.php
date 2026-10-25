@@ -10,7 +10,7 @@
             <h2 class="text-5xl font-display font-extrabold text-gray-900 tracking-tight"><?= htmlspecialchars($title) ?></h2>
             
             <div class="flex items-center space-x-3 ml-auto">
-                <button onclick="window.location.reload()" class="bg-white hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-full font-bold text-sm shadow-sm border border-gray-200 transition-all flex items-center uppercase tracking-widest">
+                <button onclick="const u=new URL(window.location);u.searchParams.set('refresh','1');window.location.href=u.toString();" class="bg-white hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-full font-bold text-sm shadow-sm border border-gray-200 transition-all flex items-center uppercase tracking-widest">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                     Refresh
                 </button>
@@ -23,7 +23,7 @@
     </div>
 
     <!-- Stats Overview -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
         <!-- Total Customers -->
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between">
             <div>
@@ -66,6 +66,17 @@
                 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Delivered Revenue</h3>
             </div>
             <p class="text-3xl font-display font-black text-gray-900">₹<?= number_format($stats['delivered_revenue'], 2) ?></p>
+        </div>
+
+        <!-- Total Rejected Buyers -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between">
+            <div>
+                <div class="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-500 mb-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                </div>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Rejected</h3>
+            </div>
+            <p class="text-3xl font-display font-black text-gray-900"><?= number_format($stats['rejected_buyers'] ?? 0) ?></p>
         </div>
     </div>
 

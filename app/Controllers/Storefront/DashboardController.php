@@ -116,12 +116,21 @@ class DashboardController extends Controller
 
         // Update User table
         if ($profilePicturePath) {
-            $stmt = $db->prepare("UPDATE users SET name = ?, phone = ?, profile_picture = ? WHERE id = ?");
-            $stmt->execute([$name, $phone, $profilePicturePath, $userId]);
+            try {
+                $stmt = $db->prepare("UPDATE users SET name = ?, phone = ?, profile_picture = ? WHERE id = ?");
+                $stmt->execute([$name, $phone, $profilePicturePath, $userId]);
+            } catch (\Exception $e) {
+                // profile_picture column may not exist yet — fall back to name/phone update only
+                // Run config/patch_profile_picture.sql on your database to fix this permanently
+                error_log('[Profile Update] profile_picture column missing: ' . $e->getMessage());
+                $stmt = $db->prepare("UPDATE users SET name = ?, phone = ? WHERE id = ?");
+                $stmt->execute([$name, $phone, $userId]);
+            }
         } else {
             $stmt = $db->prepare("UPDATE users SET name = ?, phone = ? WHERE id = ?");
             $stmt->execute([$name, $phone, $userId]);
         }
+
         
         // Update Business Profile table
         // First check if business profile exists

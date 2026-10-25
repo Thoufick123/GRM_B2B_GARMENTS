@@ -124,6 +124,9 @@ class User extends Model
             WHERE status = 'delivered' AND payment_status = 'paid'
         ");
         $stats['delivered_revenue'] = (float)$stmt->fetchColumn();
+
+        $stmt = $this->db->query("SELECT COUNT(*) FROM users WHERE role = 'buyer' AND status = 'rejected'");
+        $stats['rejected_buyers'] = (int)$stmt->fetchColumn();
         
         return $stats;
     }
