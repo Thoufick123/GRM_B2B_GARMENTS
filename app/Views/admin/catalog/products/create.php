@@ -1204,11 +1204,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${comboArr.map(c => `<input type="hidden" name="variants[${index}][attributes][${c.attrId}]" value="${c.optId}">`).join('')}
 
                             <div>
-                                <label class="block text-xs font-bold text-gray-700 mb-1">Base Price (₹) <span class="text-red-500">*</span></label>
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Base Price (Incl. GST) <span class="text-red-500">*</span></label>
                                 <input type="text" step="0.01" min="0.01" name="variants[${index}][base_price]" id="base_price_${index}" value="" placeholder="e.g. 999.00" required oninput="calculateGst(this)" class="variant-price variant-base-price w-full border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 px-3 py-1.5 text-sm">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-gray-700 mb-1">Discount Price (₹)</label>
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Discount Price (Incl. GST)</label>
                                 <input type="text" step="0.01" min="0.01" name="variants[${index}][discount_price]" oninput="calculateGst(this)" class="variant-discount-price w-full border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 px-3 py-1.5 text-sm" placeholder="e.g. 899.00">
                             </div>
                             <div>
@@ -1802,5 +1802,4 @@ function selectAllCustomLabels(checked) {
 <?php if (!empty($isCustomize)): ?>
 <?php include __DIR__ . '/../_customization_label_modal.php'; ?>
 <?php endif; ?>
-
 

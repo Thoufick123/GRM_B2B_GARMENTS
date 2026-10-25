@@ -8,8 +8,8 @@ $prodCgst = $catTotalGst > 0 ? $catCgst : (float)($product['cgst'] ?? 0);
 $prodTotalGst = $catTotalGst > 0 ? $catTotalGst : ((isset($product['total_gst']) && (float)$product['total_gst'] > 0) ? (float)$product['total_gst'] : ($prodSgst + $prodCgst));
 
 $wholesalePrice = (float)($product['wholesale_price'] ?? 0);
-$prodTaxAmount = round($wholesalePrice * ($prodTotalGst / 100), 2);
-$prodMaxAmount = round($wholesalePrice + $prodTaxAmount, 2);
+$prodTaxAmount = $prodTotalGst > 0 ? round($wholesalePrice - ($wholesalePrice / (1 + ($prodTotalGst / 100))), 2) : 0;
+$prodMaxAmount = $wholesalePrice;
 ?>
 
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -140,7 +140,7 @@ $prodMaxAmount = round($wholesalePrice + $prodTaxAmount, 2);
             <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">General Information</h3>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
                 <div class="bg-gray-50/70 p-4 rounded-xl border border-gray-100">
-                    <p class="text-xs text-gray-500 mb-1 font-medium">Wholesale Price (Excl. Tax)</p>
+                    <p class="text-xs text-gray-500 mb-1 font-medium">Wholesale Price (Incl. GST)</p>
                     <p class="text-lg font-bold text-gray-900">₹<?= number_format($wholesalePrice, 2) ?></p>
                 </div>
                 <div class="bg-gray-50/70 p-4 rounded-xl border border-gray-100">
@@ -149,13 +149,13 @@ $prodMaxAmount = round($wholesalePrice + $prodTaxAmount, 2);
                     <p class="text-[10px] text-gray-400 mt-0.5">SGST: <?= number_format($prodSgst, 2) ?>% | CGST: <?= number_format($prodCgst, 2) ?>%</p>
                 </div>
                 <div class="bg-gray-50/70 p-4 rounded-xl border border-gray-100">
-                    <p class="text-xs text-gray-500 mb-1 font-medium">Tax Amount</p>
+                    <p class="text-xs text-gray-500 mb-1 font-medium">GST Included</p>
                     <p class="text-lg font-bold text-amber-700">₹<?= number_format($prodTaxAmount, 2) ?></p>
                 </div>
                 <div class="bg-brand-50/50 p-4 rounded-xl border border-brand-100/80">
-                    <p class="text-xs text-brand-700 mb-1 font-bold">Total Price (Incl. Tax)</p>
+                    <p class="text-xs text-brand-700 mb-1 font-bold">Price (Incl. GST)</p>
                     <p class="text-lg font-bold text-brand-700">₹<?= number_format($prodMaxAmount, 2) ?></p>
-                    <span class="inline-block mt-0.5 text-[9px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold border border-emerald-100">Tax Added</span>
+                    <span class="inline-block mt-0.5 text-[9px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold border border-emerald-100">GST Included</span>
                 </div>
                 <div class="bg-gray-50/70 p-4 rounded-xl border border-gray-100">
                     <p class="text-xs text-gray-500 mb-1 font-medium">MOQ Override</p>
@@ -205,9 +205,9 @@ $prodMaxAmount = round($wholesalePrice + $prodTaxAmount, 2);
                         $vDiscount = (!empty($variant['discount_price']) && (float)$variant['discount_price'] > 0) ? (float)$variant['discount_price'] : null;
                         $vEff = $vDiscount ?? $vBase;
 
-                        $vTaxAmount = round($vEff * ($vTotalGst / 100), 2);
-                        $vBaseInclGst = round($vBase + ($vBase * ($vTotalGst / 100)), 2);
-                        $vMaxAmount = round($vEff + $vTaxAmount, 2);
+                        $vTaxAmount = $vTotalGst > 0 ? round($vEff - ($vEff / (1 + ($vTotalGst / 100))), 2) : 0;
+                        $vBaseInclGst = $vBase;
+                        $vMaxAmount = $vEff;
                         $hasDiscount = $vDiscount !== null && $vDiscount < $vBase;
                     ?>
                         <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -228,11 +228,11 @@ $prodMaxAmount = round($wholesalePrice + $prodTaxAmount, 2);
                             </div>
                             <div class="p-5 grid grid-cols-2 gap-4">
                                 <div>
-                                    <p class="text-xs text-gray-500 mb-1">Base Price (Excl. Tax)</p>
+                                    <p class="text-xs text-gray-500 mb-1">Base Price (Incl. GST)</p>
                                     <p class="font-bold text-gray-900">₹<?= number_format($vBase, 2) ?></p>
                                 </div>
                                 <div>
-                                    <p class="text-xs text-gray-500 mb-1">Discount Price (Excl. Tax)</p>
+                                    <p class="text-xs text-gray-500 mb-1">Discount Price (Incl. GST)</p>
                                     <p class="font-bold text-brand-600">
                                         <?= $vDiscount 
                                             ? '₹' . number_format($vDiscount, 2) 
@@ -245,13 +245,13 @@ $prodMaxAmount = round($wholesalePrice + $prodTaxAmount, 2);
                                     <p class="text-[9px] text-gray-400">SGST <?= number_format($vSgst, 1) ?>% + CGST <?= number_format($vCgst, 1) ?>%</p>
                                 </div>
                                 <div>
-                                    <p class="text-xs text-gray-500 mb-1">Tax Amount</p>
-                                    <p class="font-bold text-amber-700">+ ₹<?= number_format($vTaxAmount, 2) ?></p>
+                                    <p class="text-xs text-gray-500 mb-1">GST Included</p>
+                                    <p class="font-bold text-amber-700">₹<?= number_format($vTaxAmount, 2) ?></p>
                                 </div>
                                 <div class="col-span-2 bg-brand-50/40 p-3 rounded-lg border border-brand-100/50 flex justify-between items-center">
                                     <div>
                                         <p class="text-[11px] font-bold text-brand-800">Final Price (Incl. GST)</p>
-                                        <p class="text-xs text-gray-500">Tax added checkout amount</p>
+                                        <p class="text-xs text-gray-500">No additional tax at checkout</p>
                                     </div>
                                     <div class="text-lg font-bold text-brand-700">
                                         ₹<?= number_format($vMaxAmount, 2) ?>

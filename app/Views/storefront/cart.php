@@ -272,16 +272,14 @@
                                 $rpImg = !empty($rp['primary_image'])
                                     ? (str_starts_with($rp['primary_image'], 'http') ? $rp['primary_image'] : (BASE_URL . '/' . ltrim($rp['primary_image'], '/')))
                                     : 'https://placehold.co/400?text=' . urlencode($rp['name']);
-                                $catGst = (float)($rp['category_sgst'] ?? 0) + (float)($rp['category_cgst'] ?? 0);
-                                $prodGst = $catGst > 0 ? $catGst : ((float)($rp['variant_total_gst'] ?? 0) ?: (float)($rp['total_gst'] ?? 0));
                                 $basePrice = (isset($rp['base_price']) && (float)$rp['base_price'] > 0) ? (float)$rp['base_price'] : (float)($rp['wholesale_price'] ?? 0);
                                 $discountPrice = !empty($rp['discount_price']) && (float)$rp['discount_price'] > 0 ? (float)$rp['discount_price'] : (!empty($rp['price']) ? (float)$rp['price'] : null);
                                 $effPrice = $discountPrice ?? $basePrice;
 
-                                $displayPrice = round($effPrice * (1 + ($prodGst / 100)), 2);
+                                $displayPrice = $effPrice;
                                 $displayOriginalPrice = null;
                                 if ($discountPrice && $basePrice > $discountPrice) {
-                                    $displayOriginalPrice = round($basePrice * (1 + ($prodGst / 100)), 2);
+                                    $displayOriginalPrice = $basePrice;
                                 }
                                 $rpMoq = !empty($rp['moq']) ? (int)$rp['moq'] : (!empty($rp['moq_override']) ? (int)$rp['moq_override'] : ($rp['category_moq'] ?? 1));
                             ?>
@@ -714,4 +712,3 @@ window.addEventListener('beforeunload', () => {
     });
 });
 </script>
-

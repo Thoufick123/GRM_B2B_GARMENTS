@@ -14,40 +14,6 @@ class FabricCustomization
         $this->db = Database::getInstance();
     }
 
-    private function getFabricGstRateSql(): string
-    {
-        return "COALESCE(
-            NULLIF(COALESCE(c.sgst, 0) + COALESCE(c.cgst, 0), 0),
-            NULLIF((
-                SELECT CASE
-                    WHEN COALESCE(pv.total_gst, 0) > 0 THEN pv.total_gst
-                    ELSE COALESCE(pv.sgst, 0) + COALESCE(pv.cgst, 0)
-                END
-                FROM product_variants pv
-                WHERE pv.product_id = p.id
-                ORDER BY CASE WHEN pv.discount_price > 0 THEN pv.discount_price ELSE pv.base_price END ASC, pv.id ASC
-                LIMIT 1
-            ), 0),
-            NULLIF(p.total_gst, 0),
-            COALESCE(p.sgst, 0) + COALESCE(p.cgst, 0),
-            0
-        )";
-    }
-
-    private function applyInclusiveGstPricing(array $row): array
-    {
-        $gstRate = max(0, (float)($row['fabric_gst_rate'] ?? 0));
-        $multiplier = 1 + ($gstRate / 100);
-
-        foreach (['fabric_price', 'fabric_base_price', 'fabric_discount_price'] as $priceField) {
-            if (isset($row[$priceField]) && is_numeric($row[$priceField])) {
-                $row[$priceField] = round((float)$row[$priceField] * $multiplier, 2);
-            }
-        }
-
-        return $row;
-    }
-
     /**
      * Get all fabric customization rules with product & category information
      */
@@ -60,7 +26,6 @@ class FabricCustomization
                            (SELECT pv.sku FROM product_variants pv WHERE pv.product_id = p.id AND pv.sku IS NOT NULL AND TRIM(pv.sku) != '' ORDER BY pv.id ASC LIMIT 1),
                            CONCAT('FAB-', p.id)
                        ) as fabric_sku, 
-                       (" . $this->getFabricGstRateSql() . ") as fabric_gst_rate,
                        COALESCE(
                            (SELECT MIN(CASE WHEN pv.discount_price > 0 THEN pv.discount_price ELSE pv.base_price END) FROM product_variants pv WHERE pv.product_id = p.id),
                            p.wholesale_price
@@ -112,7 +77,6 @@ class FabricCustomization
 
         // Attach sizes and labels to each
         foreach ($programs as &$program) {
-            $program = $this->applyInclusiveGstPricing($program);
             $program['sizes'] = $this->getSizesByCustomizationId($program['id']);
             $program['labels'] = $this->getLabelsByCustomizationId($program['id']);
         }
@@ -133,7 +97,6 @@ class FabricCustomization
                        (SELECT pv.sku FROM product_variants pv WHERE pv.product_id = p.id AND pv.sku IS NOT NULL AND TRIM(pv.sku) != '' ORDER BY pv.id ASC LIMIT 1),
                        CONCAT('FAB-', p.id)
                    ) as fabric_sku, 
-                   (" . $this->getFabricGstRateSql() . ") as fabric_gst_rate,
                    COALESCE(
                        (SELECT MIN(CASE WHEN pv.discount_price > 0 THEN pv.discount_price ELSE pv.base_price END) FROM product_variants pv WHERE pv.product_id = p.id),
                        p.wholesale_price
@@ -158,7 +121,6 @@ class FabricCustomization
         $customization = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($customization) {
-            $customization = $this->applyInclusiveGstPricing($customization);
             $customization['sizes'] = $this->getSizesByCustomizationId($customization['id']);
             $customization['labels'] = $this->getLabelsByCustomizationId($customization['id']);
         }
@@ -171,7 +133,7 @@ class FabricCustomization
      */
     public function getByFabricId($fabricId)
     {
-        $cacheKey = "fabric_customization_fid_v2_" . (int)$fabricId;
+        $cacheKey = "fabric_customization_fid_v3_" . (int)$fabricId;
         if (class_exists('\Core\Cache')) {
             $cached = \Core\Cache::get($cacheKey);
             if ($cached !== null) {
@@ -188,7 +150,6 @@ class FabricCustomization
                        CONCAT('FAB-', p.id)
                    ) as fabric_sku, 
                    (SELECT image_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image,
-                   (" . $this->getFabricGstRateSql() . ") as fabric_gst_rate,
                    COALESCE(
                        (SELECT MIN(CASE WHEN pv.discount_price > 0 THEN pv.discount_price ELSE pv.base_price END) FROM product_variants pv WHERE pv.product_id = p.id),
                        p.wholesale_price
@@ -217,7 +178,6 @@ class FabricCustomization
         $customization = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($customization) {
-            $customization = $this->applyInclusiveGstPricing($customization);
             $customization['sizes'] = $this->getSizesByCustomizationId($customization['id']);
             $customization['labels'] = $this->getLabelsByCustomizationId($customization['id']);
             $customization['images'] = $this->getProductImages($fabricId);
@@ -245,7 +205,7 @@ class FabricCustomization
             empty($filters['search']) && 
             ($filters['sort'] ?? 'newest') === 'newest'
         );
-        $cacheKey = $isDefaultQuery ? 'customizable_fabrics_default_v3' : null;
+        $cacheKey = $isDefaultQuery ? 'customizable_fabrics_default_v4' : null;
 
         if ($cacheKey && class_exists('\Core\Cache')) {
             $cached = \Core\Cache::get($cacheKey);
@@ -263,7 +223,6 @@ class FabricCustomization
                            CONCAT('FAB-', p.id)
                        ) as fabric_sku, 
                        p.slug as fabric_slug, 
-                       (" . $this->getFabricGstRateSql() . ") as fabric_gst_rate,
                        COALESCE(
                            (SELECT MIN(CASE WHEN pv.discount_price > 0 THEN pv.discount_price ELSE pv.base_price END) FROM product_variants pv WHERE pv.product_id = p.id),
                            p.wholesale_price
@@ -333,11 +292,6 @@ class FabricCustomization
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         $fabrics = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($fabrics as &$fabric) {
-            $fabric = $this->applyInclusiveGstPricing($fabric);
-        }
-        unset($fabric);
-
         // Batch-load sizes, labels, and images in single queries to eliminate N+1 latency
         if (!empty($fabrics)) {
             $custIds = array_column($fabrics, 'id');

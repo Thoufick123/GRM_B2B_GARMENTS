@@ -54,15 +54,6 @@ foreach ($items as $item) {
             <div class="divide-y divide-gray-100" id="itemsList">
                 <?php foreach ($items as $idx => $item): ?>
                 <?php
-                    $rawBase = 0.0;
-                    if (!empty($item['variant_discount_price']) && (float)$item['variant_discount_price'] > 0) {
-                        $rawBase = (float)$item['variant_discount_price'];
-                    } elseif (!empty($item['variant_price']) && (float)$item['variant_price'] > 0) {
-                        $rawBase = (float)$item['variant_price'];
-                    } elseif (!empty($item['base_price']) && (float)$item['base_price'] > 0) {
-                        $rawBase = (float)$item['base_price'];
-                    }
-
                     $sgstRate = 0.0;
                     $cgstRate = 0.0;
 
@@ -117,11 +108,11 @@ foreach ($items as $item) {
                         
                         <div class="flex items-center gap-2 mt-1 mb-1 flex-wrap">
                             <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                                Price (Incl. Tax): ₹<?= number_format($item['unit_price'], 2) ?>
+                                Price (Incl. GST): ₹<?= number_format($item['unit_price'], 2) ?>
                             </span>
-                            <?php if ($rawBase > 0): ?>
+                            <?php if ($totGstRate > 0): ?>
                                 <span class="text-xs text-gray-500">
-                                    (Base: ₹<?= number_format($rawBase, 2) ?><?= $totGstRate > 0 ? " + {$totGstRate}% GST" : '' ?>)
+                                    (Includes <?= number_format($totGstRate, 2) ?>% GST)
                                 </span>
                             <?php endif; ?>
                             <?php if (!empty($item['moq'])): ?>
@@ -151,7 +142,7 @@ foreach ($items as $item) {
 
                     <!-- New Price -->
                     <div class="w-32 flex-shrink-0">
-                        <label class="block text-xs text-gray-500 mb-1">New Unit Price (Incl. Tax)</label>
+                        <label class="block text-xs text-gray-500 mb-1">New Unit Price (Incl. GST)</label>
                         <div class="relative">
                             <span class="absolute left-3 top-2 text-gray-400 text-sm">₹</span>
                             <input type="text" step="0.01" name="new_price[<?= $idx ?>]" value="<?= $item['unit_price'] ?>" min="0"
@@ -590,20 +581,19 @@ function fetchProducts(categoryId, subCategoryId) {
             let html = '<div class="divide-y divide-gray-100">';
             data.forEach(item => {
                 const price = parseFloat(item.price || 0).toFixed(2);
-                const basePrice = parseFloat(item.base_price || 0).toFixed(2);
                 const gstRate = parseFloat(item.gst_rate || 0);
                 const moq = parseInt(item.moq || 1);
                 const imgUrl = item.image ? (item.image.startsWith('http') ? item.image : `<?= BASE_URL ?>/${item.image}`) : '';
                 html += `
-                    <div class="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors" onclick="addNewProductToBill('${item.product_id}', '${item.product_id}', '${item.variant_id || ''}', '${item.name.replace(/'/g, "\\'")}', '${price}', '${basePrice}', ${gstRate}, '${item.image || ''}', ${moq})">
+                    <div class="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors" onclick="addNewProductToBill('${item.product_id}', '${item.product_id}', '${item.variant_id || ''}', '${item.name.replace(/'/g, "\\'")}', '${price}', ${gstRate}, '${item.image || ''}', ${moq})">
                         <div class="w-10 h-10 rounded bg-gray-100 overflow-hidden flex-shrink-0">
                             ${imgUrl ? `<img src="${imgUrl}" class="w-full h-full object-cover">` : ''}
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-semibold text-gray-900 truncate">${item.name}</p>
                             <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                                <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">₹${price} (Tax Added)</span>
-                                ${gstRate > 0 ? `<span class="text-[11px] text-gray-500">(Base: ₹${basePrice} + ${gstRate}% GST)</span>` : ''}
+                                <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">₹${price} (Incl. GST)</span>
+                                ${gstRate > 0 ? `<span class="text-[11px] text-gray-500">(Includes ${gstRate}% GST)</span>` : ''}
                                 <span class="text-[10px] px-1.5 py-0.5 rounded-md ${item.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} font-medium">Stock: ${item.stock}</span>
                             </div>
                         </div>
@@ -616,7 +606,7 @@ function fetchProducts(categoryId, subCategoryId) {
         });
 }
 
-function addNewProductToBill(id, productId, variantId, name, price, basePrice, gstRate, image, moq = 1) {
+function addNewProductToBill(id, productId, variantId, name, price, gstRate, image, moq = 1) {
     const list = document.getElementById('itemsList');
     const rowId = 'new-item-' + newProductCount;
     const replaceItemId = replacementItemId;
@@ -637,8 +627,8 @@ function addNewProductToBill(id, productId, variantId, name, price, basePrice, g
                 </div>
                 <p class="font-semibold text-gray-900 truncate">${name}</p>
                 <div class="flex items-center gap-2 mt-1 flex-wrap">
-                    <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Price (Incl. Tax): ₹${price}</span>
-                    ${gstRate > 0 ? `<span class="text-xs text-gray-500">(Base: ₹${basePrice} + ${gstRate}% GST)</span>` : `<span class="text-xs text-gray-500">Base: ₹${basePrice}</span>`}
+                    <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Price (Incl. GST): ₹${price}</span>
+                    ${gstRate > 0 ? `<span class="text-xs text-gray-500">(Includes ${gstRate}% GST)</span>` : ''}
                     <span class="text-[10px] font-bold text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded">MOQ: ${moq}</span>
                 </div>
             </div>
@@ -662,7 +652,7 @@ function addNewProductToBill(id, productId, variantId, name, price, basePrice, g
 
             <!-- Price -->
             <div class="w-32 flex-shrink-0">
-                <label class="block text-xs text-gray-500 mb-1">Unit Price (Incl. Tax)</label>
+                <label class="block text-xs text-gray-500 mb-1">Unit Price (Incl. GST)</label>
                 <div class="relative">
                     <span class="absolute left-3 top-2 text-gray-400 text-sm">₹</span>
                     <input type="text" step="0.01" name="new_p_price[${newProductCount}]" value="${price}" min="0"

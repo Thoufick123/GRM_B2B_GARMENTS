@@ -528,7 +528,7 @@
                     <!-- Products List -->
                     <ul class="space-y-3.5 sm:space-y-4 md:space-y-5 lg:space-y-4 mb-5 sm:mb-6 md:mb-7 lg:mb-6">
                         <?php foreach($cartItems as $item):
-                            $unitPrice = isset($item['unit_price']) ? (float)$item['unit_price'] : ((!empty($item['max_amount']) && (float)$item['max_amount'] > 0) ? (float)$item['max_amount'] : (float)($item['variant_discount_price'] ?: $item['variant_price'] ?: $item['wholesale_price']));
+                            $unitPrice = isset($item['unit_price']) ? (float)$item['unit_price'] : (float)($item['variant_discount_price'] ?: $item['variant_price'] ?: $item['wholesale_price']);
                             $rawImg = $item['primary_image'] ?? '';
                             if (empty($rawImg)) {
                                 $imgUrl = 'https://placehold.co/80x80/f3f4f6/9ca3af?text=Img';

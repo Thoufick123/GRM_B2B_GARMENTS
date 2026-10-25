@@ -582,11 +582,11 @@ class OrderModificationController extends Controller
 
             // Determine effective base price
             if (!empty($row['variant_discount_price']) && (float)$row['variant_discount_price'] > 0) {
-                $rawBase = (float)$row['variant_discount_price'];
+                $unitPrice = (float)$row['variant_discount_price'];
             } elseif (!empty($row['variant_price']) && (float)$row['variant_price'] > 0) {
-                $rawBase = (float)$row['variant_price'];
+                $unitPrice = (float)$row['variant_price'];
             } else {
-                $rawBase = (float)($row['base_price'] ?? 0);
+                $unitPrice = (float)($row['base_price'] ?? 0);
             }
 
             // Determine tax rates
@@ -623,24 +623,15 @@ class OrderModificationController extends Controller
 
             $totGstRate = $sgstRate + $cgstRate;
 
-            // Determine tax added unit price
-            $maxAmount = (float)(!empty($row['variant_id']) ? ($row['variant_max_amount'] ?? 0) : ($row['product_max_amount'] ?? 0));
-            if ($maxAmount > 0) {
-                $taxAddedPrice = $maxAmount;
-            } else {
-                $taxAddedPrice = round($rawBase * (1 + ($totGstRate / 100)), 2);
-            }
-
             $formatted[] = [
                 'id' => $row['variant_id'] ? $row['product_id'] . '-' . $row['variant_id'] : $row['product_id'],
                 'product_id' => $row['product_id'],
                 'variant_id' => $row['variant_id'],
                 'name' => $row['product_name'] . ($row['variant_name'] ? ' (' . $row['variant_name'] . ')' : ''),
-                'base_price' => $rawBase,
                 'gst_rate' => $totGstRate,
                 'sgst_rate' => $sgstRate,
                 'cgst_rate' => $cgstRate,
-                'price' => $taxAddedPrice,
+                'price' => $unitPrice,
                 'image' => $row['image_path'] ?? '',
                 'moq' => $moq,
                 'stock' => $stock

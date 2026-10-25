@@ -579,8 +579,8 @@
                         <tr class="text-xs font-bold text-gray-400 uppercase tracking-wider bg-gray-50/30">
                             <th class="px-6 py-4 border-b border-gray-100">Variant</th>
                             <th class="px-6 py-4 border-b border-gray-100">SKU</th>
-                            <th class="px-6 py-4 border-b border-gray-100">Price (₹)</th>
-                            <th class="px-6 py-4 border-b border-gray-100">Discount Price (₹)</th>
+                            <th class="px-6 py-4 border-b border-gray-100">Price (Incl. GST)</th>
+                            <th class="px-6 py-4 border-b border-gray-100">Discount Price (Incl. GST)</th>
                             <th class="px-6 py-4 border-b border-gray-100 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -658,11 +658,11 @@
                                 <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 variant-card-container">
                                     <div>
                                         <input type="hidden" name="variants[<?= $variant['id'] ?>][name]" value="<?= htmlspecialchars($variant['name'] ?? '') ?>">
-                                        <label class="block text-xs font-bold text-gray-500 mb-1">Base Price <span class="text-red-500">*</span></label>
+                                        <label class="block text-xs font-bold text-gray-500 mb-1">Base Price (Incl. GST) <span class="text-red-500">*</span></label>
                                         <input type="text" step="any" min="0.01" name="variants[<?= $variant['id'] ?>][base_price]" value="<?= htmlspecialchars($variant['base_price']) ?>" required oninput="calculateGst(this)" class="variant-base-price w-full border border-gray-200 rounded-lg focus:ring-brown focus:border-brown px-3 py-2 text-sm text-gray-700 shadow-sm">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-bold text-gray-500 mb-1">Discount Price</label>
+                                        <label class="block text-xs font-bold text-gray-500 mb-1">Discount Price (Incl. GST)</label>
                                         <input type="text" step="0.01" name="variants[<?= $variant['id'] ?>][discount_price]" value="<?= htmlspecialchars($variant['discount_price'] ?? '') ?>" oninput="calculateGst(this)" class="variant-discount-price w-full border border-gray-200 rounded-lg focus:ring-brown focus:border-brown px-3 py-2 text-sm text-gray-700 shadow-sm" placeholder="e.g. 99.99">
                                     </div>
                                     <div>
@@ -818,7 +818,7 @@
                         <tr class="text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
                             <th class="px-5 py-3.5">Size / Variant</th>
                             <th class="px-5 py-3.5">SKU</th>
-                            <th class="px-5 py-3.5">Base Price (₹)</th>
+                            <th class="px-5 py-3.5">Base Price (Incl. GST)</th>
                             <th class="px-5 py-3.5">
                                 <span class="flex items-center gap-1">
                                     Base Qty (Pcs)
@@ -1622,8 +1622,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${combo.map(c => `<input type="hidden" name="${inputPrefix}[attributes][${c.attrId}]" value="${c.id}">`).join('')}
                     <!-- Form Fields -->
                     <div class="flex-1 grid grid-cols-2 gap-x-4 gap-y-4 variant-card-container" style="min-width:0">
-                        <div><label class="block text-xs font-bold text-gray-500 mb-1">Base Price <span class="text-red-500">*</span></label><input type="number" step="any" min="0.01" name="${inputPrefix}[base_price]" value="${escapeHtml(basePrice)}" required oninput="calculateGst(this)" class="variant-base-price w-full border border-gray-200 rounded-lg focus:ring-brown focus:border-brown px-3 py-2 text-sm text-gray-700 shadow-sm"></div>
-                        <div><label class="block text-xs font-bold text-gray-500 mb-1">Discount Price</label><input type="number" step="0.01" name="${inputPrefix}[discount_price]" value="${escapeHtml(discountPrice)}" oninput="calculateGst(this)" class="variant-discount-price w-full border border-gray-200 rounded-lg focus:ring-brown focus:border-brown px-3 py-2 text-sm text-gray-700 shadow-sm" placeholder="e.g. 99.99"></div>
+                        <div>                        <label class="block text-xs font-bold text-gray-500 mb-1">Base Price (Incl. GST) <span class="text-red-500">*</span></label><input type="number" step="any" min="0.01" name="${inputPrefix}[base_price]" value="${escapeHtml(basePrice)}" required oninput="calculateGst(this)" class="variant-base-price w-full border border-gray-200 rounded-lg focus:ring-brown focus:border-brown px-3 py-2 text-sm text-gray-700 shadow-sm"></div>
+                        <div><label class="block text-xs font-bold text-gray-500 mb-1">Discount Price (Incl. GST)</label><input type="number" step="0.01" name="${inputPrefix}[discount_price]" value="${escapeHtml(discountPrice)}" oninput="calculateGst(this)" class="variant-discount-price w-full border border-gray-200 rounded-lg focus:ring-brown focus:border-brown px-3 py-2 text-sm text-gray-700 shadow-sm" placeholder="e.g. 99.99"></div>
                         <div><label class="block text-xs font-bold text-gray-500 mb-1">SGST (%)</label><input type="number" step="0.01" name="${inputPrefix}[sgst]" value="${escapeHtml(vSgst)}" readonly class="variant-sgst w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 cursor-not-allowed text-gray-600 shadow-sm"></div>
                         <div><label class="block text-xs font-bold text-gray-500 mb-1">CGST (%)</label><input type="number" step="0.01" name="${inputPrefix}[cgst]" value="${escapeHtml(vCgst)}" readonly class="variant-cgst w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 cursor-not-allowed text-gray-600 shadow-sm"></div>
                         <div><label class="block text-xs font-bold text-gray-500 mb-1">Total GST (%)</label><input type="number" step="0.01" name="${inputPrefix}[total_gst]" value="${escapeHtml(vTotalGst)}" readonly class="variant-total-gst w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 cursor-not-allowed font-semibold text-gray-700 shadow-sm"></div>
@@ -2180,4 +2180,3 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php if (!empty($isCustomize)): ?>
 <?php include __DIR__ . '/../_customization_label_modal.php'; ?>
 <?php endif; ?>
-

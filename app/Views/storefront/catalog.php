@@ -349,8 +349,6 @@
                             $displayOriginalPrice = null;
                             if ($discountPrice && $basePrice > $discountPrice) {
                                 $displayOriginalPrice = $basePrice;
-                            } elseif (!empty($product['max_amount']) && (float)$product['max_amount'] > $effPrice) {
-                                $displayOriginalPrice = (float)$product['max_amount'];
                             } elseif (!empty($product['wholesale_price']) && (float)$product['wholesale_price'] > $effPrice) {
                                 $displayOriginalPrice = (float)$product['wholesale_price'];
                             }
@@ -1155,4 +1153,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-

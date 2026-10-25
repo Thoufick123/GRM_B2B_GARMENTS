@@ -277,12 +277,12 @@ function exportToExcel() {
         alert('No products to export.');
         return;
     }
-    const headers = ['ID', 'Product Name', 'Slug', 'Category', 'HSN Code', 'Sub Category', 'Base Price (Excl. Tax)', 'GST (%)', 'Tax Added Price (Incl. Tax)', 'MOQ Override', 'Status'];
+    const headers = ['ID', 'Product Name', 'Slug', 'Category', 'HSN Code', 'Sub Category', 'Base Price (Incl. GST)', 'GST (%)', 'Price (Incl. GST)', 'MOQ Override', 'Status'];
     let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
     filteredProducts.forEach(p => {
         const effPrice = (p.discount_price && parseFloat(p.discount_price) > 0) ? parseFloat(p.discount_price) : (parseFloat(p.base_price) || 0);
         const gst = parseFloat(p.total_gst) || 0;
-        const taxAddedPrice = (p.max_amount && parseFloat(p.max_amount) > 0) ? parseFloat(p.max_amount) : effPrice;
+        const priceInclGst = effPrice;
 
         const row = [
             p.id,
@@ -293,7 +293,7 @@ function exportToExcel() {
             `"${(p.sub_category_name || '').replace(/"/g, '""')}"`,
             p.base_price,
             gst + '%',
-            taxAddedPrice.toFixed(2),
+            priceInclGst.toFixed(2),
             p.moq_override || '',
             p.status
         ];
