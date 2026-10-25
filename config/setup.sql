@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     phone VARCHAR(20) UNIQUE NOT NULL,
+    profile_picture VARCHAR(500) NULL,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('buyer', 'staff', 'manager', 'super_admin') NOT NULL DEFAULT 'buyer',
     status ENUM('pending', 'under_review', 'approved', 'active', 'rejected', 'blocked', 'deactivated') NOT NULL DEFAULT 'pending',

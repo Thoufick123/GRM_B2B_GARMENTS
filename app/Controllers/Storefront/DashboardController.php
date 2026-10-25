@@ -85,33 +85,65 @@ class DashboardController extends Controller
 
         $db = \Core\Database::getInstance();
         
-        // Handle file upload
         $profilePicturePath = null;
-        if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
-            $tmpName = $_FILES['profile_picture']['tmp_name'];
-            $uploader = new \App\Core\CloudinaryUploader();
-            $cloudinaryResponse = $uploader->uploadMedia($tmpName);
-            
-            if ($cloudinaryResponse && isset($cloudinaryResponse['secure_url'])) {
-                $profilePicturePath = $cloudinaryResponse['secure_url'];
+        if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] !== UPLOAD_ERR_NO_FILE) {
+            $upload = $_FILES['profile_picture'];
+            if ($upload['error'] !== UPLOAD_ERR_OK) {
+                $message = match ($upload['error']) {
+                    UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'Profile picture must be no larger than 5 MB.',
+                    UPLOAD_ERR_PARTIAL => 'The profile picture upload was incomplete. Please try again.',
+                    UPLOAD_ERR_NO_TMP_DIR, UPLOAD_ERR_CANT_WRITE => 'The server could not process the profile picture. Please try again later.',
+                    default => 'The profile picture could not be uploaded. Please try again.',
+                };
+                Session::setFlash('error', $message);
+                $this->redirect('/dashboard/profile');
+                return;
             }
+
+            if ((int)$upload['size'] > 5 * 1024 * 1024) {
+                Session::setFlash('error', 'Profile picture must be no larger than 5 MB.');
+                $this->redirect('/dashboard/profile');
+                return;
+            }
+
+            $imageInfo = @getimagesize($upload['tmp_name']);
+            $mimeType = $imageInfo['mime'] ?? '';
+            if (!in_array($mimeType, ['image/jpeg', 'image/png', 'image/gif'], true)) {
+                Session::setFlash('error', 'Please upload a valid JPG, PNG, or GIF profile picture.');
+                $this->redirect('/dashboard/profile');
+                return;
+            }
+
+            $uploader = new \App\Core\CloudinaryUploader();
+            $cloudinaryResponse = $uploader->uploadImage($upload['tmp_name']);
+            if (!$cloudinaryResponse || empty($cloudinaryResponse['secure_url'])) {
+                error_log('[Profile Update] Profile picture upload failed: ' . json_encode($cloudinaryResponse));
+                Session::setFlash('error', 'Profile picture upload failed. Please try again.');
+                $this->redirect('/dashboard/profile');
+                return;
+            }
+
+            $profilePicturePath = $cloudinaryResponse['secure_url'];
         }
 
-        // Update User table
-        if ($profilePicturePath) {
-            try {
+        try {
+            if ($profilePicturePath !== null) {
                 $stmt = $db->prepare("UPDATE users SET name = ?, phone = ?, profile_picture = ? WHERE id = ?");
                 $stmt->execute([$name, $phone, $profilePicturePath, $userId]);
-            } catch (\Exception $e) {
-                // profile_picture column may not exist yet — fall back to name/phone update only
-                // Run config/patch_profile_picture.sql on your database to fix this permanently
-                error_log('[Profile Update] profile_picture column missing: ' . $e->getMessage());
+            } else {
                 $stmt = $db->prepare("UPDATE users SET name = ?, phone = ? WHERE id = ?");
                 $stmt->execute([$name, $phone, $userId]);
             }
-        } else {
-            $stmt = $db->prepare("UPDATE users SET name = ?, phone = ? WHERE id = ?");
-            $stmt->execute([$name, $phone, $userId]);
+        } catch (\PDOException $e) {
+            error_log('[Profile Update] Failed to update user profile: ' . $e->getMessage());
+            Session::setFlash(
+                'error',
+                $profilePicturePath !== null
+                    ? 'Profile photo could not be saved. Please ensure the profile photo database update has been applied.'
+                    : 'Your profile could not be saved. Please try again.'
+            );
+            $this->redirect('/dashboard/profile');
+            return;
         }
 
         

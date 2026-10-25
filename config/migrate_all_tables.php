@@ -1005,6 +1005,12 @@ try {
 
     // Upgrade existing tables with any missing columns (Hostinger compatibility patch)
     echo "\n  Upgrading existing table columns...\n";
+    $usersCols = array_map('strtolower', $db->query("SHOW COLUMNS FROM `users`")->fetchAll(PDO::FETCH_COLUMN));
+    if (!in_array('profile_picture', $usersCols)) {
+        $db->exec("ALTER TABLE `users` ADD COLUMN `profile_picture` VARCHAR(500) NULL AFTER `phone`");
+        echo "  [OK] Added `users.profile_picture` column.\n";
+    }
+
     $ordersCols = array_map('strtolower', $db->query("SHOW COLUMNS FROM `orders`")->fetchAll(PDO::FETCH_COLUMN));
     if (!in_array('razorpay_order_id', $ordersCols)) {
         $db->exec("ALTER TABLE `orders` ADD COLUMN `razorpay_order_id` VARCHAR(100) NULL AFTER `cashfree_order_id`");
