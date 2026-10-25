@@ -47,11 +47,16 @@ class RegistrationAddressService
         }
 
         $legacyParts = self::parseWithLegacyRule($shopLocation);
-        if ($legacyParts === null
-            || trim((string)$address['line1']) !== $legacyParts['line1']
-            || trim((string)$address['city']) !== $legacyParts['city']
-            || trim((string)$address['state']) !== $legacyParts['state']
-            || trim((string)$address['postal_code']) !== $legacyParts['postal_code']) {
+        $matchesLegacyValues = $legacyParts !== null
+            && trim((string)$address['line1']) === $legacyParts['line1']
+            && trim((string)$address['city']) === $legacyParts['city']
+            && trim((string)$address['state']) === $legacyParts['state']
+            && trim((string)$address['postal_code']) === $legacyParts['postal_code'];
+        $hasCompositeState = self::stateSuffix((string)$address['state']) !== null
+            && str_contains((string)$address['state'], ',')
+            && strcasecmp(trim((string)$address['state']), $parsed['state']) !== 0;
+
+        if (!$matchesLegacyValues && !$hasCompositeState) {
             return;
         }
 
@@ -78,6 +83,39 @@ class RegistrationAddressService
 
         $addressAndRegion = trim($matches[1]);
         $postalCode = $matches[2];
+        $state = self::stateSuffix($addressAndRegion);
+        if ($state === null) {
+            return null;
+        }
+
+        $beforeState = trim(substr($addressAndRegion, 0, -strlen(', ' . $state)));
+        $parts = array_map('trim', explode(',', $beforeState));
+        if (count($parts) < 2) {
+            return null;
+        }
+
+        $city = array_pop($parts);
+        if (strcasecmp($state, 'Tamil Nadu') === 0) {
+            while ($parts && strcasecmp(end($parts), $city) === 0) {
+                array_pop($parts);
+            }
+        }
+
+        $line1 = trim(implode(', ', $parts));
+        if ($line1 === '' || $city === '') {
+            return null;
+        }
+
+        return [
+            'line1' => $line1,
+            'city' => $city,
+            'state' => $state,
+            'postal_code' => $postalCode,
+        ];
+    }
+
+    private static function stateSuffix(string $value): ?string
+    {
         $states = self::STATES;
         usort($states, static function (string $a, string $b): int {
             return strlen($b) <=> strlen($a);
@@ -85,28 +123,9 @@ class RegistrationAddressService
 
         foreach ($states as $state) {
             $suffix = ', ' . $state;
-            if (strcasecmp(substr($addressAndRegion, -strlen($suffix)), $suffix) !== 0) {
-                continue;
+            if (strcasecmp(substr(trim($value), -strlen($suffix)), $suffix) === 0) {
+                return $state;
             }
-
-            $addressAndCity = trim(substr($addressAndRegion, 0, -strlen($suffix)));
-            $citySeparator = strrpos($addressAndCity, ',');
-            if ($citySeparator === false) {
-                return null;
-            }
-
-            $line1 = trim(substr($addressAndCity, 0, $citySeparator));
-            $city = trim(substr($addressAndCity, $citySeparator + 1));
-            if ($line1 === '' || $city === '') {
-                return null;
-            }
-
-            return [
-                'line1' => $line1,
-                'city' => $city,
-                'state' => $state,
-                'postal_code' => $postalCode,
-            ];
         }
 
         return null;
