@@ -43,7 +43,7 @@
                 <?php else: ?>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Fabric Quantity (Stock) <span class="text-red-500">*</span></label>
-                    <input type="number" name="stock_quantity" required min="1" value="100" placeholder="e.g. 100 (meters/units)" class="w-full border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 px-3 py-2">
+                    <input type="number" name="stock_quantity" required min="1" step="1" value="" placeholder="Enter available fabric quantity" class="w-full border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 px-3 py-2">
                 </div>
                 <?php endif; ?>
                 <div class="sm:col-span-2 space-y-4">
@@ -1802,4 +1802,3 @@ function selectAllCustomLabels(checked) {
 <?php if (!empty($isCustomize)): ?>
 <?php include __DIR__ . '/../_customization_label_modal.php'; ?>
 <?php endif; ?>
-

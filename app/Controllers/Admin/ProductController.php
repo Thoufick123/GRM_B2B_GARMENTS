@@ -305,6 +305,13 @@ class ProductController extends Controller
             $this->redirect('/admin/catalog/products/create' . ($isCustomize ? '?module=customize' : ''));
         }
 
+        $stockQuantity = filter_var($_POST['stock_quantity'] ?? null, FILTER_VALIDATE_INT);
+        if ($isCustomize && ($stockQuantity === false || $stockQuantity < 1)) {
+            Session::setFlash('error', 'Enter the available fabric stock quantity (at least 1).');
+            $this->redirect('/admin/catalog/products/create?module=customize');
+            return;
+        }
+
         $firstVariant = reset($postedVariants);
         $firstVariantBasePrice = (float)($firstVariant['base_price'] ?? 0);
         $firstVariantDiscountPrice = (isset($firstVariant['discount_price']) && $firstVariant['discount_price'] !== '') ? (float)$firstVariant['discount_price'] : null;
@@ -349,7 +356,7 @@ class ProductController extends Controller
             'wholesale_price' => $firstVariantEffectivePrice,
             'retail_price' => $firstVariantBasePrice,
             'weight' => $firstVariantWeight,
-            'stock_quantity' => (int)($_POST['stock_quantity'] ?? 0),
+            'stock_quantity' => $isCustomize ? $stockQuantity : (int)($_POST['stock_quantity'] ?? 0),
             'moq_override' => (!$isCustomize && !empty($_POST['moq_override'])) ? (int)$_POST['moq_override'] : null,
             'status' => $status,
             'approval_status' => $approvalStatus,
