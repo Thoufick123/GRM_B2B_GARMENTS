@@ -1042,7 +1042,11 @@ class ProductController extends Controller
 
             $db->commit();
             \Core\Cache::delete('catalog_active');
+            \Core\Cache::delete('catalog_default_products');
             \Core\Cache::delete('home_active_products');
+            \Core\Cache::delete('product_details_bundle_' . (int)$id);
+            \Core\Cache::delete('prod_tiers_' . (int)$id);
+            \Core\Cache::deleteByPrefix('rel_prods_diff_');
             \Core\Cache::delete('customizable_fabrics_default_v2');
             \Core\Cache::delete('fabric_customization_fid_' . (int)$id);
             Session::setFlash('success', $isCustomize ? 'Fabric updated successfully.' : 'Product updated successfully.');
