@@ -125,6 +125,9 @@ $changeTypeLabels = [
                     <?php if ($item['variant_name']): ?>
                         <p class="text-xs text-gray-400"><?= htmlspecialchars($item['variant_name']) ?></p>
                     <?php endif; ?>
+                    <?php if ($item['change_type'] === 'replaced' && !empty($item['replacement_product_name'])): ?>
+                        <p class="text-xs text-blue-700 mt-0.5">Replaced with: <?= htmlspecialchars($item['replacement_product_name']) ?><?= !empty($item['replacement_product_variant_name']) ? ' (' . htmlspecialchars($item['replacement_product_variant_name']) . ')' : '' ?></p>
+                    <?php endif; ?>
                     <?php if ($item['note']): ?>
                         <p class="text-xs text-gray-500 mt-0.5 italic"><?= htmlspecialchars($item['note']) ?></p>
                     <?php endif; ?>

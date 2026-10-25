@@ -38,6 +38,67 @@ class InventoryController extends Controller
         ], 'admin');
     }
 
+    public function export()
+    {
+        $this->requirePermission('inventory', 'view');
+        $isVendor = (\Core\Session::get('user_role') === 'vendor');
+        $vendorId = $isVendor ? (int)\Core\Session::get('user_id') : null;
+        $inventoryList = $this->productModel->getInventoryList($vendorId);
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="inventory-' . date('Y-m-d') . '.csv"');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+
+        $output = fopen('php://output', 'w');
+        if ($output === false) {
+            throw new \RuntimeException('Unable to open inventory export stream.');
+        }
+
+        $safeText = static function ($value): string {
+            $value = (string)$value;
+            return preg_match('/^[\t\r\n ]*[=+\-@]/', $value) ? "'" . $value : $value;
+        };
+
+        fwrite($output, "\xEF\xBB\xBF");
+        fputcsv($output, [
+            'Product',
+            'Category',
+            'SKU',
+            'Variant Count',
+            'Current Stock',
+            'Total Stock',
+            'Reserved Stock',
+            'Low Stock Alert',
+            'Stock Status',
+            'Vendor'
+        ]);
+
+        foreach ($inventoryList as $item) {
+            $currentStock = max(0, (int)($item['current_stock'] ?? 0));
+            $totalStock = max(0, (int)($item['total_stock'] ?? 0));
+            $lowStockAlert = max(0, (int)($item['low_stock_alert'] ?? 0));
+            $stockStatus = $currentStock === 0
+                ? 'Out of Stock'
+                : ($currentStock <= $lowStockAlert ? 'Low Stock' : 'In Stock');
+
+            fputcsv($output, [
+                $safeText($item['product_name'] ?? ''),
+                $safeText($item['category_name'] ?? 'Uncategorized'),
+                $safeText($item['sku'] ?? ''),
+                max(0, (int)($item['variant_count'] ?? 0)),
+                $currentStock,
+                $totalStock,
+                max(0, (int)($item['reserve_stock'] ?? 0)),
+                $lowStockAlert,
+                $stockStatus,
+                $safeText($item['vendor_store_name'] ?? '')
+            ]);
+        }
+
+        fclose($output);
+        exit;
+    }
+
     public function view()
     {
         $this->requirePermission('inventory', 'view');

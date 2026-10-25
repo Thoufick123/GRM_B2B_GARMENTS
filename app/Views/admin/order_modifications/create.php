@@ -169,10 +169,14 @@ foreach ($items as $item) {
 
                     <!-- Remove toggle -->
                     <div class="flex-shrink-0">
-                        <label class="block text-xs text-gray-500 mb-1">Remove</label>
+                        <label class="block text-xs text-gray-500 mb-1">Change</label>
+                        <button type="button" onclick="openReplacementModal(<?= $item['id'] ?>)"
+                            class="h-10 px-3 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 text-xs font-semibold transition-colors mb-1">
+                            Replace
+                        </button>
                         <button type="button" onclick="toggleRemove(<?= $idx ?>, <?= $item['id'] ?>)"
                             id="remove-btn-<?= $idx ?>"
-                            class="w-10 h-10 rounded-full border-2 border-gray-200 text-gray-400 hover:border-red-400 hover:text-red-500 transition-colors flex items-center justify-center">
+                            title="Remove this item" class="w-10 h-10 rounded-full border-2 border-gray-200 text-gray-400 hover:border-red-400 hover:text-red-500 transition-colors flex items-center justify-center">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                         <input type="hidden" name="removed_flags[<?= $idx ?>]" id="removed-flag-<?= $idx ?>" value="0">
@@ -344,6 +348,8 @@ function toggleRemove(idx, itemId) {
 function recalcTotal() {
     let itemsTotal = 0;
     document.querySelectorAll('.item-row').forEach((row, idx) => {
+        if (row.dataset.replaced === '1') return;
+
         // For existing items, check if removed flag is set
         const flag = document.getElementById('removed-flag-' + idx);
         if (flag && flag.value === '1') return;
@@ -484,12 +490,26 @@ document.getElementById('modForm').addEventListener('submit', function() {
 // --- Modal & New Product Logic ---
 let newProductCount = 0;
 
+let replacementItemId = null;
+
 function openProductModal() {
+    replacementItemId = null;
+    document.getElementById('productSearchModal').classList.remove('hidden');
+}
+
+function openReplacementModal(itemId) {
+    const originalRow = Array.from(document.querySelectorAll('#itemsList > .item-row'))
+        .find(row => row.querySelector('input[name^="item_id["]')?.value === String(itemId));
+    if (!originalRow || originalRow.dataset.replaced === '1') {
+        return;
+    }
+    replacementItemId = itemId;
     document.getElementById('productSearchModal').classList.remove('hidden');
 }
 
 function closeProductModal() {
     document.getElementById('productSearchModal').classList.add('hidden');
+    replacementItemId = null;
     document.getElementById('categorySelect').value = '';
     
     const subCatSelect = document.getElementById('subCategorySelect');
@@ -599,6 +619,7 @@ function fetchProducts(categoryId, subCategoryId) {
 function addNewProductToBill(id, productId, variantId, name, price, basePrice, gstRate, image, moq = 1) {
     const list = document.getElementById('itemsList');
     const rowId = 'new-item-' + newProductCount;
+    const replaceItemId = replacementItemId;
     const imgUrl = image ? (image.startsWith('http') ? image : `<?= BASE_URL ?>/${image}`) : '';
     
     const html = `
@@ -612,7 +633,7 @@ function addNewProductToBill(id, productId, variantId, name, price, basePrice, g
             <!-- Name -->
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-0.5">
-                    <span class="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider">New Added</span>
+                    <span class="px-2 py-0.5 rounded-full ${replaceItemId ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'} text-[10px] font-bold uppercase tracking-wider">${replaceItemId ? 'Replacement' : 'New Added'}</span>
                 </div>
                 <p class="font-semibold text-gray-900 truncate">${name}</p>
                 <div class="flex items-center gap-2 mt-1 flex-wrap">
@@ -625,6 +646,7 @@ function addNewProductToBill(id, productId, variantId, name, price, basePrice, g
             <!-- Hidden fields for new item -->
             <input type="hidden" name="new_p_id[${newProductCount}]" value="${productId}">
             <input type="hidden" name="new_v_id[${newProductCount}]" value="${variantId}">
+            <input type="hidden" name="new_replace_item_id[${newProductCount}]" value="${replaceItemId || ''}">
 
             <!-- Qty -->
             <div class="w-32 flex-shrink-0">
@@ -658,7 +680,7 @@ function addNewProductToBill(id, productId, variantId, name, price, basePrice, g
 
             <!-- Remove toggle (just deletes row for new items) -->
             <div class="flex-shrink-0 pt-5">
-                <button type="button" onclick="document.getElementById('${rowId}').remove(); recalcTotal();"
+                <button type="button" onclick="removeNewProductRow('${rowId}')"
                     class="w-10 h-10 rounded-full border-2 border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center justify-center">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
@@ -667,9 +689,34 @@ function addNewProductToBill(id, productId, variantId, name, price, basePrice, g
     `;
     
     list.insertAdjacentHTML('beforeend', html);
+    if (replaceItemId) {
+        const originalRow = Array.from(document.querySelectorAll('#itemsList > .item-row'))
+            .find(row => row.querySelector('input[name^="item_id["]')?.value === String(replaceItemId));
+        if (originalRow) {
+            originalRow.dataset.replaced = '1';
+            originalRow.classList.add('opacity-40');
+        }
+        replacementItemId = null;
+    }
     newProductCount++;
     recalcTotal();
     closeProductModal();
+}
+
+function removeNewProductRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+    const replaceItemId = row.querySelector('input[name^="new_replace_item_id["]')?.value;
+    row.remove();
+    if (replaceItemId) {
+        const originalRow = Array.from(document.querySelectorAll('#itemsList > .item-row'))
+            .find(itemRow => itemRow.querySelector('input[name^="item_id["]')?.value === replaceItemId);
+        if (originalRow) {
+            originalRow.dataset.replaced = '';
+            originalRow.classList.remove('opacity-40');
+        }
+    }
+    recalcTotal();
 }
 function changeQty(btn, step) {
     const input = btn.parentNode.querySelector('.new-qty');
@@ -740,5 +787,3 @@ function changeQty(btn, step) {
         
     </div>
 </div>
-
-

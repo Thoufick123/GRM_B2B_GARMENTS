@@ -365,6 +365,7 @@ $router->post('/admin/catalog/attributes/delete-value', 'App\Controllers\Admin\A
 
 // Inventory Routes
 $router->get('/admin/inventory', 'App\Controllers\Admin\InventoryController@index');
+$router->get('/admin/inventory/export', 'App\Controllers\Admin\InventoryController@export');
 $router->get('/admin/inventory/view', 'App\Controllers\Admin\InventoryController@view');
 $router->get('/admin/inventory/variant-details', 'App\Controllers\Admin\InventoryController@getVariantDetails');
 $router->post('/admin/inventory/update', 'App\Controllers\Admin\InventoryController@update');

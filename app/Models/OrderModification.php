@@ -122,7 +122,42 @@ class OrderModification extends Model
                     $pid = $mItem['product_id'];
                     $vid = $mItem['variant_id'];
                     $qtyDiff = -$mItem['new_qty']; // Deduct new qty
-                } elseif (in_array($mItem['change_type'], ['qty_changed', 'price_changed', 'replaced'])) {
+                } elseif ($mItem['change_type'] === 'replaced') {
+                    $getOrigItem->execute([$mItem['order_item_id']]);
+                    $orig = $getOrigItem->fetch(\PDO::FETCH_ASSOC);
+                    if ($orig) {
+                        $oldProductId = (int)$orig['product_id'];
+                        $oldVariantId = (int)($orig['variant_id'] ?? 0);
+                        if ($oldVariantId) {
+                            $updateVariantStock->execute([$mItem['old_qty'], $mItem['old_qty'], $oldVariantId]);
+                            $syncParentStock->execute([$oldProductId, $oldProductId]);
+                        } else {
+                            $updateProductStock->execute([$mItem['old_qty'], $oldProductId]);
+                        }
+                    }
+
+                    $pid = (int)$mItem['product_id'];
+                    $vid = (int)($mItem['variant_id'] ?? 0);
+                    if ($vid) {
+                        $updateVariantStock->execute([-$mItem['new_qty'], -$mItem['new_qty'], $vid]);
+                        $syncParentStock->execute([$pid, $pid]);
+                    } else {
+                        $updateProductStock->execute([-$mItem['new_qty'], $pid]);
+                    }
+
+                    $this->db->prepare("
+                        UPDATE order_items
+                        SET product_id = ?, variant_id = ?, quantity = ?, unit_price = ?, total_price = ?
+                        WHERE id = ?
+                    ")->execute([
+                        $pid,
+                        $vid ?: null,
+                        $mItem['new_qty'],
+                        $mItem['new_price'],
+                        $mItem['new_qty'] * $mItem['new_price'],
+                        $mItem['order_item_id'],
+                    ]);
+                } elseif (in_array($mItem['change_type'], ['qty_changed', 'price_changed'])) {
                     $getOrigItem->execute([$mItem['order_item_id']]);
                     $orig = $getOrigItem->fetch();
                     if ($orig) {
@@ -219,6 +254,8 @@ class OrderModification extends Model
                    oi.quantity as orig_qty, oi.unit_price as orig_unit_price,
                    COALESCE(p.name, p2.name) as product_name,
                    COALESCE(pv.name, pv2.name) as variant_name,
+                   p2.name as replacement_product_name,
+                   pv2.name as replacement_product_variant_name,
                    COALESCE(
                        (SELECT image_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
                        (SELECT image_path FROM product_images WHERE product_id = p2.id AND is_primary = 1 LIMIT 1)
@@ -316,7 +353,7 @@ class OrderModification extends Model
                         $this->db->prepare("DELETE FROM order_items WHERE id = ?")->execute([$mItem['order_item_id']]);
                     } elseif ($mItem['change_type'] === 'added') {
                         $this->db->prepare("
-                            INSERT INTO order_items (order_id, product_id, variant_id, quantity, unit_price, subtotal)
+                            INSERT INTO order_items (order_id, product_id, variant_id, quantity, unit_price, total_price)
                             VALUES (?, ?, ?, ?, ?, ?)
                         ")->execute([
                             $mod['order_id'],
@@ -329,7 +366,42 @@ class OrderModification extends Model
                         $pid = $mItem['product_id'];
                         $vid = $mItem['variant_id'];
                         $qtyDiff = -$mItem['new_qty']; // Deduct new qty
-                    } elseif (in_array($mItem['change_type'], ['qty_changed', 'price_changed', 'replaced'])) {
+                    } elseif ($mItem['change_type'] === 'replaced') {
+                        $getOrigItem->execute([$mItem['order_item_id']]);
+                        $orig = $getOrigItem->fetch(\PDO::FETCH_ASSOC);
+                        if ($orig) {
+                            $oldProductId = (int)$orig['product_id'];
+                            $oldVariantId = (int)($orig['variant_id'] ?? 0);
+                            if ($oldVariantId) {
+                                $updateVariantStock->execute([$mItem['old_qty'], $mItem['old_qty'], $oldVariantId]);
+                                $syncParentStock->execute([$oldProductId, $oldProductId]);
+                            } else {
+                                $updateProductStock->execute([$mItem['old_qty'], $oldProductId]);
+                            }
+                        }
+
+                        $pid = (int)$mItem['product_id'];
+                        $vid = (int)($mItem['variant_id'] ?? 0);
+                        if ($vid) {
+                            $updateVariantStock->execute([-$mItem['new_qty'], -$mItem['new_qty'], $vid]);
+                            $syncParentStock->execute([$pid, $pid]);
+                        } else {
+                            $updateProductStock->execute([-$mItem['new_qty'], $pid]);
+                        }
+
+                        $this->db->prepare("
+                            UPDATE order_items
+                            SET product_id = ?, variant_id = ?, quantity = ?, unit_price = ?, total_price = ?
+                            WHERE id = ?
+                        ")->execute([
+                            $pid,
+                            $vid ?: null,
+                            $mItem['new_qty'],
+                            $mItem['new_price'],
+                            $mItem['new_qty'] * $mItem['new_price'],
+                            $mItem['order_item_id'],
+                        ]);
+                    } elseif (in_array($mItem['change_type'], ['qty_changed', 'price_changed'])) {
                         $getOrigItem->execute([$mItem['order_item_id']]);
                         $orig = $getOrigItem->fetch();
                         if ($orig) {
@@ -339,7 +411,7 @@ class OrderModification extends Model
                         }
                         $this->db->prepare("
                             UPDATE order_items 
-                            SET quantity = ?, unit_price = ?, subtotal = ?
+                            SET quantity = ?, unit_price = ?, total_price = ?
                             WHERE id = ?
                         ")->execute([
                             $mItem['new_qty'],

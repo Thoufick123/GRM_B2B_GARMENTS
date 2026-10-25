@@ -661,6 +661,30 @@ if ($hasDynamicNavbar) {
     <?php if ($flashSuccess = \Core\Session::getFlash('success')): ?>
         <?php 
             $isWelcomeBack = (stripos($flashSuccess, 'Welcome') !== false || stripos($flashSuccess, 'signed in') !== false || stripos($flashSuccess, 'logged in') !== false);
+            $welcomeTermsHtml = '';
+            if ($isWelcomeBack) {
+                $termsContent = \App\Services\TermsAndConditions::getContent();
+                $termsEscape = static function (string $value): string {
+                    return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                };
+                $welcomeTermsHtml = '<div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:14px;">'
+                    . '<div style="width:58px;height:58px;background:#f0fdf4;border:2px solid #86efac;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px auto;">'
+                    . '<span style="font-size:28px;color:#22c55e;font-weight:800;">&#10003;</span></div>'
+                    . '<h3 style="font-size:22px;font-weight:800;color:#111827;margin:0 0 6px;">Success</h3>'
+                    . '<p style="margin:0;font-size:14px;color:#4b5563;font-weight:600;">' . $termsEscape($flashSuccess) . '</p></div>'
+                    . '<div class="grm-terms-scroll-box" style="background:#fff5f8;border:1px solid #fce7f3;border-radius:14px;padding:14px 16px;text-align:left;max-height:min(390px,52vh);overflow-y:auto;">'
+                    . '<h4 style="margin:0 0 8px;color:#db2777;font-size:12px;text-transform:uppercase;">' . $termsEscape($termsContent['title']) . '</h4>'
+                    . '<p style="margin:0 0 10px;font-size:10.5px;color:#4b5563;line-height:1.45;">' . $termsEscape($termsContent['introduction']) . '</p>';
+                foreach ($termsContent['sections'] as $section) {
+                    $welcomeTermsHtml .= '<div style="margin:0 0 10px;font-size:11px;color:#374151;line-height:1.5;">'
+                        . '<strong style="color:#0f2963;">' . (int)$section['number'] . '. ' . $termsEscape($section['title']) . '</strong>';
+                    foreach ($section['paragraphs'] as $paragraph) {
+                        $welcomeTermsHtml .= '<p style="margin:3px 0 0;">' . $termsEscape($paragraph) . '</p>';
+                    }
+                    $welcomeTermsHtml .= '</div>';
+                }
+                $welcomeTermsHtml .= '</div>';
+            }
         ?>
         <style>
             .swal-login-popup {
@@ -700,7 +724,7 @@ if ($hasDynamicNavbar) {
         <script>
             document.addEventListener("DOMContentLoaded", function() {
                 <?php if ($isWelcomeBack): ?>
-                Swal.fire({
+                Swal.fire(Object.assign({
                     html: '<div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:14px;">'
                         + '<div style="width:58px;height:58px;background:#f0fdf4;border:2px solid #86efac;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px auto;box-shadow:0 4px 14px rgba(34,197,94,0.18);flex-shrink:0;">'
                         + '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'
@@ -918,7 +942,9 @@ if ($hasDynamicNavbar) {
                         document.body.style.overflow = '';
                         document.body.style.touchAction = '';
                     }
-                });
+                }, {
+                    html: <?= json_encode($welcomeTermsHtml, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>
+                }));
                 <?php else: ?>
                 Swal.fire({
                     icon: 'success',

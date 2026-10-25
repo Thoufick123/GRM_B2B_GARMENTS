@@ -644,6 +644,7 @@ class InvoiceService
             }
         }
 
+        $termsContent = \App\Services\TermsAndConditions::getContent();
         ob_start();
 ?>
 <!DOCTYPE html>
@@ -1154,9 +1155,9 @@ class InvoiceService
   <!-- Page 2: Full Terms & Conditions and Declaration -->
   <div class="terms-box" style="margin-top: 6px;">
     <h4>GRM B2B Wholesale Terms &amp; Conditions</h4>
-    <p class="terms-intro">These Terms and Conditions (&ldquo;Terms&rdquo;) govern every wholesale order placed with the Company (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) by a registered business buyer (&ldquo;the Buyer,&rdquo; &ldquo;you,&rdquo; or &ldquo;the Customer&rdquo;). They are written to set out, in clear and professional language, exactly what both sides can expect once an order is placed. By submitting a purchase order, confirming a quotation or invoice, or otherwise placing a wholesale order with us &mdash; whether by phone, email, in person, or through our website &mdash; the Buyer acknowledges that it has read, understood, and agreed to be bound by these Terms in full.</p>
+    <p class="terms-intro" style="display:none;"></p>
 
-    <div class="terms-list">
+    <div class="terms-list" style="display:none;">
       <div class="term-item"><strong>1. Definitions:</strong> 1.1 &ldquo;Buyer&rdquo; means the business placing an Order with the Company. 1.2 &ldquo;Order&rdquo; means a purchase order, accepted quotation, or any request to buy goods, submitted through any channel. 1.3 &ldquo;Order Confirmation&rdquo; means the Company's written confirmation, proforma invoice, or tax invoice for an Order. 1.4 &ldquo;Goods&rdquo; means the products supplied under an Order. 1.5 &ldquo;Assorted&rdquo; means Goods sold in mixed or random designs, colours, or prints selected by the Company.</div>
       <div class="term-item"><strong>2. Wholesale Only:</strong> 2.1 The Company sells only to businesses buying for resale, distribution, or commercial use, and does not sell to individual retail consumers. 2.2 The Buyer must provide a valid GSTIN or other business registration proof [if applicable] before its first Order. 2.3 The minimum order quantity is [quantity/value], unless stated otherwise in the quotation. 2.4 The Company may decline or limit any Order, or request further verification, at its discretion. 2.5 Wholesale prices and catalogues are for trade Buyers only and must not be quoted to end consumers.</div>
       <div class="term-item"><strong>3. Orders and Confirmation:</strong> 3.1 An Order becomes binding once the Company issues an Order Confirmation and, where full payment is required before dispatch under Section 4, once that payment is received. 3.2 The Buyer must check the product, design, quantity, size, and price on the Order Confirmation and report any error within [24] hours of receiving it. 3.3 The Company will not substitute products or reduce quantities without the Buyer's consent, except for Assorted Goods under Section 5. 3.4 If an item becomes unavailable after confirmation, the Company will inform the Buyer before dispatch. The Buyer may choose a partial shipment, a back-order, or an agreed substitute; any amount paid for items not supplied will be refunded or credited within [3] working days.</div>
@@ -1172,6 +1173,17 @@ class InvoiceService
       <div class="term-item"><strong>13. Privacy:</strong> The Company collects and uses the Buyer's business and contact details only to process Orders, deliver Goods, and communicate about its products. Further details are set out in the Company's Privacy Policy.</div>
       <div class="term-item"><strong>14. General:</strong> 14.1 By placing an Order through any channel, the Buyer agrees to these Terms, which apply to every Order even if not separately referenced on the purchase order, invoice, or delivery note. 14.2 These Terms override any terms in the Buyer's purchase order, unless an authorised representative of the Company agrees otherwise in writing. 14.3 The Company may update these Terms at any time; the version in effect at the time an Order is confirmed applies to that Order. 14.4 If any clause is found invalid or unenforceable, the remaining clauses continue to apply. 14.5 If the Company does not enforce a clause at any time, it does not lose the right to enforce it later.</div>
       <div class="term-item"><strong>15. Governing Law and Disputes:</strong> 15.1 These Terms are governed by the laws of [India\ Tamil Nadu]. 15.2 The parties will first try to resolve any dispute through good-faith discussion within [15] days. 15.3 Any unresolved dispute is subject to the exclusive jurisdiction of the courts at [coimbatore], [India\ Tamil Nadu].</div>
+    </div>
+    <p class="terms-intro"><?= htmlspecialchars($termsContent['introduction'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+    <div class="terms-list">
+      <?php foreach ($termsContent['sections'] as $section): ?>
+        <div class="term-item">
+          <strong><?= (int)$section['number'] ?>. <?= htmlspecialchars($section['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>:</strong>
+          <?php foreach ($section['paragraphs'] as $index => $paragraph): ?>
+            <?= $index > 0 ? '<br>' : '' ?><?= htmlspecialchars($paragraph, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>
+          <?php endforeach; ?>
+        </div>
+      <?php endforeach; ?>
     </div>
   </div>
 

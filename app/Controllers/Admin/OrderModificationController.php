@@ -245,16 +245,12 @@ class OrderModificationController extends Controller
                 $newPrice   = 0;
             } elseif ($newQty !== $oldQty && $newPrice !== $oldPrice) {
                 $changeType         = 'price_changed';
-                $revisedItemsTotal += $newQty * $newPrice;
             } elseif ($newQty !== $oldQty) {
                 $changeType         = 'qty_changed';
-                $revisedItemsTotal += $newQty * $newPrice;
             } elseif ($newPrice !== $oldPrice) {
                 $changeType         = 'price_changed';
-                $revisedItemsTotal += $newQty * $newPrice;
             } else {
                 $changeType         = 'unchanged';
-                $revisedItemsTotal += $newQty * $newPrice;
             }
 
             $itemChanges[] = [
@@ -277,6 +273,7 @@ class OrderModificationController extends Controller
         $newPQtys      = $_POST['new_p_qty'] ?? [];
         $newPPrices    = $_POST['new_p_price'] ?? [];
         $newPNotes     = $_POST['new_p_note'] ?? [];
+        $newReplaceItemIds = $_POST['new_replace_item_id'] ?? [];
 
         foreach ($newProductIds as $idx => $pid) {
             $pid    = (int)$pid;
@@ -286,8 +283,34 @@ class OrderModificationController extends Controller
             $qty    = (int)($newPQtys[$idx] ?? 1);
             $price  = (float)($newPPrices[$idx] ?? 0);
             $note   = trim($newPNotes[$idx] ?? '');
+            $replaceItemId = (int)($newReplaceItemIds[$idx] ?? 0);
 
-            $revisedItemsTotal += $qty * $price;
+            if ($replaceItemId > 0) {
+                $existingChangeIndex = null;
+                foreach ($itemChanges as $changeIndex => $change) {
+                    if ((int)$change['order_item_id'] === $replaceItemId) {
+                        $existingChangeIndex = $changeIndex;
+                        break;
+                    }
+                }
+
+                if ($existingChangeIndex === null) {
+                    Session::setFlash('error', 'The item selected for replacement is not part of this order.');
+                    $this->redirect('/admin/order-modifications');
+                    return;
+                }
+
+                $itemChanges[$existingChangeIndex] = array_merge($itemChanges[$existingChangeIndex], [
+                    'change_type' => 'replaced',
+                    'new_qty' => $qty,
+                    'new_price' => $price,
+                    'product_id' => $pid,
+                    'variant_id' => $vid,
+                    'replacement_variant_id' => $vid,
+                    'note' => $note,
+                ]);
+                continue;
+            }
 
             $itemChanges[] = [
                 'order_item_id'          => null,
@@ -301,6 +324,12 @@ class OrderModificationController extends Controller
                 'product_id'             => $pid,
                 'variant_id'             => $vid,
             ];
+        }
+
+        foreach ($itemChanges as $change) {
+            if ($change['change_type'] !== 'removed') {
+                $revisedItemsTotal += (int)$change['new_qty'] * (float)$change['new_price'];
+            }
         }
 
         $revisedTotal = $revisedItemsTotal + $otherFees;
@@ -318,7 +347,9 @@ class OrderModificationController extends Controller
         foreach ($itemChanges as $ic) {
             if ($ic['change_type'] === 'removed') continue;
             
-            $pid = $ic['order_item_id'] ? ($existingItems[$ic['order_item_id']] ?? null) : $ic['product_id'];
+            $pid = $ic['change_type'] === 'replaced'
+                ? $ic['product_id']
+                : ($ic['order_item_id'] ? ($existingItems[$ic['order_item_id']] ?? null) : $ic['product_id']);
             if ($pid) {
                 $validationProductIds[$pid] = true;
             }
@@ -344,7 +375,9 @@ class OrderModificationController extends Controller
         foreach ($itemChanges as $ic) {
             if ($ic['change_type'] === 'removed') continue;
             
-            $pid = $ic['order_item_id'] ? ($existingItems[$ic['order_item_id']] ?? null) : $ic['product_id'];
+            $pid = $ic['change_type'] === 'replaced'
+                ? $ic['product_id']
+                : ($ic['order_item_id'] ? ($existingItems[$ic['order_item_id']] ?? null) : $ic['product_id']);
             if (!$pid || !isset($productInfo[$pid])) continue;
             
             $info = $productInfo[$pid];

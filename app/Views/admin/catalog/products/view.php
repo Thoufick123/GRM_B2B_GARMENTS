@@ -204,10 +204,10 @@ $prodMaxAmount = round($wholesalePrice + $prodTaxAmount, 2);
                         $vBase = (float)($variant['base_price'] ?? 0);
                         $vDiscount = (!empty($variant['discount_price']) && (float)$variant['discount_price'] > 0) ? (float)$variant['discount_price'] : null;
                         $vEff = $vDiscount ?? $vBase;
-                        
-                        $vTaxAmount = round($vEff - ($vEff / (1 + ($vTotalGst / 100))), 2);
-                        $vBaseInclGst = $vBase;
-                        $vMaxAmount = $vEff;
+
+                        $vTaxAmount = round($vEff * ($vTotalGst / 100), 2);
+                        $vBaseInclGst = round($vBase + ($vBase * ($vTotalGst / 100)), 2);
+                        $vMaxAmount = round($vEff + $vTaxAmount, 2);
                         $hasDiscount = $vDiscount !== null && $vDiscount < $vBase;
                     ?>
                         <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -219,7 +219,7 @@ $prodMaxAmount = round($wholesalePrice + $prodTaxAmount, 2);
                                 <div class="text-right">
                                     <div class="text-xl font-bold text-brand-600">₹<?= number_format($vMaxAmount, 2) ?></div>
                                     <?php if ($hasDiscount): ?>
-                                        <p class="text-xs text-gray-400 line-through">Base: ₹<?= number_format($vBaseInclGst, 2) ?></p>
+                                        <p class="text-xs text-gray-400 line-through">Base incl. GST: ₹<?= number_format($vBaseInclGst, 2) ?></p>
                                     <?php endif; ?>
                                     <?php if ($vTotalGst > 0): ?>
                                         <span class="inline-block mt-1 text-[9px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold border border-emerald-100">Incl. <?= number_format($vTotalGst, 1) ?>% GST</span>
