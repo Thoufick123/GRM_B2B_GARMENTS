@@ -9,10 +9,12 @@
             <h2 class="text-5xl font-display font-extrabold text-gray-900 tracking-tight">Top Announcement Bars</h2>
             <p class="text-sm text-gray-500 mt-1">Manage dynamic top bars with slider, marquee animations, sticky announcements, and dynamic color pickers.</p>
         </div>
+        <?php if ($this->hasPermission('cms_topbars', 'create')): ?>
         <a href="<?= BASE_URL ?>/admin/cms/topbars/create" class="bg-[#F25996] hover:bg-[#e04481] text-white px-6 py-3 rounded-full font-bold text-xs shadow-sm transition-all flex items-center gap-2 uppercase tracking-wider">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             Add Top Bar
         </a>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -63,15 +65,19 @@
                     <span class="text-xs text-gray-400 font-mono">BG: <?= htmlspecialchars($bgColor) ?></span>
                     <!-- Actions -->
                     <div class="flex items-center gap-1.5">
+                        <?php if ($this->hasPermission('cms_topbars', 'edit')): ?>
                         <a href="<?= BASE_URL ?>/admin/cms/topbars/edit?id=<?= $tb['id'] ?>" class="inline-flex items-center justify-center p-1 text-blue-600 hover:text-blue-800 transition-colors" title="Edit">
                             <i class="bi bi-pencil-square text-lg"></i>
                         </a>
+                        <?php endif; ?>
+                        <?php if ($this->hasPermission('cms_topbars', 'delete')): ?>
                         <form action="<?= BASE_URL ?>/admin/cms/topbars/delete" method="POST" class="inline delete-form">
                             <input type="hidden" name="id" value="<?= $tb['id'] ?>">
                             <button type="submit" class="inline-flex items-center justify-center p-1 text-red-600 hover:text-red-800 transition-colors" title="Delete" onclick="return confirm('Are you sure you want to delete this Top Announcement Bar?')">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </form>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

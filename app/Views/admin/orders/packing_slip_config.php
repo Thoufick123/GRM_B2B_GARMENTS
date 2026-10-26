@@ -27,10 +27,12 @@
                     <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     <span>BACK TO ORDERS</span>
                 </a>
+                <?php if ($this->hasPermission('packing_slip_config', 'edit') || $this->hasPermission('all_orders', 'edit')): ?>
                 <button type="button" onclick="submitPackingSlipConfig()" id="topSaveBtn" class="bg-[#F25996] hover:bg-[#d94480] text-white text-xs font-bold uppercase tracking-wider px-6 py-2.5 rounded-full flex items-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                     <span>SAVE CONFIGURATION</span>
                 </button>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -309,10 +311,16 @@
 
                 <!-- Form Submit Action -->
                 <div class="flex items-center justify-end gap-3 pt-2">
+                    <?php if ($this->hasPermission('packing_slip_config', 'edit') || $this->hasPermission('all_orders', 'edit')): ?>
                     <button type="submit" id="mainSaveBtn" class="bg-[#F25996] hover:bg-[#e04481] text-white px-8 py-3 rounded-xl font-bold text-sm shadow-md transition-all flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         <span>Save Packing Slip Format</span>
                     </button>
+                    <?php else: ?>
+                    <span class="px-8 py-3 bg-gray-100 text-gray-400 font-bold text-xs uppercase tracking-wider rounded-xl cursor-not-allowed">
+                        Read-Only Mode
+                    </span>
+                    <?php endif; ?>
                 </div>
             </form>
         </div>

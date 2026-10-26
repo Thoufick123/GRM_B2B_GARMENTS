@@ -225,9 +225,15 @@ function renderColorField($label, $fieldName, $value, $mode) {
             </div><!-- end view-cols -->
 
             <div class="flex justify-end pt-4 border-t border-gray-100">
+                <?php if ($this->hasPermission('cms_product_card', 'edit')): ?>
                 <button type="submit" class="px-10 py-3 bg-gray-900 text-white font-bold text-sm rounded-full shadow-sm hover:bg-black transition-all">
                     Save All Settings
                 </button>
+                <?php else: ?>
+                <span class="px-8 py-3 bg-gray-100 text-gray-400 font-bold text-xs uppercase tracking-wider rounded-full cursor-not-allowed">
+                    Read-Only Mode
+                </span>
+                <?php endif; ?>
             </div>
 
         </div>

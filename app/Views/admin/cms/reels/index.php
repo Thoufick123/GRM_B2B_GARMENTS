@@ -13,14 +13,18 @@
             <p class="text-sm text-gray-500 mt-1">Configure responsive video reels, mobile/desktop view heights in VH, display counts, and Cloudinary media assets.</p>
         </div>
         <div class="flex items-center gap-3">
+            <?php if ($this->hasPermission('cms_builder', 'view') || $this->hasAnyPermission('cms_builder')): ?>
             <a href="<?= BASE_URL ?>/admin/cms/builder" class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-5 py-2.5 rounded-full font-bold text-xs shadow-sm transition-all flex items-center gap-2 uppercase tracking-wider">
                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path></svg>
                 Layout Builder
             </a>
+            <?php endif; ?>
+            <?php if ($this->hasPermission('cms_reels', 'create')): ?>
             <a href="<?= BASE_URL ?>/admin/cms/reels/create" class="bg-[#F25996] hover:bg-[#e04481] text-white px-6 py-2.5 rounded-full font-bold text-xs shadow-md shadow-[#F25996]/20 transition-all flex items-center gap-2 uppercase tracking-wider">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Add Reels Container
             </a>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -33,10 +37,12 @@
             </div>
             <p class="text-xl font-bold text-gray-800">No Reels Containers Configured</p>
             <p class="text-sm text-gray-500 mt-1 max-w-md mx-auto">Create your first Reels Container with custom desktop/mobile heights, view counts, and Cloudinary video reels.</p>
+            <?php if ($this->hasPermission('cms_reels', 'create')): ?>
             <a href="<?= BASE_URL ?>/admin/cms/reels/create" class="inline-flex items-center gap-2 mt-6 bg-[#F25996] hover:bg-[#e04481] text-white px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wider shadow-md">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Create First Reels Container
             </a>
+            <?php endif; ?>
         </div>
     <?php else: ?>
         <?php foreach($containers as $c): 
@@ -82,9 +88,15 @@
                     <span class="text-xs font-bold bg-white/20 backdrop-blur px-2.5 py-1 rounded-lg border border-white/20">
                         🎬 <?= $reelsCount ?> <?= $reelsCount === 1 ? 'Reel' : 'Reels' ?>
                     </span>
+                    <?php if ($this->hasPermission('cms_reels', 'edit')): ?>
                     <button type="button" onclick="toggleReelActive('<?= htmlspecialchars($c['id']) ?>', this)" class="text-xs font-bold px-3 py-1 rounded-full transition-all <?= $isActive ? 'bg-emerald-500 text-white' : 'bg-gray-600/80 text-gray-200' ?>">
                         <?= $isActive ? '● Published' : '○ Draft' ?>
                     </button>
+                    <?php else: ?>
+                    <span class="text-xs font-bold px-3 py-1 rounded-full <?= $isActive ? 'bg-emerald-500 text-white' : 'bg-gray-600/80 text-gray-200' ?>">
+                        <?= $isActive ? '● Published' : '○ Draft' ?>
+                    </span>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -113,12 +125,16 @@
                 <div class="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between">
                     <span class="text-[11px] font-mono text-gray-400"><?= htmlspecialchars($c['id']) ?></span>
                     <div class="flex items-center gap-1">
+                        <?php if ($this->hasPermission('cms_reels', 'edit')): ?>
                         <a href="<?= BASE_URL ?>/admin/cms/reels/edit?id=<?= urlencode($c['id']) ?>" class="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-xl transition-all" title="Edit Reels Container">
                             <i class="bi bi-pencil-square text-base"></i>
                         </a>
+                        <?php endif; ?>
+                        <?php if ($this->hasPermission('cms_reels', 'delete')): ?>
                         <button type="button" onclick="confirmDeleteReels('<?= htmlspecialchars($c['id']) ?>', '<?= htmlspecialchars(addslashes($title)) ?>')" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all" title="Delete">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

@@ -10,14 +10,18 @@
             <p class="text-sm text-gray-500 mt-1">Configure customer review carousels and animation effects for your landing page.</p>
         </div>
         <div class="flex items-center gap-3">
+            <?php if ($this->hasPermission('cms_builder', 'view') || $this->hasAnyPermission('cms_builder')): ?>
             <a href="<?= BASE_URL ?>/admin/cms/builder" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-3 rounded-full font-bold text-xs shadow-sm transition-all flex items-center gap-2 uppercase tracking-wider">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 Layout Builder
             </a>
+            <?php endif; ?>
+            <?php if ($this->hasPermission('cms_reviews', 'create')): ?>
             <a href="<?= BASE_URL ?>/admin/cms/reviews/create" class="bg-[#F25996] hover:bg-[#e04481] text-white px-6 py-3 rounded-full font-bold text-xs shadow-sm transition-all flex items-center gap-2 uppercase tracking-wider">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Add Review Section
             </a>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -30,10 +34,12 @@
             </div>
             <p class="text-xl font-bold text-gray-800">No Review Sections Found</p>
             <p class="text-sm text-gray-500 mt-2 max-w-md mx-auto">Create a review section to showcase customer feedback with animations like fade, slide, or zoom on your storefront.</p>
+            <?php if ($this->hasPermission('cms_reviews', 'create')): ?>
             <a href="<?= BASE_URL ?>/admin/cms/reviews/create" class="inline-flex items-center gap-2 mt-6 bg-[#F25996] hover:bg-[#e04481] text-white px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wider transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Create First Review Section
             </a>
+            <?php endif; ?>
         </div>
     <?php else: ?>
         <?php foreach($sections as $sec): 
@@ -120,15 +126,19 @@
                         Layout Component
                     </span>
                     <div class="flex items-center gap-2">
+                        <?php if ($this->hasPermission('cms_reviews', 'edit')): ?>
                         <a href="<?= BASE_URL ?>/admin/cms/reviews/edit?id=<?= $sec['id'] ?>" class="inline-flex items-center justify-center p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" title="Edit Review Section">
                             <i class="bi bi-pencil-square text-lg"></i>
                         </a>
+                        <?php endif; ?>
+                        <?php if ($this->hasPermission('cms_reviews', 'delete')): ?>
                         <form action="<?= BASE_URL ?>/admin/cms/reviews/delete" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this Review section?');">
                             <input type="hidden" name="id" value="<?= htmlspecialchars($sec['id']) ?>">
                             <button type="submit" class="inline-flex items-center justify-center p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors" title="Delete Review Section">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </form>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

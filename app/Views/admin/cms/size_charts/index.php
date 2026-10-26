@@ -14,10 +14,12 @@
                 <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                 View Storefront
             </a>
+            <?php if ($this->hasPermission('cms_size_charts', 'create')): ?>
             <a href="<?= BASE_URL ?>/admin/cms/size-charts/create" class="bg-[#F25996] hover:bg-[#e04481] text-white px-6 py-3 rounded-full font-bold text-xs shadow-sm transition-all flex items-center gap-2 uppercase tracking-wider">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 <span>Add Size Chart</span>
             </a>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -81,10 +83,12 @@
                 </div>
                 <h3 class="text-lg font-bold text-gray-900 mb-1">No Size Charts Found</h3>
                 <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">Create measurement charts for your dresses, baby & kids clothing, kurtis, and coord sets.</p>
+                <?php if ($this->hasPermission('cms_size_charts', 'create')): ?>
                 <a href="<?= BASE_URL ?>/admin/cms/size-charts/create" class="inline-flex items-center gap-2 bg-brand-600 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-sm hover:bg-brand-700 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Create Your First Size Chart
                 </a>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <div class="overflow-x-auto">
@@ -151,6 +155,7 @@
                                     </div>
                                 </td>
                                 <td class="py-4 px-6 text-center">
+                                    <?php if ($this->hasPermission('cms_size_charts', 'edit')): ?>
                                     <form action="<?= BASE_URL ?>/admin/cms/size-charts/toggle" method="POST" class="inline">
                                         <input type="hidden" name="id" value="<?= $chart['id'] ?>">
                                         <button type="submit" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold transition-colors <?= $chart['is_active'] ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100' : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200' ?>" title="Click to toggle status">
@@ -158,6 +163,12 @@
                                             <?= $chart['is_active'] ? 'Active' : 'Hidden' ?>
                                         </button>
                                     </form>
+                                    <?php else: ?>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold <?= $chart['is_active'] ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-500 border border-gray-200' ?>">
+                                        <span class="w-1.5 h-1.5 rounded-full <?= $chart['is_active'] ? 'bg-emerald-500' : 'bg-gray-400' ?> mr-1.5"></span>
+                                        <?= $chart['is_active'] ? 'Active' : 'Hidden' ?>
+                                    </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="py-4 px-6 text-right">
                                     <div class="flex items-center justify-end gap-2">
@@ -165,15 +176,19 @@
                                         <button type="button" onclick="openPreviewModal(<?= htmlspecialchars(json_encode($chart), ENT_QUOTES, 'UTF-8') ?>)" class="inline-flex items-center justify-center p-1 text-emerald-600 hover:text-emerald-800 transition-colors" title="Live Preview Size Chart">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         </button>
+                                        <?php if ($this->hasPermission('cms_size_charts', 'edit')): ?>
                                         <a href="<?= BASE_URL ?>/admin/cms/size-charts/edit?id=<?= $chart['id'] ?>" class="inline-flex items-center justify-center p-1 text-blue-600 hover:text-blue-800 transition-colors" title="Edit Size Chart">
                                             <i class="bi bi-pencil-square text-lg"></i>
                                         </a>
+                                        <?php endif; ?>
+                                        <?php if ($this->hasPermission('cms_size_charts', 'delete')): ?>
                                         <form action="<?= BASE_URL ?>/admin/cms/size-charts/delete" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this size chart?');">
                                             <input type="hidden" name="id" value="<?= $chart['id'] ?>">
                                             <button type="submit" class="inline-flex items-center justify-center p-1 text-red-600 hover:text-red-800 transition-colors" title="Delete">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                             </button>
                                         </form>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>

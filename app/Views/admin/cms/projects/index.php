@@ -17,10 +17,12 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                 View Storefront Page
             </a>
+            <?php if ($this->hasPermission('cms_projects', 'create')): ?>
             <a href="<?= BASE_URL ?>/admin/cms/projects/create" class="bg-[#F25996] hover:bg-[#e04481] text-white px-6 py-2.5 rounded-full font-bold text-xs shadow-sm transition-all flex items-center gap-2 uppercase tracking-wider">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Add Project
             </a>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -74,10 +76,12 @@
         </div>
         <h3 class="text-2xl font-bold text-gray-900">No Projects Created Yet</h3>
         <p class="text-sm text-gray-500 mt-2 max-w-md mx-auto">Create your first project showcase with multiple images, videos, and details. It will automatically be rendered dynamically on the storefront `/project` page.</p>
+        <?php if ($this->hasPermission('cms_projects', 'create')): ?>
         <a href="<?= BASE_URL ?>/admin/cms/projects/create" class="inline-flex items-center gap-2 mt-6 bg-[#F25996] hover:bg-[#e04481] text-white px-7 py-3 rounded-full font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             Add Your First Project
         </a>
+        <?php endif; ?>
     </div>
 <?php else: ?>
     <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
@@ -161,25 +165,36 @@
 
                         <!-- Status Toggle -->
                         <td class="py-4 px-6 text-center">
+                            <?php if ($this->hasPermission('cms_projects', 'edit')): ?>
                             <button onclick="toggleProjectStatus(<?= $project['id'] ?>, this)" 
                                     class="status-badge inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition-all <?= $isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-500 border border-gray-200' ?>">
                                 <span class="w-2 h-2 rounded-full <?= $isActive ? 'bg-emerald-500' : 'bg-gray-400' ?>"></span>
                                 <span><?= $isActive ? 'Active' : 'Inactive' ?></span>
                             </button>
+                            <?php else: ?>
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold <?= $isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-500 border border-gray-200' ?>">
+                                <span class="w-2 h-2 rounded-full <?= $isActive ? 'bg-emerald-500' : 'bg-gray-400' ?>"></span>
+                                <span><?= $isActive ? 'Active' : 'Inactive' ?></span>
+                            </span>
+                            <?php endif; ?>
                         </td>
 
                         <!-- Action Buttons -->
                         <td class="py-4 px-6 text-right space-x-2">
+                            <?php if ($this->hasPermission('cms_projects', 'edit')): ?>
                             <a href="<?= BASE_URL ?>/admin/cms/projects/edit?id=<?= $project['id'] ?>" class="inline-flex items-center justify-center p-1 text-blue-600 hover:text-blue-800 transition-colors group/btn" title="Edit">
                                 <svg class="w-5 h-5 group-hover/btn:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                             </a>
+                            <?php endif; ?>
 
+                            <?php if ($this->hasPermission('cms_projects', 'delete')): ?>
                             <form action="<?= BASE_URL ?>/admin/cms/projects/delete" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this project?');">
                                 <input type="hidden" name="id" value="<?= $project['id'] ?>">
                                 <button type="submit" class="inline-flex items-center justify-center p-1 text-red-600 hover:text-red-800 transition-colors group/btn cursor-pointer" title="Delete">
                                     <svg class="w-5 h-5 group-hover/btn:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
                             </form>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>

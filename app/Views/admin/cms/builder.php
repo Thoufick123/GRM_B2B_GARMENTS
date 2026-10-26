@@ -178,55 +178,58 @@ if (!empty($inactiveComponents)) {
                                 </div>
                                 <!-- Actions: Edit + Delete + Eye toggle -->
                                 <div class="flex items-center gap-1 flex-shrink-0">
-                                    <?php if ($isHeroBanner): ?>
+                                    <?php if ($isHeroBanner && $this->hasPermission('cms_hero_banners', 'edit')): ?>
                                         <a href="<?= BASE_URL ?>/admin/cms/hero-banners/edit?id=<?= $cmp['id'] ?>" class="p-1 text-blue-600 hover:text-blue-800 transition-colors" title="Edit Hero Banner">
                                             <i class="bi bi-pencil-square text-base"></i>
                                         </a>
-                                    <?php elseif ($isMainBanner): ?>
+                                    <?php elseif ($isMainBanner && $this->hasPermission('cms_main_banners', 'edit')): ?>
                                         <a href="<?= BASE_URL ?>/admin/cms/main-banners/edit?id=<?= $cmp['id'] ?>" class="p-1 text-blue-600 hover:text-blue-800 transition-colors" title="Edit Main Banner">
                                             <i class="bi bi-pencil-square text-base"></i>
                                         </a>
-                                    <?php elseif ($isProductCarousel): ?>
+                                    <?php elseif ($isProductCarousel && $this->hasPermission('cms_product_carousels', 'edit')): ?>
                                         <a href="<?= BASE_URL ?>/admin/cms/product-carousels/edit?id=<?= $cmp['id'] ?>" class="p-1 text-blue-600 hover:text-blue-800 transition-colors" title="Edit Product Carousel">
                                             <i class="bi bi-pencil-square text-base"></i>
                                         </a>
-                                    <?php elseif ($isCategoryCarousel): ?>
+                                    <?php elseif ($isCategoryCarousel && $this->hasPermission('cms_category_carousels', 'edit')): ?>
                                         <a href="<?= BASE_URL ?>/admin/cms/category-carousels/edit?id=<?= $cmp['id'] ?>" class="p-1 text-blue-600 hover:text-blue-800 transition-colors" title="Edit Category Carousel">
                                             <i class="bi bi-pencil-square text-base"></i>
                                         </a>
-                                    <?php elseif ($isCategoriesGrid): ?>
+                                    <?php elseif ($isCategoriesGrid && $this->hasPermission('cms_categories_grid', 'edit')): ?>
                                         <a href="<?= BASE_URL ?>/admin/cms/categories-grid/edit?id=<?= $cmp['id'] ?>" class="p-1 text-blue-600 hover:text-blue-800 transition-colors" title="Edit Categories Grid">
                                             <i class="bi bi-pencil-square text-base"></i>
                                         </a>
-                                    <?php elseif ($isNavbar): ?>
+                                    <?php elseif ($isNavbar && $this->hasPermission('cms_navbars', 'edit')): ?>
                                         <a href="<?= BASE_URL ?>/admin/cms/navbars/edit?id=<?= $cmp['id'] ?>" class="p-1 text-blue-600 hover:text-blue-800 transition-colors" title="Edit Navbar">
                                             <i class="bi bi-pencil-square text-base"></i>
                                         </a>
-                                    <?php elseif ($isTopBar): ?>
+                                    <?php elseif ($isTopBar && $this->hasPermission('cms_topbars', 'edit')): ?>
                                         <a href="<?= BASE_URL ?>/admin/cms/topbars/edit?id=<?= $cmp['id'] ?>" class="p-1 text-blue-600 hover:text-blue-800 transition-colors" title="Edit Top Bar">
                                             <i class="bi bi-pencil-square text-base"></i>
                                         </a>
-                                    <?php elseif ($isFooter): ?>
+                                    <?php elseif ($isFooter && $this->hasPermission('cms_footers', 'edit')): ?>
                                         <a href="<?= BASE_URL ?>/admin/cms/footers/edit?id=<?= $cmp['id'] ?>" class="p-1 text-blue-600 hover:text-blue-800 transition-colors" title="Edit Footer">
                                             <i class="bi bi-pencil-square text-base"></i>
                                         </a>
-                                    <?php elseif ($isReviews): ?>
+                                    <?php elseif ($isReviews && $this->hasPermission('cms_reviews', 'edit')): ?>
                                         <a href="<?= BASE_URL ?>/admin/cms/reviews/edit?id=<?= $cmp['id'] ?>" class="p-1 text-blue-600 hover:text-blue-800 transition-colors" title="Edit Review Section">
                                             <i class="bi bi-pencil-square text-base"></i>
                                         </a>
-                                    <?php elseif ($isAboutUs): ?>
+                                    <?php elseif ($isAboutUs && $this->hasPermission('cms_about_us', 'edit')): ?>
                                         <a href="<?= BASE_URL ?>/admin/cms/about-us/edit?id=<?= $cmp['id'] ?>&ref=builder" class="p-1 text-blue-600 hover:text-blue-800 transition-colors" title="Edit About Us">
                                             <i class="bi bi-pencil-square text-base"></i>
                                         </a>
-                                    <?php elseif ($isReelsContainer): ?>
+                                    <?php elseif ($isReelsContainer && $this->hasPermission('cms_reels', 'edit')): ?>
                                         <a href="<?= BASE_URL ?>/admin/cms/reels/edit?id=<?= $cmp['id'] ?>" class="p-1 text-blue-600 hover:text-blue-800 transition-colors" title="Edit Reels Container">
                                             <i class="bi bi-pencil-square text-base"></i>
                                         </a>
                                     <?php endif; ?>
-                                    <!-- Delete button (always visible now) -->
+                                    <?php if ($this->hasPermission('cms_builder', 'delete') || $this->hasPermission('cms_builder', 'edit')): ?>
+                                    <!-- Delete button -->
                                     <button class="delete-component-btn p-1.5 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 transition-all" title="Delete Component" data-id="<?= htmlspecialchars($cmp['id']) ?>" data-label="<?= htmlspecialchars($label) ?>">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
+                                    <?php endif; ?>
+                                    <?php if ($this->hasPermission('cms_builder', 'edit')): ?>
                                     <button class="toggle-visibility-btn p-1.5 rounded-md hover:bg-gray-50 transition-colors <?= $cmp['is_active'] ? 'text-green-500' : 'text-gray-400' ?>" title="Toggle Visibility">
                                         <?php if($cmp['is_active']): ?>
                                             <!-- Open Eye -->
@@ -236,12 +239,14 @@ if (!empty($inactiveComponents)) {
                                             <svg class="w-5 h-5 eye-icon-closed" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.05 10.05 0 011.51-2.793M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.88 9.88a3 3 0 014.24 4.24M10.73 5.08A10.43 10.43 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411"></path></svg>
                                         <?php endif; ?>
                                     </button>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
                 
+                <?php if ($this->hasPermission('cms_builder', 'edit')): ?>
                 <!-- Buttons -->
                 <div class="mt-6 pt-5 border-t border-gray-100 flex flex-col gap-3">
                     <div class="flex gap-3">
@@ -250,6 +255,9 @@ if (!empty($inactiveComponents)) {
                     </div>
                     <button id="resetBtn" class="w-full py-2.5 rounded-full border border-red-200 font-bold text-red-500 bg-white hover:bg-red-50 transition-colors text-[11px] tracking-wider">RESET TO PUBLISHED</button>
                 </div>
+                <?php endif; ?>
+            </div>
+        </div>
             </div>
         </div>
 
@@ -309,7 +317,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const layoutList = document.getElementById('layoutList');
     
     // Initialize Sortable
-    if (layoutList) {
+    const canEditLayout = <?= ($this->hasPermission('cms_builder', 'edit')) ? 'true' : 'false' ?>;
+    if (layoutList && canEditLayout) {
         new Sortable(layoutList, {
             animation: 150,
             handle: '.drag-handle',
