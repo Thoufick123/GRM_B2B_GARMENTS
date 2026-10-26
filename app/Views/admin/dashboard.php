@@ -305,9 +305,8 @@
                     <h2 class="text-base font-bold text-slate-900">Revenue Analytics</h2>
                     <p class="text-xs text-slate-400 mt-0.5">Daily revenue over the last 30 days</p>
                 </div>
-                <div class="border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-600 bg-white flex items-center gap-1 cursor-pointer">
+                <div class="border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-600 bg-white">
                     <span>Daily</span>
-                    <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
             </div>
             
@@ -323,9 +322,8 @@
                     <h2 class="text-base font-bold text-slate-900">Order Volume</h2>
                     <p class="text-xs text-slate-400 mt-0.5">Orders by day of week</p>
                 </div>
-                <div class="border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-600 bg-white flex items-center gap-1 cursor-pointer">
+                <div class="border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-600 bg-white">
                     <span>This Week</span>
-                    <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
             </div>
             
