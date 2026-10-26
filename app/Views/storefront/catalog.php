@@ -281,7 +281,7 @@
             <div class="bg-white rounded-2xl border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 
                 <!-- Results Count -->
-                <div class="text-gray-600 text-xs sm:text-sm font-medium whitespace-nowrap hidden sm:block">
+                <div id="catalog-results-count" class="text-gray-600 text-xs sm:text-sm font-medium whitespace-nowrap hidden sm:block">
                     <?php
                     $pgFrom = min($totalProducts ?? count($products), (($currentPage ?? 1) - 1) * ($perPage ?? 24) + 1);
                     $pgTo   = min($totalProducts ?? count($products), ($currentPage ?? 1) * ($perPage ?? 24));
@@ -294,13 +294,59 @@
                 <div class="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap sm:flex-nowrap justify-between sm:justify-end">
                     
                     <!-- Search Box -->
-                    <div class="relative flex-1 sm:w-52 md:w-64">
-                        <form id="search-form" action="<?= BASE_URL ?>/catalog" method="GET" onsubmit="handleSearchSubmit(event)" class="relative m-0">
+                    <div class="relative flex-1 sm:w-56 md:w-72" id="search-box-container">
+                        <form id="search-form" action="<?= BASE_URL ?>/catalog" method="GET" onsubmit="handleSearchSubmit(event)" class="relative m-0" autocomplete="off">
                             <?php if ($selectedCategoryId): ?><input type="hidden" name="category_id" value="<?= $selectedCategoryId ?>"><?php endif; ?>
                             <?php if ($selectedSubCategoryId): ?><input type="hidden" name="sub_category_id" value="<?= $selectedSubCategoryId ?>"><?php endif; ?>
-                            <input id="search-input" type="text" name="q" placeholder="Search products..." value="<?= htmlspecialchars($searchQuery ?? '') ?>" class="w-full pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-[#F25996] focus:border-[#F25996]" style="padding-left: 2.35rem !important;">
+                            <input id="search-input" type="text" name="q" placeholder="Search products..." value="<?= htmlspecialchars($searchQuery ?? '') ?>" class="w-full pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#F25996] focus:border-[#F25996] transition-all placeholder-gray-400" style="padding-left: 2.35rem !important;" autocomplete="off" spellcheck="false">
                             <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            <!-- Clear Button -->
+                            <button type="button" id="search-clear-btn" onclick="clearCatalogSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200/80 hover:bg-gray-300 text-gray-600 flex items-center justify-center text-[10px] transition-all cursor-pointer" title="Clear search">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
                         </form>
+
+                        <!-- Inline Search Options Dropdown -->
+                        <div id="search-autocomplete-dropdown" class="hidden absolute right-0 w-[calc(100vw-2rem)] sm:w-80 md:w-96 max-w-[92vw] top-full mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 ring-1 ring-black/5 z-50 overflow-hidden text-left backdrop-blur-sm" style="max-height: 480px;">
+                            <!-- Loading State -->
+                            <div id="search-dropdown-loading" class="hidden py-4 px-3 text-center">
+                                <div class="inline-flex items-center gap-2 text-xs font-semibold text-gray-500">
+                                    <svg class="w-4 h-4 animate-spin text-[#F25996]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    <span>Searching options...</span>
+                                </div>
+                            </div>
+
+                            <!-- Scrollable Options List -->
+                            <div id="search-dropdown-content" class="overflow-y-auto max-h-[360px] divide-y divide-gray-50">
+                                <!-- Categories Section -->
+                                <div id="search-dropdown-categories" class="p-2 hidden">
+                                    <p class="px-2 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Categories</p>
+                                    <div id="search-categories-items" class="space-y-0.5"></div>
+                                </div>
+
+                                <!-- Products Section -->
+                                <div id="search-dropdown-products" class="p-2 hidden">
+                                    <p class="px-2 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Products</p>
+                                    <div id="search-products-items" class="space-y-1"></div>
+                                </div>
+
+                                <!-- Empty State -->
+                                <div id="search-dropdown-empty" class="py-6 px-4 text-center hidden">
+                                    <svg class="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <p class="text-xs text-gray-600 font-semibold">No matching options found</p>
+                                    <p class="text-[11px] text-gray-400 mt-0.5">Try searching with a different keyword</p>
+                                </div>
+                            </div>
+
+                            <!-- Footer: Search All in Catalog -->
+                            <div id="search-dropdown-footer" class="p-2.5 bg-gray-50/90 border-t border-gray-100 flex items-center justify-between text-xs cursor-pointer hover:bg-pink-50/60 transition-colors group" onclick="triggerFullSearchFromDropdown()">
+                                <div class="flex items-center gap-2 text-gray-700 group-hover:text-[#F25996] font-medium truncate">
+                                    <svg class="w-4 h-4 text-[#F25996] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    <span class="truncate">Search catalog for "<strong id="search-query-preview" class="font-bold text-[#F25996]"></strong>"</span>
+                                </div>
+                                <kbd class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-semibold text-gray-500 bg-white border border-gray-200 rounded shadow-2xs shrink-0">↵ Enter</kbd>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Sort By Dropdown -->
@@ -472,6 +518,7 @@ function catalogPageUrl(int $page): string {
     return $base . '?' . http_build_query($qs);
 }
 ?>
+<div id="catalog-pagination-container" class="w-full">
 <?php if ($totalPages > 1): ?>
 <div class="w-full max-w-full mx-auto px-3 sm:px-6 lg:px-8 pb-10">
     <div class="flex items-center justify-center gap-2 flex-wrap pt-2">
@@ -513,6 +560,7 @@ function catalogPageUrl(int $page): string {
     </p>
 </div>
 <?php endif; ?>
+</div>
 
 <style>
 /* ===== Hide List-specific elements in Grid View ===== */
@@ -979,9 +1027,369 @@ function updateCategories() {
     window.location.href = url.toString();
 }
 
+/* ─────────────────────────────────────────────────────────
+   Inline Live Search & Autocomplete Options Dropdown
+───────────────────────────────────────────────────────── */
+let searchDebounceTimer = null;
+let apiSearchDebounceTimer = null;
+let currentHighlightedIndex = -1;
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function highlightMatch(text, query) {
+    if (!text) return '';
+    if (!query) return escapeHtml(text);
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    return escapeHtml(text).replace(regex, '<mark class="bg-pink-100 text-[#F25996] font-bold p-0 rounded-xs">$1</mark>');
+}
+
+function hideSearchDropdown() {
+    const dropdown = document.getElementById('search-autocomplete-dropdown');
+    if (dropdown) {
+        dropdown.classList.add('hidden');
+    }
+    currentHighlightedIndex = -1;
+}
+
+function clearCatalogSearch() {
+    const searchInput = document.getElementById('search-input');
+    const clearBtn = document.getElementById('search-clear-btn');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+    }
+    if (clearBtn) clearBtn.classList.add('hidden');
+    hideSearchDropdown();
+    filterProductCardsClientSide('');
+    fetchCatalogGrid('');
+}
+
+function triggerFullSearchFromDropdown() {
+    const searchInput = document.getElementById('search-input');
+    hideSearchDropdown();
+    const q = searchInput ? searchInput.value.trim() : '';
+    clearTimeout(searchDebounceTimer);
+    clearTimeout(apiSearchDebounceTimer);
+    fetchCatalogGrid(q);
+}
+
 function handleSearchSubmit(e) {
-    e.preventDefault();
-    applyFilters();
+    if (e) e.preventDefault();
+    hideSearchDropdown();
+    const searchInput = document.getElementById('search-input');
+    const q = searchInput ? searchInput.value.trim() : '';
+    clearTimeout(searchDebounceTimer);
+    clearTimeout(apiSearchDebounceTimer);
+    fetchCatalogGrid(q);
+}
+
+function filterProductCardsClientSide(query) {
+    const grid = document.getElementById('product-grid');
+    if (!grid) return;
+
+    const cards = grid.querySelectorAll('.product-card');
+    const qLower = query.toLowerCase().trim();
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const nameEl = card.querySelector('.product-name');
+        const nameText = nameEl ? nameEl.textContent.toLowerCase() : '';
+        const bodyText = card.textContent.toLowerCase();
+
+        if (!qLower || nameText.includes(qLower) || bodyText.includes(qLower)) {
+            card.style.display = '';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    // Handle empty state message for client-side search
+    let emptyMsg = document.getElementById('client-search-empty-msg');
+    if (visibleCount === 0 && qLower && cards.length > 0) {
+        if (!emptyMsg) {
+            emptyMsg = document.createElement('div');
+            emptyMsg.id = 'client-search-empty-msg';
+            emptyMsg.className = 'col-span-full py-12 px-4 text-center bg-white rounded-2xl border border-gray-200 shadow-sm';
+            grid.appendChild(emptyMsg);
+        }
+        emptyMsg.innerHTML = `
+            <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <h3 class="text-base font-bold text-gray-900">No matching products found</h3>
+            <p class="text-xs text-gray-500 mt-1">No products on this page match "<strong class="text-gray-700">${escapeHtml(query)}</strong>"</p>
+            <button type="button" onclick="clearCatalogSearch()" class="inline-block mt-3 px-3 py-1.5 text-xs text-[#F25996] font-bold hover:underline bg-pink-50 rounded-lg">Clear search</button>
+        `;
+        emptyMsg.style.display = '';
+    } else if (emptyMsg) {
+        emptyMsg.style.display = 'none';
+    }
+
+    // Update count display
+    const countEl = document.getElementById('catalog-results-count');
+    if (countEl && qLower) {
+        countEl.innerHTML = `Showing <span class="font-bold text-gray-900">${visibleCount}</span> matching products`;
+    }
+}
+
+function fetchCatalogGrid(query) {
+    const url = new URL(window.location.href);
+    if (query) {
+        url.searchParams.set('q', query);
+        url.searchParams.delete('page'); // Reset to page 1 on search
+    } else {
+        url.searchParams.delete('q');
+    }
+
+    // Update browser URL history without reloading
+    window.history.replaceState({}, '', url.toString());
+
+    fetch(url.toString(), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(res => res.text())
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // Update product grid
+        const newGrid = doc.getElementById('product-grid');
+        const currentGrid = document.getElementById('product-grid');
+        if (newGrid && currentGrid) {
+            currentGrid.innerHTML = newGrid.innerHTML;
+            if (localStorage.getItem('catalogView') === 'list') {
+                setView('list');
+            }
+        }
+
+        // Update count display
+        const newCount = doc.getElementById('catalog-results-count');
+        const currentCount = document.getElementById('catalog-results-count');
+        if (newCount && currentCount) {
+            currentCount.innerHTML = newCount.innerHTML;
+        }
+
+        // Update pagination
+        const newPagination = doc.getElementById('catalog-pagination-container');
+        const currentPagination = document.getElementById('catalog-pagination-container');
+        if (newPagination && currentPagination) {
+            currentPagination.innerHTML = newPagination.innerHTML;
+        } else if (currentPagination && !newPagination) {
+            currentPagination.innerHTML = '';
+        }
+    })
+    .catch(err => {
+        console.error("Catalog live search error:", err);
+    });
+}
+
+function fetchSearchDropdownOptions(query) {
+    const dropdown = document.getElementById('search-autocomplete-dropdown');
+    const loading = document.getElementById('search-dropdown-loading');
+    const catSection = document.getElementById('search-dropdown-categories');
+    const catItems = document.getElementById('search-categories-items');
+    const prodSection = document.getElementById('search-dropdown-products');
+    const prodItems = document.getElementById('search-products-items');
+    const emptyState = document.getElementById('search-dropdown-empty');
+    const queryPreview = document.getElementById('search-query-preview');
+
+    if (!dropdown) return;
+
+    dropdown.classList.remove('hidden');
+    if (queryPreview) queryPreview.textContent = query;
+    if (loading) loading.classList.remove('hidden');
+    if (emptyState) emptyState.classList.add('hidden');
+    if (catSection) catSection.classList.add('hidden');
+    if (prodSection) prodSection.classList.add('hidden');
+
+    fetch(`<?= BASE_URL ?>/api/search?q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (loading) loading.classList.add('hidden');
+            let hasResults = false;
+            currentHighlightedIndex = -1;
+
+            // Categories
+            if (data.categories && data.categories.length > 0) {
+                hasResults = true;
+                catSection.classList.remove('hidden');
+                catItems.innerHTML = data.categories.map(cat => `
+                    <a href="<?= BASE_URL ?>/catalog?category_id=${cat.id}" class="search-option-item flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-700 hover:bg-pink-50 hover:text-[#F25996] transition-colors group">
+                        <span class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-md bg-pink-50 flex items-center justify-center text-[#F25996] group-hover:bg-pink-100 transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                            </span>
+                            <span>${highlightMatch(cat.name, query)}</span>
+                        </span>
+                        <span class="text-[10px] text-gray-400 group-hover:text-pink-400">Category</span>
+                    </a>
+                `).join('');
+            }
+
+            // Products
+            if (data.products && data.products.length > 0) {
+                hasResults = true;
+                prodSection.classList.remove('hidden');
+                prodItems.innerHTML = data.products.slice(0, 6).map(p => {
+                    const img = p.primary_image || ('https://placehold.co/80?text=' + encodeURIComponent(p.name));
+                    const priceHtml = p.display_price ? `<span class="text-xs font-bold text-[#F25996]">₹${parseFloat(p.display_price).toLocaleString()}</span>` : '';
+                    return `
+                        <a href="<?= BASE_URL ?>/product?id=${p.id}" class="search-option-item flex items-center gap-3 p-2 rounded-xl hover:bg-pink-50/70 transition-colors group">
+                            <div class="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 border border-gray-100 shrink-0">
+                                <img src="${img}" alt="${escapeHtml(p.name)}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-bold text-gray-900 group-hover:text-[#F25996] transition-colors truncate">
+                                    ${highlightMatch(p.name, query)}
+                                </div>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    ${p.category_name ? `<span class="text-[10px] text-gray-400 font-medium truncate">${escapeHtml(p.category_name)}</span>` : ''}
+                                    ${priceHtml}
+                                </div>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-300 group-hover:text-[#F25996] group-hover:translate-x-0.5 transition-all shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </a>
+                    `;
+                }).join('');
+            }
+
+            if (!hasResults) {
+                emptyState.classList.remove('hidden');
+            }
+        })
+        .catch(err => {
+            console.error("API search error:", err);
+            if (loading) loading.classList.add('hidden');
+        });
+}
+
+function highlightDropdownItem(items, index) {
+    const footer = document.getElementById('search-dropdown-footer');
+    items.forEach((item, idx) => {
+        if (idx === index) {
+            item.classList.add('bg-pink-50', 'ring-1', 'ring-[#F25996]/30');
+            item.scrollIntoView({ block: 'nearest' });
+        } else {
+            item.classList.remove('bg-pink-50', 'ring-1', 'ring-[#F25996]/30');
+        }
+    });
+
+    if (footer) {
+        if (index === items.length) {
+            footer.classList.add('bg-pink-100/70');
+            footer.scrollIntoView({ block: 'nearest' });
+        } else {
+            footer.classList.remove('bg-pink-100/70');
+        }
+    }
+}
+
+function initCatalogInlineSearch() {
+    const searchInput = document.getElementById('search-input');
+    const clearBtn = document.getElementById('search-clear-btn');
+    if (!searchInput) return;
+
+    if (searchInput.value.trim()) {
+        if (clearBtn) clearBtn.classList.remove('hidden');
+    }
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+
+        // Toggle clear button
+        if (clearBtn) {
+            if (query) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+        }
+
+        // 1. Instant client-side DOM filter on current product cards
+        filterProductCardsClientSide(query);
+
+        // 2. Debounced API search for autocomplete dropdown options
+        clearTimeout(apiSearchDebounceTimer);
+        if (query.length >= 1) {
+            apiSearchDebounceTimer = setTimeout(() => {
+                fetchSearchDropdownOptions(query);
+            }, 200);
+        } else {
+            hideSearchDropdown();
+        }
+
+        // 3. Debounced AJAX fetch for complete database catalog grid sync
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            fetchCatalogGrid(query);
+        }, 400);
+    });
+
+    searchInput.addEventListener('keydown', function(e) {
+        const dropdown = document.getElementById('search-autocomplete-dropdown');
+        const isDropdownOpen = dropdown && !dropdown.classList.contains('hidden');
+
+        if (!isDropdownOpen) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSearchSubmit(e);
+            }
+            return;
+        }
+
+        const items = dropdown.querySelectorAll('.search-option-item');
+        const totalNavItems = items.length + 1; // items + footer
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            currentHighlightedIndex = (currentHighlightedIndex + 1) % totalNavItems;
+            highlightDropdownItem(items, currentHighlightedIndex);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            currentHighlightedIndex = (currentHighlightedIndex - 1 + totalNavItems) % totalNavItems;
+            highlightDropdownItem(items, currentHighlightedIndex);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (currentHighlightedIndex >= 0 && currentHighlightedIndex < items.length) {
+                items[currentHighlightedIndex].click();
+            } else {
+                hideSearchDropdown();
+                handleSearchSubmit(e);
+            }
+        } else if (e.key === 'Escape') {
+            hideSearchDropdown();
+        }
+    });
+
+    searchInput.addEventListener('focus', function() {
+        const query = this.value.trim();
+        if (query.length >= 1) {
+            fetchSearchDropdownOptions(query);
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        const container = document.getElementById('search-box-container');
+        if (container && !container.contains(e.target)) {
+            hideSearchDropdown();
+        }
+    });
+
+    window.addEventListener('popstate', function() {
+        const url = new URL(window.location.href);
+        const q = url.searchParams.get('q') || '';
+        if (searchInput) {
+            searchInput.value = q;
+            if (clearBtn) {
+                if (q) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
+        }
+        fetchCatalogGrid(q);
+    });
 }
 
 function setView(mode) {
@@ -1143,6 +1551,7 @@ function initCatCustomSelect(sel) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    initCatalogInlineSearch();
     initCatCustomSelect(document.getElementById('sort-select'));
     initCatCustomSelect(document.getElementById('main-category-select'));
     initCatCustomSelect(document.getElementById('sub-category-select'));
