@@ -19,7 +19,7 @@ class PackingSlipConfigController extends Controller
 
     public function index()
     {
-        $this->requirePermission('all_orders', 'edit');
+        $this->requirePermission('packing_slip_config', 'view');
 
         $config = PackingSlipConfig::get();
 
@@ -48,7 +48,7 @@ class PackingSlipConfigController extends Controller
 
     public function save()
     {
-        $this->requirePermission('all_orders', 'edit');
+        $this->requirePermission('packing_slip_config', 'edit');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/orders/packing-slip-config');

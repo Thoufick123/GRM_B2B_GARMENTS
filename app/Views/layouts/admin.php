@@ -839,7 +839,7 @@ if ($currentUserRole === 'super_admin') {
             </div>
             <?php endif; ?>
 
-            <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasAnyPermission('all_orders') || $this->hasAnyPermission('pending_payments') || $this->hasAnyPermission('bill_modifications')): ?>
+            <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasAnyPermission('all_orders') || $this->hasAnyPermission('pending_payments') || $this->hasAnyPermission('bill_modifications') || $this->hasAnyPermission('packing_videos') || $this->hasAnyPermission('packing_slip_config')): ?>
             <style>
                 .sales-dropdown {
                     display: none;
@@ -877,12 +877,12 @@ if ($currentUserRole === 'super_admin') {
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Bill Modifications</span>
                     </a>
                     <?php endif; ?>
-                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('all_orders', 'view') || $this->hasAnyPermission('all_orders')): ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('packing_videos', 'view') || $this->hasAnyPermission('packing_videos')): ?>
                     <a href="<?= BASE_URL ?>/admin/orders/packing-videos" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= $currentUri === '/admin/orders/packing-videos' ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">📹 Packing Videos & Backup</span>
                     </a>
                     <?php endif; ?>
-                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('all_orders', 'edit') || $this->hasAnyPermission('all_orders')): ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('packing_slip_config', 'view') || $this->hasAnyPermission('packing_slip_config')): ?>
                     <a href="<?= BASE_URL ?>/admin/orders/packing-slip-config" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/orders/packing-slip-config') === 0 ? 'bg-brand-50 text-brand-700 font-bold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">🏷️ Packing Slip Config</span>
                     </a>
@@ -1178,7 +1178,25 @@ if ($currentUserRole === 'super_admin') {
             </div>
             <?php endif; ?>
 
-            <?php if (\Core\Session::get('user_role') === 'super_admin'): ?>
+            <?php 
+            $hasCmsAccess = \Core\Session::get('user_role') === 'super_admin' || 
+                $this->hasAnyPermission('cms_builder') ||
+                $this->hasAnyPermission('cms_navbars') ||
+                $this->hasAnyPermission('cms_topbars') ||
+                $this->hasAnyPermission('cms_hero_banners') ||
+                $this->hasAnyPermission('cms_main_banners') ||
+                $this->hasAnyPermission('cms_product_carousels') ||
+                $this->hasAnyPermission('cms_category_carousels') ||
+                $this->hasAnyPermission('cms_categories_grid') ||
+                $this->hasAnyPermission('cms_footers') ||
+                $this->hasAnyPermission('cms_about_us') ||
+                $this->hasAnyPermission('cms_size_charts') ||
+                $this->hasAnyPermission('cms_product_card') ||
+                $this->hasAnyPermission('cms_reviews') ||
+                $this->hasAnyPermission('cms_projects') ||
+                $this->hasAnyPermission('cms_reels');
+            if ($hasCmsAccess): 
+            ?>
             <style>
                 .cms-dropdown {
                     display: none;
@@ -1201,54 +1219,84 @@ if ($currentUserRole === 'super_admin') {
                 </div>
                 
                 <div class="cms-dropdown ml-4 pl-4 border-l border-gray-100 space-y-1 mt-1">
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_builder', 'view') || $this->hasAnyPermission('cms_builder')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/builder" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= $currentUri === '/admin/cms/builder' ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Layout Builder</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_navbars', 'view') || $this->hasAnyPermission('cms_navbars')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/navbars" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/navbars') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Navbars</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_topbars', 'view') || $this->hasAnyPermission('cms_topbars')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/topbars" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/topbars') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Top Bars</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_hero_banners', 'view') || $this->hasAnyPermission('cms_hero_banners')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/hero-banners" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/hero-banners') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Hero Banners</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_main_banners', 'view') || $this->hasAnyPermission('cms_main_banners')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/main-banners" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/main-banners') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Main Banners</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_product_carousels', 'view') || $this->hasAnyPermission('cms_product_carousels')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/product-carousels" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/product-carousels') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Product Carousels</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_category_carousels', 'view') || $this->hasAnyPermission('cms_category_carousels')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/category-carousels" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/category-carousels') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Category Carousels</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_categories_grid', 'view') || $this->hasAnyPermission('cms_categories_grid')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/categories-grid" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/categories-grid') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Categories Grid</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_footers', 'view') || $this->hasAnyPermission('cms_footers')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/footers" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/footers') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Footers</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_about_us', 'view') || $this->hasAnyPermission('cms_about_us')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/about-us" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/about-us') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">About Us</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_size_charts', 'view') || $this->hasAnyPermission('cms_size_charts')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/size-charts" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/size-charts') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Size Charts</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_product_card', 'view') || $this->hasAnyPermission('cms_product_card')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/product-card-settings" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/product-card-settings') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Product Card</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_reviews', 'view') || $this->hasAnyPermission('cms_reviews')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/reviews" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/reviews') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Review</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_projects', 'view') || $this->hasAnyPermission('cms_projects')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/projects" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/projects') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Our Project</span>
                     </a>
+                    <?php endif; ?>
+                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('cms_reels', 'view') || $this->hasAnyPermission('cms_reels')): ?>
                     <a href="<?= BASE_URL ?>/admin/cms/reels" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-w-max <?= strpos($currentUri, '/admin/cms/reels') === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?>">
                         <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap flex items-center gap-1.5">
                             <span>Reels Container</span>
                             <span class="px-1.5 py-0.2 text-[9px] font-black uppercase tracking-wider bg-rose-100 text-rose-600 rounded">New</span>
                         </span>
                     </a>
+                    <?php endif; ?>
                 </div>
             </div>
             <?php endif; ?>

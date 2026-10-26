@@ -12,14 +12,17 @@ class ProductCardSettingsController extends Controller
     public function __construct()
     {
         parent::__construct();
-        if (Session::get('user_role') !== 'super_admin') {
-            $this->redirect('/admin/dashboard');
+        $role = Session::get('user_role');
+        if (!$role) {
+            Session::setFlash('error', 'Unauthorized access.');
+            $this->redirect('/login');
         }
         $this->db = Database::getInstance();
     }
 
     public function index()
     {
+        $this->requirePermission('cms_product_card', 'view');
         $stmt = $this->db->prepare("SELECT setting_value FROM settings WHERE setting_key = 'product_card_settings'");
         $stmt->execute();
         $row = $stmt->fetch();
@@ -77,6 +80,7 @@ class ProductCardSettingsController extends Controller
 
     public function update()
     {
+        $this->requirePermission('cms_product_card', 'edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/product-card-settings');
         }

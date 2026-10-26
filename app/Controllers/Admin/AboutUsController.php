@@ -12,14 +12,17 @@ class AboutUsController extends Controller
     public function __construct()
     {
         parent::__construct();
-        if (Session::get('user_role') !== 'super_admin') {
-            $this->redirect('/admin/dashboard');
+        $role = Session::get('user_role');
+        if (!$role) {
+            Session::setFlash('error', 'Unauthorized access.');
+            $this->redirect('/login');
         }
         $this->cmsModel = new CmsComponent();
     }
 
     public function index()
     {
+        $this->requirePermission('cms_about_us', 'view');
         $db = \Core\Database::getInstance();
         $stmt = $db->query("SELECT * FROM cms_components WHERE section_type = 'about_us' ORDER BY id DESC");
         $aboutUsList = $stmt->fetchAll();
@@ -36,6 +39,7 @@ class AboutUsController extends Controller
 
     public function create()
     {
+        $this->requirePermission('cms_about_us', 'create');
         $this->render('admin/cms/about_us/create', [
             'title' => 'Create About Us Component'
         ], 'admin');
@@ -43,6 +47,7 @@ class AboutUsController extends Controller
 
     public function store()
     {
+        $this->requirePermission('cms_about_us', 'create');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/about-us');
         }
@@ -71,6 +76,7 @@ class AboutUsController extends Controller
 
     public function edit()
     {
+        $this->requirePermission('cms_about_us', 'edit');
         $id = $_GET['id'] ?? null;
         if (!$id) $this->redirect('/admin/cms/about-us');
 
@@ -91,6 +97,7 @@ class AboutUsController extends Controller
 
     public function update()
     {
+        $this->requirePermission('cms_about_us', 'edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/about-us');
         }
@@ -125,6 +132,7 @@ class AboutUsController extends Controller
 
     public function delete()
     {
+        $this->requirePermission('cms_about_us', 'delete');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/about-us');
         }

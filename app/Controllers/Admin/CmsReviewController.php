@@ -12,9 +12,9 @@ class CmsReviewController extends Controller
     {
         parent::__construct();
         $role = Session::get('user_role');
-        if (!$role || $role !== 'super_admin') {
+        if (!$role) {
             Session::setFlash('error', 'Unauthorized access.');
-            $this->redirect('/admin/dashboard');
+            $this->redirect('/login');
         }
     }
 
@@ -23,6 +23,7 @@ class CmsReviewController extends Controller
      */
     public function index()
     {
+        $this->requirePermission('cms_reviews', 'view');
         $db = Database::getInstance();
         $stmt = $db->query("SELECT * FROM cms_components WHERE section_type = 'reviews' ORDER BY id DESC");
         $sections = $stmt->fetchAll();
@@ -42,6 +43,7 @@ class CmsReviewController extends Controller
      */
     public function create()
     {
+        $this->requirePermission('cms_reviews', 'create');
         $reviews = $this->getAllApprovedReviews();
 
         $this->render('admin/cms/reviews/create', [
@@ -55,6 +57,7 @@ class CmsReviewController extends Controller
      */
     public function store()
     {
+        $this->requirePermission('cms_reviews', 'create');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/reviews');
         }
@@ -90,6 +93,7 @@ class CmsReviewController extends Controller
      */
     public function edit()
     {
+        $this->requirePermission('cms_reviews', 'edit');
         $id = $_GET['id'] ?? null;
         if (!$id) {
             $this->redirect('/admin/cms/reviews');
@@ -120,6 +124,7 @@ class CmsReviewController extends Controller
      */
     public function update()
     {
+        $this->requirePermission('cms_reviews', 'edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/reviews');
         }
@@ -161,6 +166,7 @@ class CmsReviewController extends Controller
      */
     public function delete()
     {
+        $this->requirePermission('cms_reviews', 'delete');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/reviews');
         }

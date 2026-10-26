@@ -13,9 +13,9 @@ class ProjectController extends Controller
     {
         parent::__construct();
         $role = Session::get('user_role');
-        if (!$role || $role !== 'super_admin') {
+        if (!$role) {
             Session::setFlash('error', 'Unauthorized access.');
-            $this->redirect('/admin/dashboard');
+            $this->redirect('/login');
         }
     }
 
@@ -24,6 +24,7 @@ class ProjectController extends Controller
      */
     public function index()
     {
+        $this->requirePermission('cms_projects', 'view');
         $db = Database::getInstance();
         $stmt = $db->query("SELECT * FROM cms_projects ORDER BY sort_order ASC, id DESC");
         $projects = $stmt->fetchAll();
@@ -44,6 +45,7 @@ class ProjectController extends Controller
      */
     public function create()
     {
+        $this->requirePermission('cms_projects', 'create');
         $this->render('admin/cms/projects/create', [
             'title' => 'Add New Project'
         ], 'admin');
@@ -54,6 +56,7 @@ class ProjectController extends Controller
      */
     public function store()
     {
+        $this->requirePermission('cms_projects', 'create');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/projects');
         }
@@ -104,6 +107,7 @@ class ProjectController extends Controller
      */
     public function edit()
     {
+        $this->requirePermission('cms_projects', 'edit');
         $id = (int)($_GET['id'] ?? 0);
         if (!$id) {
             $this->redirect('/admin/cms/projects');
@@ -133,6 +137,7 @@ class ProjectController extends Controller
      */
     public function update()
     {
+        $this->requirePermission('cms_projects', 'edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/projects');
         }
@@ -192,6 +197,7 @@ class ProjectController extends Controller
      */
     public function delete()
     {
+        $this->requirePermission('cms_projects', 'delete');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/projects');
         }
@@ -217,6 +223,7 @@ class ProjectController extends Controller
      */
     public function toggleStatus()
     {
+        $this->requirePermission('cms_projects', 'edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);

@@ -12,14 +12,17 @@ class TopBarController extends Controller
     public function __construct()
     {
         parent::__construct();
-        if (Session::get('user_role') !== 'super_admin') {
-            $this->redirect('/admin/dashboard');
+        $role = Session::get('user_role');
+        if (!$role) {
+            Session::setFlash('error', 'Unauthorized access.');
+            $this->redirect('/login');
         }
         $this->cmsModel = new CmsComponent();
     }
 
     public function index()
     {
+        $this->requirePermission('cms_topbars', 'view');
         $db = \Core\Database::getInstance();
         $stmt = $db->query("SELECT * FROM cms_components WHERE section_type = 'top_bar' ORDER BY updated_at DESC");
         $topbars = $stmt->fetchAll();
@@ -36,6 +39,7 @@ class TopBarController extends Controller
 
     public function create()
     {
+        $this->requirePermission('cms_topbars', 'create');
         $this->render('admin/cms/topbar/create', [
             'title' => 'Create Top Announcement Bar'
         ], 'admin');
@@ -43,6 +47,7 @@ class TopBarController extends Controller
 
     public function store()
     {
+        $this->requirePermission('cms_topbars', 'create');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/topbars');
         }
@@ -104,6 +109,7 @@ class TopBarController extends Controller
 
     public function edit()
     {
+        $this->requirePermission('cms_topbars', 'edit');
         $id = $_GET['id'] ?? '';
         $topbar = $this->cmsModel->getById($id);
 
@@ -123,6 +129,7 @@ class TopBarController extends Controller
 
     public function update()
     {
+        $this->requirePermission('cms_topbars', 'edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/topbars');
         }
@@ -191,6 +198,7 @@ class TopBarController extends Controller
 
     public function delete()
     {
+        $this->requirePermission('cms_topbars', 'delete');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/topbars');
         }

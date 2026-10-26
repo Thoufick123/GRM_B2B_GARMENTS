@@ -16,9 +16,10 @@ class ReelsController extends Controller
     public function __construct()
     {
         parent::__construct();
-        if (Session::get('user_role') !== 'super_admin') {
+        $role = Session::get('user_role');
+        if (!$role) {
             Session::setFlash('error', 'Unauthorized access.');
-            $this->redirect('/admin/dashboard');
+            $this->redirect('/login');
         }
         $this->cmsModel = new CmsComponent();
         $this->db = Database::getInstance();
@@ -29,6 +30,7 @@ class ReelsController extends Controller
      */
     public function index()
     {
+        $this->requirePermission('cms_reels', 'view');
         $containers = $this->cmsModel->getAllReelsContainers();
         
         foreach ($containers as &$c) {
@@ -46,6 +48,7 @@ class ReelsController extends Controller
      */
     public function create()
     {
+        $this->requirePermission('cms_reels', 'create');
         $this->render('admin/cms/reels/create', [
             'title' => 'Add Reels Container'
         ], 'admin');
@@ -56,6 +59,7 @@ class ReelsController extends Controller
      */
     public function store()
     {
+        $this->requirePermission('cms_reels', 'create');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/reels');
         }
@@ -121,6 +125,7 @@ class ReelsController extends Controller
      */
     public function edit()
     {
+        $this->requirePermission('cms_reels', 'edit');
         $id = $_GET['id'] ?? '';
         $container = $this->cmsModel->getById($id);
 
@@ -143,6 +148,7 @@ class ReelsController extends Controller
      */
     public function update()
     {
+        $this->requirePermission('cms_reels', 'edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/reels');
         }
@@ -211,6 +217,7 @@ class ReelsController extends Controller
      */
     public function delete()
     {
+        $this->requirePermission('cms_reels', 'delete');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/reels');
         }
@@ -254,6 +261,7 @@ class ReelsController extends Controller
      */
     public function toggleStatus()
     {
+        $this->requirePermission('cms_reels', 'edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);

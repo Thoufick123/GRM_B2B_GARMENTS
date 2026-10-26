@@ -11,11 +11,16 @@ class CmsAdminController extends Controller
     public function __construct()
     {
         parent::__construct();
+        $role = \Core\Session::get('user_role');
+        if (!$role) {
+            $this->redirect('/login');
+        }
         $this->db = Database::getInstance();
     }
 
     public function builder()
     {
+        $this->requirePermission('cms_builder', 'view');
         // Fetch current layout
         $stmt = $this->db->prepare("SELECT layout_data FROM cms_layouts WHERE page_name = 'home'");
         $stmt->execute();
@@ -61,6 +66,7 @@ class CmsAdminController extends Controller
 
     public function deleteComponent()
     {
+        $this->requirePermission('cms_builder', 'edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/builder');
         }

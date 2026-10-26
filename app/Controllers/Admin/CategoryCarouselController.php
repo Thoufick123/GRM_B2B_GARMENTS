@@ -15,8 +15,10 @@ class CategoryCarouselController extends Controller
     public function __construct()
     {
         parent::__construct();
-        if (Session::get('user_role') !== 'super_admin') {
-            $this->redirect('/admin/dashboard');
+        $role = Session::get('user_role');
+        if (!$role) {
+            Session::setFlash('error', 'Unauthorized access.');
+            $this->redirect('/login');
         }
         $this->cmsModel = new CmsComponent();
         $this->categoryModel = new Category();
@@ -24,6 +26,7 @@ class CategoryCarouselController extends Controller
 
     public function index()
     {
+        $this->requirePermission('cms_category_carousels', 'view');
         $carousels = $this->cmsModel->getAllCategoryCarousels();
         
         // Decode JSON content and fetch first category image
@@ -48,6 +51,7 @@ class CategoryCarouselController extends Controller
 
     public function create()
     {
+        $this->requirePermission('cms_category_carousels', 'create');
         $categories = $this->categoryModel->getAll();
 
         $this->render('admin/cms/category_carousels/create', [
@@ -58,6 +62,7 @@ class CategoryCarouselController extends Controller
 
     public function store()
     {
+        $this->requirePermission('cms_category_carousels', 'create');
         $title = $_POST['title'] ?? '';
         $sort_order = $_POST['sort_order'] ?? 0;
         $mobile_count = max(1, min(6, (int)($_POST['mobile_count'] ?? 2)));
@@ -120,6 +125,7 @@ class CategoryCarouselController extends Controller
 
     public function edit()
     {
+        $this->requirePermission('cms_category_carousels', 'edit');
         $id = $_GET['id'] ?? '';
         $carousel = $this->cmsModel->getById($id);
         
@@ -141,6 +147,7 @@ class CategoryCarouselController extends Controller
 
     public function update()
     {
+        $this->requirePermission('cms_category_carousels', 'edit');
         $id = $_POST['id'] ?? '';
         $carousel = $this->cmsModel->getById($id);
         
@@ -209,6 +216,7 @@ class CategoryCarouselController extends Controller
 
     public function delete()
     {
+        $this->requirePermission('cms_category_carousels', 'delete');
         $id = $_POST['id'] ?? '';
         $this->cmsModel->delete($id);
         

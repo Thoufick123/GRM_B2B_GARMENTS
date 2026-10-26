@@ -17,8 +17,10 @@ class SizeChartController extends Controller
     public function __construct()
     {
         parent::__construct();
-        if (Session::get('user_role') !== 'super_admin') {
-            $this->redirect('/admin/dashboard');
+        $role = Session::get('user_role');
+        if (!$role) {
+            Session::setFlash('error', 'Unauthorized access.');
+            $this->redirect('/login');
         }
         $this->sizeChartModel = new SizeChart();
         $this->categoryModel = new Category();
@@ -27,6 +29,7 @@ class SizeChartController extends Controller
 
     public function index(): void
     {
+        $this->requirePermission('cms_size_charts', 'view');
         $charts = $this->sizeChartModel->getAll();
         $categories = $this->categoryModel->getAll();
 
@@ -51,6 +54,7 @@ class SizeChartController extends Controller
 
     public function create(): void
     {
+        $this->requirePermission('cms_size_charts', 'create');
         $categories = $this->categoryModel->getAll();
         $subCategories = $this->subCategoryModel->getAll();
 
@@ -63,6 +67,7 @@ class SizeChartController extends Controller
 
     public function store(): void
     {
+        $this->requirePermission('cms_size_charts', 'create');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/size-charts');
         }
@@ -180,6 +185,7 @@ class SizeChartController extends Controller
 
     public function edit(): void
     {
+        $this->requirePermission('cms_size_charts', 'edit');
         $id = (int)($_GET['id'] ?? 0);
         $chart = $this->sizeChartModel->getById($id);
         if (!$chart) {
@@ -203,6 +209,7 @@ class SizeChartController extends Controller
 
     public function update(): void
     {
+        $this->requirePermission('cms_size_charts', 'edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/size-charts');
         }
@@ -330,6 +337,7 @@ class SizeChartController extends Controller
 
     public function delete(): void
     {
+        $this->requirePermission('cms_size_charts', 'delete');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/size-charts');
         }
@@ -343,6 +351,7 @@ class SizeChartController extends Controller
 
     public function toggleStatus(): void
     {
+        $this->requirePermission('cms_size_charts', 'edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/size-charts');
         }
@@ -362,6 +371,7 @@ class SizeChartController extends Controller
 
     public function createCategoryAjax(): void
     {
+        $this->requirePermission('cms_size_charts', 'create');
         header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             echo json_encode(['success' => false, 'error' => 'Invalid request method.']);

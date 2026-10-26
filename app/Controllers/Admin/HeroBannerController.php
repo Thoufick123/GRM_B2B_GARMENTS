@@ -12,14 +12,17 @@ class HeroBannerController extends Controller
     public function __construct()
     {
         parent::__construct();
-        if (\Core\Session::get('user_role') !== 'super_admin') {
-            $this->redirect('/admin/dashboard');
+        $role = Session::get('user_role');
+        if (!$role) {
+            Session::setFlash('error', 'Unauthorized access.');
+            $this->redirect('/login');
         }
         $this->cmsModel = new CmsComponent();
     }
 
     public function index()
     {
+        $this->requirePermission('cms_hero_banners', 'view');
         $banners = $this->cmsModel->getAllHeroBanners();
         
         // Decode JSON content
@@ -35,6 +38,7 @@ class HeroBannerController extends Controller
 
     public function create()
     {
+        $this->requirePermission('cms_hero_banners', 'create');
         $this->render('admin/cms/hero_banners/create', [
             'title' => 'New Hero Banner'
         ], 'admin');
@@ -42,6 +46,7 @@ class HeroBannerController extends Controller
 
     public function store()
     {
+        $this->requirePermission('cms_hero_banners', 'create');
         $title = $_POST['title'] ?? '';
         $subtitle = $_POST['subtitle'] ?? '';
         $button_text = $_POST['button_text'] ?? '';
@@ -158,6 +163,7 @@ class HeroBannerController extends Controller
 
     public function edit()
     {
+        $this->requirePermission('cms_hero_banners', 'edit');
         $id = $_GET['id'] ?? '';
         $banner = $this->cmsModel->getById($id);
         
@@ -177,6 +183,7 @@ class HeroBannerController extends Controller
 
     public function update()
     {
+        $this->requirePermission('cms_hero_banners', 'edit');
         $id = $_POST['id'] ?? '';
         $banner = $this->cmsModel->getById($id);
         
@@ -273,6 +280,7 @@ class HeroBannerController extends Controller
 
     public function delete()
     {
+        $this->requirePermission('cms_hero_banners', 'delete');
         $id = $_POST['id'] ?? '';
         $this->cmsModel->delete($id);
         \Core\Cache::delete('cms_layout_home');

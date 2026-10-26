@@ -14,8 +14,10 @@ class CategoriesGridController extends Controller
     public function __construct()
     {
         parent::__construct();
-        if (\Core\Session::get('user_role') !== 'super_admin') {
-            $this->redirect('/admin/dashboard');
+        $role = Session::get('user_role');
+        if (!$role) {
+            Session::setFlash('error', 'Unauthorized access.');
+            $this->redirect('/login');
         }
         $this->cmsModel = new CmsComponent();
         $this->categoryModel = new Category();
@@ -23,6 +25,7 @@ class CategoriesGridController extends Controller
 
     public function index()
     {
+        $this->requirePermission('cms_categories_grid', 'view');
         $carousels = $this->cmsModel->getAllCategoriesGrids();
         
         // Decode JSON content and fetch first category image
@@ -47,6 +50,7 @@ class CategoriesGridController extends Controller
 
     public function create()
     {
+        $this->requirePermission('cms_categories_grid', 'create');
         $categories = $this->categoryModel->getAll();
 
         $this->render('admin/cms/categories_grid/create', [
@@ -57,6 +61,7 @@ class CategoriesGridController extends Controller
 
     public function store()
     {
+        $this->requirePermission('cms_categories_grid', 'create');
         $title = $_POST['title'] ?? '';
         $sort_order = $_POST['sort_order'] ?? 0;
         $mobile_count = $_POST['mobile_count'] ?? 2;
@@ -121,6 +126,7 @@ class CategoriesGridController extends Controller
 
     public function edit()
     {
+        $this->requirePermission('cms_categories_grid', 'edit');
         $id = $_GET['id'] ?? '';
         $carousel = $this->cmsModel->getById($id);
         
@@ -142,6 +148,7 @@ class CategoriesGridController extends Controller
 
     public function update()
     {
+        $this->requirePermission('cms_categories_grid', 'edit');
         $id = $_POST['id'] ?? '';
         $carousel = $this->cmsModel->getById($id);
         
@@ -212,6 +219,7 @@ class CategoriesGridController extends Controller
 
     public function delete()
     {
+        $this->requirePermission('cms_categories_grid', 'delete');
         $id = $_POST['id'] ?? '';
         $this->cmsModel->delete($id);
         

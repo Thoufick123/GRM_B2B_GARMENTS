@@ -12,14 +12,17 @@ class MainBannerController extends Controller
     public function __construct()
     {
         parent::__construct();
-        if (\Core\Session::get('user_role') !== 'super_admin') {
-            $this->redirect('/admin/dashboard');
+        $role = Session::get('user_role');
+        if (!$role) {
+            Session::setFlash('error', 'Unauthorized access.');
+            $this->redirect('/login');
         }
         $this->cmsModel = new CmsComponent();
     }
 
     public function index()
     {
+        $this->requirePermission('cms_main_banners', 'view');
         // Get components by section_type = 'main_banner'
         $db = \Core\Database::getInstance();
         $stmt = $db->query("SELECT * FROM cms_components WHERE section_type = 'main_banner'");
@@ -37,6 +40,7 @@ class MainBannerController extends Controller
 
     public function create()
     {
+        $this->requirePermission('cms_main_banners', 'create');
         $db = \Core\Database::getInstance();
         $previewProducts = $db->query("SELECT id, name, slug, (SELECT image_path FROM product_images WHERE product_id = products.id AND is_primary = 1 LIMIT 1) as main_image FROM products WHERE status = 'active' ORDER BY id DESC")->fetchAll();
         $previewCategories = $db->query("SELECT id, name, slug, image_path as image FROM categories WHERE status = 'active' ORDER BY name ASC")->fetchAll();
@@ -68,6 +72,7 @@ class MainBannerController extends Controller
 
     public function store()
     {
+        $this->requirePermission('cms_main_banners', 'create');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/main-banners');
         }
@@ -157,6 +162,7 @@ class MainBannerController extends Controller
 
     public function edit()
     {
+        $this->requirePermission('cms_main_banners', 'edit');
         $id = $_GET['id'] ?? '';
         $banner = $this->cmsModel->getById($id);
         
@@ -200,6 +206,7 @@ class MainBannerController extends Controller
 
     public function update()
     {
+        $this->requirePermission('cms_main_banners', 'edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/main-banners');
         }
@@ -294,6 +301,7 @@ class MainBannerController extends Controller
 
     public function delete()
     {
+        $this->requirePermission('cms_main_banners', 'delete');
         $id = $_POST['id'] ?? '';
         $banner = $this->cmsModel->getById($id);
         if ($banner && $banner['section_type'] === 'main_banner') {

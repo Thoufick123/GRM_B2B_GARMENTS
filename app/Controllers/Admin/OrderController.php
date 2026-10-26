@@ -979,7 +979,7 @@ class OrderController extends Controller
      */
     public function packingVideos()
     {
-        $this->requirePermission('all_orders', 'view');
+        $this->requirePermission('packing_videos', 'view');
         $db = \Core\Database::getInstance();
         
         $stmt = $db->query("
@@ -1056,7 +1056,9 @@ class OrderController extends Controller
      */
     public function cleanupPackingVideos()
     {
-        $this->requirePermission('all_orders', 'edit');
+        if (!$this->hasPermission('packing_videos', 'delete') && !$this->hasPermission('packing_videos', 'edit')) {
+            $this->requirePermission('packing_videos', 'delete');
+        }
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);

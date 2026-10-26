@@ -20,6 +20,8 @@ class StaffController extends Controller
             'all_orders' => ['label' => 'All Orders', 'actions' => ['view', 'edit']],
             'pending_payments' => ['label' => 'Pending Payments', 'actions' => ['view', 'edit']],
             'bill_modifications' => ['label' => 'Bill Modifications', 'actions' => ['view', 'edit']],
+            'packing_videos' => ['label' => 'Packing Videos & Backup', 'actions' => ['view', 'edit', 'delete']],
+            'packing_slip_config' => ['label' => 'Packing Slip Config', 'actions' => ['view', 'edit']],
         ],
         'Reviews' => [
             'reviews' => ['label' => 'Reviews', 'actions' => ['view', 'edit', 'delete']],
@@ -50,6 +52,23 @@ class StaffController extends Controller
         'Rules' => [
             'order_rules' => ['label' => 'Order Rules', 'actions' => ['view', 'create', 'edit', 'delete']],
             'fee_rules' => ['label' => 'Fee Rules', 'actions' => ['view', 'create', 'edit', 'delete']],
+        ],
+        'CMS Builder' => [
+            'cms_builder' => ['label' => 'Layout Builder', 'actions' => ['view', 'edit']],
+            'cms_navbars' => ['label' => 'Navbars', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'cms_topbars' => ['label' => 'Top Bars', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'cms_hero_banners' => ['label' => 'Hero Banners', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'cms_main_banners' => ['label' => 'Main Banners', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'cms_product_carousels' => ['label' => 'Product Carousels', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'cms_category_carousels' => ['label' => 'Category Carousels', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'cms_categories_grid' => ['label' => 'Categories Grid', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'cms_footers' => ['label' => 'Footers', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'cms_about_us' => ['label' => 'About Us', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'cms_size_charts' => ['label' => 'Size Charts', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'cms_product_card' => ['label' => 'Product Card Settings', 'actions' => ['view', 'edit']],
+            'cms_reviews' => ['label' => 'CMS Reviews', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'cms_projects' => ['label' => 'Our Project', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'cms_reels' => ['label' => 'Reels Container', 'actions' => ['view', 'create', 'edit', 'delete']],
         ],
         'Staff' => [
             'staff_management' => ['label' => 'Staff Members', 'actions' => ['view', 'create', 'edit', 'delete']],
