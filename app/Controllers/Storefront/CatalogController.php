@@ -245,7 +245,7 @@ class CatalogController extends Controller
             $productModel = new Product();
             $product = $productModel->findById($id);
 
-            if (!$product || $product['status'] !== 'active') {
+            if (!$product || $product['status'] !== 'active' || empty($product['category_id'])) {
                 $this->redirect('/catalog');
                 return;
             }

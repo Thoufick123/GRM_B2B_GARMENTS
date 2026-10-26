@@ -293,17 +293,36 @@ class CategoryController extends Controller
                     $isCustomize = true;
                     $redirectUrl = '/admin/catalog/categories?module=customize';
                 }
+
+                $counts = $categoryModel->getCounts($id);
+                if ($counts['subcategory_count'] > 0 || $counts['attribute_count'] > 0 || $counts['product_count'] > 0) {
+                    $reasons = [];
+                    if ($counts['subcategory_count'] > 0) $reasons[] = "{$counts['subcategory_count']} sub-category(ies)";
+                    if ($counts['attribute_count'] > 0) $reasons[] = "{$counts['attribute_count']} attribute(s)";
+                    if ($counts['product_count'] > 0) $reasons[] = "{$counts['product_count']} product(s)";
+                    $errMsg = "Cannot delete category: Category is currently linked to " . implode(', ', $reasons) . ". Deletion is restricted to prevent unassigned items.";
+                    if ($this->isJsonRequest()) {
+                        $this->json(['success' => false, 'message' => $errMsg]);
+                        return;
+                    }
+                    Session::setFlash('error', $errMsg);
+                    $this->redirect($redirectUrl);
+                    return;
+                }
+
                 $categoryModel->delete($id);
                 if (class_exists('\Core\Cache')) {
                     \Core\Cache::delete('catalog_active');
                 }
                 if ($this->isJsonRequest()) {
                     $this->json(['success' => true, 'message' => ($isCustomize ? 'Customize Category' : 'Category') . ' deleted successfully.']);
+                    return;
                 }
                 Session::setFlash('success', ($isCustomize ? 'Customize Category' : 'Category') . ' deleted successfully.');
             } catch (\Exception $e) {
                 if ($this->isJsonRequest()) {
                     $this->json(['success' => false, 'message' => $e->getMessage() ?: 'Cannot delete category.']);
+                    return;
                 }
                 Session::setFlash('error', $e->getMessage() ?: 'Cannot delete category.');
             }
@@ -325,8 +344,10 @@ class CategoryController extends Controller
         if ($id > 0) {
             $categoryModel = new Category();
             $counts = $categoryModel->getCounts($id);
+            $canDelete = ($counts['product_count'] === 0 && $counts['subcategory_count'] === 0 && ($counts['attribute_count'] ?? 0) === 0);
             echo json_encode([
                 'success' => true,
+                'can_delete' => $canDelete,
                 'count' => $counts['product_count'],
                 'product_count' => $counts['product_count'],
                 'subcategory_count' => $counts['subcategory_count'],

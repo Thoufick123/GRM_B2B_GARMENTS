@@ -66,9 +66,9 @@ if ($cachedCarouselProds !== null) {
                            vp.store_name AS vendor_store_name, vp.company_name AS vendor_company_name,
                            (SELECT image_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS primary_image
                     FROM products p
-                    JOIN categories c ON p.category_id = c.id
+                    JOIN categories c ON p.category_id = c.id AND c.status = 'active'
                     LEFT JOIN vendor_profiles vp ON p.vendor_id = vp.user_id
-                    WHERE p.id IN ($inClause) AND p.status = 'active'
+                    WHERE p.id IN ($inClause) AND p.status = 'active' AND p.category_id IS NOT NULL
                 ");
                 if ($stmt) {
                     $fetched = $stmt->fetchAll(\PDO::FETCH_ASSOC);

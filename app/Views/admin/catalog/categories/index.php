@@ -604,7 +604,8 @@ function openDeleteModal(id) {
     
     const confirmBtn = document.getElementById('btn-confirm-delete');
     if (confirmBtn) {
-        confirmBtn.disabled = false;
+        confirmBtn.disabled = true;
+        confirmBtn.classList.remove('hidden');
         confirmBtn.innerHTML = 'Yes, Delete';
     }
     
@@ -624,13 +625,43 @@ function openDeleteModal(id) {
                 const prodCount = data.product_count !== undefined ? data.product_count : (data.count || 0);
                 const subCount = data.subcategory_count !== undefined ? data.subcategory_count : 0;
                 const attrCount = data.attribute_count !== undefined ? data.attribute_count : 0;
-                modalText.innerHTML = `This category currently has <strong class="text-gray-900 font-bold">${subCount}</strong> sub-categor(y/ies), <strong class="text-gray-900 font-bold">${attrCount}</strong> attribute(s), and <strong class="text-gray-900 font-bold">${prodCount}</strong> product(s).<br><br><span class="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200 block text-left leading-relaxed">ℹ️ <strong>Safe Unassign:</strong> Deleting this category will <strong>not delete</strong> any products, subcategories, or attributes. They will remain safely in the database and catalog as <strong>Unassigned</strong>.</span>`;
+                
+                if (subCount > 0 || attrCount > 0 || prodCount > 0) {
+                    if (confirmBtn) confirmBtn.classList.add('hidden');
+                    modalText.innerHTML = `
+                        <div class="text-left space-y-3">
+                            <div class="p-3 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-semibold flex items-start gap-2.5">
+                                <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                <div>
+                                    <strong class="font-bold text-red-900 block text-sm mb-1">Deletion Restricted</strong>
+                                    This category cannot be deleted because it is currently linked to:
+                                    <ul class="list-disc list-inside mt-1.5 space-y-1 text-red-800 font-medium text-xs">
+                                        ${subCount > 0 ? `<li><strong>${subCount}</strong> sub-categor(y/ies)</li>` : ''}
+                                        ${attrCount > 0 ? `<li><strong>${attrCount}</strong> attribute(s)</li>` : ''}
+                                        ${prodCount > 0 ? `<li><strong>${prodCount}</strong> product(s)</li>` : ''}
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 leading-relaxed font-medium">
+                                To prevent unassigned items and maintain catalog integrity, please delete or reassign all linked subcategories, attributes, and products before deleting this category.
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    if (confirmBtn) {
+                        confirmBtn.classList.remove('hidden');
+                        confirmBtn.disabled = false;
+                    }
+                    modalText.innerHTML = `Are you sure you want to delete this category? This action <strong class="text-gray-900 font-bold">cannot be undone</strong>.`;
+                }
             } else {
-                modalText.innerHTML = `Are you sure you want to delete this category?<br><span class="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200 block text-left mt-2 leading-relaxed">ℹ️ <strong>Safe Unassign:</strong> Related products, subcategories, and attributes will not be deleted; they will be set to <strong>Unassigned</strong>.</span>`;
+                modalText.innerHTML = `Are you sure you want to delete this category?`;
+                if (confirmBtn) confirmBtn.disabled = false;
             }
         })
         .catch(err => {
-            modalText.innerHTML = `Are you sure you want to delete this category?<br><span class="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200 block text-left mt-2 leading-relaxed">ℹ️ <strong>Safe Unassign:</strong> Related products, subcategories, and attributes will not be deleted; they will be set to <strong>Unassigned</strong>.</span>`;
+            modalText.innerHTML = `Are you sure you want to delete this category?`;
+            if (confirmBtn) confirmBtn.disabled = false;
         });
 }
 

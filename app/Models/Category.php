@@ -273,6 +273,15 @@ class Category extends Model
 
     public function delete(int $id)
     {
+        $counts = $this->getCounts($id);
+        if ($counts['subcategory_count'] > 0 || $counts['attribute_count'] > 0 || $counts['product_count'] > 0) {
+            $reasons = [];
+            if ($counts['subcategory_count'] > 0) $reasons[] = "{$counts['subcategory_count']} sub-category(ies)";
+            if ($counts['attribute_count'] > 0) $reasons[] = "{$counts['attribute_count']} attribute(s)";
+            if ($counts['product_count'] > 0) $reasons[] = "{$counts['product_count']} product(s)";
+            throw new \Exception("Cannot delete category because it is currently linked to " . implode(', ', $reasons) . ". Deletion is restricted to prevent unassigned items.");
+        }
+
         $ownsTx = false;
         if (!$this->db->inTransaction()) {
             $ownsTx = true;
@@ -282,26 +291,13 @@ class Category extends Model
         try {
             $this->db->exec("SET FOREIGN_KEY_CHECKS=0");
 
-            // 1. Unassign all products belonging to this category (do NOT delete products)
-            // Also reset sub_category_id on products linked to subcategories of this category
-            $stmtProd = $this->db->prepare("UPDATE products SET category_id = NULL, sub_category_id = NULL WHERE category_id = :id");
-            $stmtProd->execute(['id' => $id]);
-
-            // 2. Unassign all subcategories belonging to this category (do NOT delete subcategories)
-            $stmtSub = $this->db->prepare("UPDATE sub_categories SET category_id = NULL WHERE category_id = :id");
-            $stmtSub->execute(['id' => $id]);
-
-            // 3. Unassign category from attributes (do NOT delete attributes)
-            $stmtAttr = $this->db->prepare("UPDATE attributes SET category_id = NULL WHERE category_id = :id");
-            $stmtAttr->execute(['id' => $id]);
-
-            // 4. Remove category-specific rules / references
+            // Remove category-specific rules / references
             $this->db->prepare("DELETE FROM order_rules WHERE category_id = :id")->execute(['id' => $id]);
             $this->db->prepare("UPDATE size_charts SET category_id = NULL WHERE category_id = :id")->execute(['id' => $id]);
             $this->db->prepare("UPDATE fabric_customizations SET category_id = NULL WHERE category_id = :id")->execute(['id' => $id]);
             $this->db->prepare("UPDATE category_requests SET parent_category_id = NULL WHERE parent_category_id = :id")->execute(['id' => $id]);
 
-            // 5. Delete the category record
+            // Delete the category record
             $stmtDel = $this->db->prepare("DELETE FROM categories WHERE id = :id");
             $result = $stmtDel->execute(['id' => $id]);
 
