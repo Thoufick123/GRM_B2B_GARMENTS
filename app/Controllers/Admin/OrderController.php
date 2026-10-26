@@ -468,6 +468,24 @@ class OrderController extends Controller
                 return;
             }
 
+            // Permission check for packing video upload (Create for new video, Edit for existing video)
+            $hasVideoUpload = (isset($_FILES['packing_video_1']) && $_FILES['packing_video_1']['error'] !== UPLOAD_ERR_NO_FILE)
+                           || (isset($_FILES['packing_video_2']) && $_FILES['packing_video_2']['error'] !== UPLOAD_ERR_NO_FILE);
+            if ($hasVideoUpload) {
+                $hasExistingVideo = !empty($order['packing_video_1']) || !empty($order['packing_video_2']);
+                if ($hasExistingVideo) {
+                    if (!$this->hasPermission('packing_videos', 'edit') && !$this->hasPermission('all_orders', 'edit')) {
+                        echo json_encode(['success' => false, 'message' => 'Permission denied: You do not have permission to edit packing videos.']);
+                        return;
+                    }
+                } else {
+                    if (!$this->hasPermission('packing_videos', 'create') && !$this->hasPermission('packing_videos', 'edit') && !$this->hasPermission('all_orders', 'edit')) {
+                        echo json_encode(['success' => false, 'message' => 'Permission denied: You do not have permission to upload packing videos.']);
+                        return;
+                    }
+                }
+            }
+
             // Handle packing video upload directories
             $uploadDirs = [
                 PUBLIC_PATH . '/uploads/packing_videos',
@@ -1056,9 +1074,7 @@ class OrderController extends Controller
      */
     public function cleanupPackingVideos()
     {
-        if (!$this->hasPermission('packing_videos', 'delete') && !$this->hasPermission('packing_videos', 'edit')) {
-            $this->requirePermission('packing_videos', 'delete');
-        }
+        $this->requirePermission('packing_videos', 'delete');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
@@ -1113,5 +1129,61 @@ class OrderController extends Controller
                 'message' => 'Cleanup error: ' . $e->getMessage()
             ]);
         }
+    }
+
+    /**
+     * Delete packing video for a single order
+     */
+    public function deletePackingVideo()
+    {
+        $this->requirePermission('packing_videos', 'delete');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
+            return;
+        }
+
+        header('Content-Type: application/json');
+        $orderNumber = trim($_POST['order_id'] ?? $_POST['order_number'] ?? '');
+        $videoNum = (int)($_POST['video_num'] ?? 0); // 1 for video 1, 2 for video 2, 0 for both
+
+        if (!$orderNumber) {
+            echo json_encode(['success' => false, 'message' => 'Order Number is required.']);
+            return;
+        }
+
+        $db = \Core\Database::getInstance();
+        $stmt = $db->prepare("SELECT id, order_number, packing_video_1, packing_video_2 FROM orders WHERE order_number = ? OR id = ? LIMIT 1");
+        $stmt->execute([$orderNumber, $orderNumber]);
+        $order = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$order) {
+            echo json_encode(['success' => false, 'message' => 'Order not found.']);
+            return;
+        }
+
+        $deletedCount = 0;
+        if ($videoNum === 1 || $videoNum === 0) {
+            if (!empty($order['packing_video_1'])) {
+                $f1 = PUBLIC_PATH . '/' . ltrim($order['packing_video_1'], '/');
+                if (file_exists($f1)) @unlink($f1);
+                $db->prepare("UPDATE orders SET packing_video_1 = NULL WHERE id = ?")->execute([$order['id']]);
+                $deletedCount++;
+            }
+        }
+        if ($videoNum === 2 || $videoNum === 0) {
+            if (!empty($order['packing_video_2'])) {
+                $f2 = PUBLIC_PATH . '/' . ltrim($order['packing_video_2'], '/');
+                if (file_exists($f2)) @unlink($f2);
+                $db->prepare("UPDATE orders SET packing_video_2 = NULL WHERE id = ?")->execute([$order['id']]);
+                $deletedCount++;
+            }
+        }
+
+        echo json_encode([
+            'success' => true,
+            'message' => "Packing video deleted successfully."
+        ]);
     }
 }

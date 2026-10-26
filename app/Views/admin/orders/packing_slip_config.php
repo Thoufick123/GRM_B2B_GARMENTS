@@ -27,7 +27,13 @@
                     <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     <span>BACK TO ORDERS</span>
                 </a>
-                <?php if ($this->hasPermission('packing_slip_config', 'edit') || $this->hasPermission('all_orders', 'edit')): ?>
+                <?php if ($this->hasPermission('packing_slip_config', 'delete') || $this->hasPermission('all_orders', 'delete')): ?>
+                <button type="button" onclick="resetPackingSlipConfig()" class="bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-full flex items-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer" title="Reset all settings to system defaults">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <span>RESET DEFAULTS</span>
+                </button>
+                <?php endif; ?>
+                <?php if ($this->hasPermission('packing_slip_config', 'edit') || $this->hasPermission('packing_slip_config', 'create') || $this->hasPermission('all_orders', 'edit')): ?>
                 <button type="button" onclick="submitPackingSlipConfig()" id="topSaveBtn" class="bg-[#F25996] hover:bg-[#d94480] text-white text-xs font-bold uppercase tracking-wider px-6 py-2.5 rounded-full flex items-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                     <span>SAVE CONFIGURATION</span>
@@ -311,7 +317,7 @@
 
                 <!-- Form Submit Action -->
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <?php if ($this->hasPermission('packing_slip_config', 'edit') || $this->hasPermission('all_orders', 'edit')): ?>
+                    <?php if ($this->hasPermission('packing_slip_config', 'edit') || $this->hasPermission('packing_slip_config', 'create') || $this->hasPermission('all_orders', 'edit')): ?>
                     <button type="submit" id="mainSaveBtn" class="bg-[#F25996] hover:bg-[#e04481] text-white px-8 py-3 rounded-xl font-bold text-sm shadow-md transition-all flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         <span>Save Packing Slip Format</span>
@@ -752,6 +758,64 @@
             topBtn.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Save Configuration';
             mainBtn.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Save Packing Slip Format';
         }
+    }
+
+    async function resetPackingSlipConfig() {
+        if (typeof Swal !== 'undefined') {
+            const result = await Swal.fire({
+                title: 'Reset to Defaults?',
+                text: 'This will reset all packing slip configurations to factory defaults.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, Reset Defaults'
+            });
+            if (!result.isConfirmed) return;
+        } else if (!confirm('Are you sure you want to reset all packing slip configurations to defaults?')) {
+            return;
+        }
+
+        try {
+            const res = await fetch('<?= BASE_URL ?>/admin/orders/packing-slip-config/reset', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Reset Complete!',
+                        text: data.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => location.reload());
+                } else {
+                    alert(data.message);
+                    location.reload();
+                }
+            } else {
+                throw new Error(data.message || 'Failed to reset');
+            }
+        } catch (err) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+            } else {
+                alert('Error: ' + err.message);
+            }
+        }
+    }
+
+    // Read-only lockdown if neither edit nor create is allowed
+    const canEditConfig = <?= ($this->hasPermission('packing_slip_config', 'edit') || $this->hasPermission('packing_slip_config', 'create') || $this->hasPermission('all_orders', 'edit')) ? 'true' : 'false' ?>;
+    if (!canEditConfig) {
+        document.querySelectorAll('#packingSlipConfigForm input, #packingSlipConfigForm textarea, #packingSlipConfigForm select').forEach(el => {
+            el.disabled = true;
+        });
     }
 
     // Event Listeners for Live Preview

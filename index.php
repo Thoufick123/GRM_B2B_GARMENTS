@@ -519,6 +519,7 @@ $router->get('/admin/orders/print', 'App\Controllers\Admin\OrderController@print
 $router->get('/admin/orders/export', 'App\Controllers\Admin\OrderController@export');
 $router->get('/admin/orders/packing-videos', 'App\Controllers\Admin\OrderController@packingVideos');
 $router->post('/admin/orders/cleanup-packing-videos', 'App\Controllers\Admin\OrderController@cleanupPackingVideos');
+$router->post('/admin/orders/delete-packing-video', 'App\Controllers\Admin\OrderController@deletePackingVideo');
 $router->post('/admin/orders/update-status', 'App\Controllers\Admin\OrderController@updateStatus');
 $router->post('/admin/orders/update-packed', 'App\Controllers\Admin\OrderController@updatePacked');
 $router->post('/admin/orders/update-courier', 'App\Controllers\Admin\OrderController@updateCourier');
@@ -529,6 +530,7 @@ $router->post('/admin/orders/courier-services/delete', 'App\Controllers\Admin\Or
 // Admin Packing Slip Config & 100mm Thermal Slip Printing
 $router->get('/admin/orders/packing-slip-config', 'App\Controllers\Admin\PackingSlipConfigController@index');
 $router->post('/admin/orders/packing-slip-config/save', 'App\Controllers\Admin\PackingSlipConfigController@save');
+$router->post('/admin/orders/packing-slip-config/reset', 'App\Controllers\Admin\PackingSlipConfigController@reset');
 $router->get('/admin/orders/packing-slip', 'App\Controllers\Admin\PackingSlipController@printSlip');
 $router->get('/admin/orders/packing-slips/bulk', 'App\Controllers\Admin\PackingSlipController@printBulk');
 $router->post('/admin/orders/packing-slips/bulk', 'App\Controllers\Admin\PackingSlipController@printBulk');

@@ -33,7 +33,7 @@ function formatStorageSize($bytes) {
                     <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     <span>Back to Orders</span>
                 </a>
-                <?php if ($this->hasPermission('packing_videos', 'delete') || $this->hasPermission('packing_videos', 'edit') || $this->hasPermission('all_orders', 'edit')): ?>
+                <?php if ($this->hasPermission('packing_videos', 'delete')): ?>
                 <button type="button" onclick="triggerCleanup()" class="h-10 bg-[#F25996] border border-[#F25996] hover:bg-[#d94480] hover:border-[#d94480] text-white text-xs font-bold uppercase tracking-wider px-5 rounded-full inline-flex items-center gap-2 shadow-xs transition active:scale-95 cursor-pointer">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     <span>Run 30-Day Retention Cleanup</span>
@@ -239,9 +239,20 @@ function formatStorageSize($bytes) {
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                     </a>
 
-                                    <?php if (($this->hasPermission('packing_videos', 'edit') || $this->hasPermission('all_orders', 'edit')) && in_array($ord['status'], ['placed', 'packed'])): ?>
+                                    <?php 
+                                        $hasAny = !empty($ord['packing_video_1']) || !empty($ord['packing_video_2']);
+                                        $canUpload = $hasAny ? ($this->hasPermission('packing_videos', 'edit') || $this->hasPermission('all_orders', 'edit'))
+                                                             : ($this->hasPermission('packing_videos', 'create') || $this->hasPermission('packing_videos', 'edit') || $this->hasPermission('all_orders', 'edit'));
+                                    ?>
+                                    <?php if ($canUpload && in_array($ord['status'], ['placed', 'packed'])): ?>
                                     <button type="button" onclick="openPackingModal('<?= htmlspecialchars($ord['order_number']) ?>')" class="inline-flex items-center justify-center p-1 text-purple-600 hover:text-purple-800 transition-colors" title="<?= $hasAny ? 'Update Packing Videos' : 'Upload Packing Videos' ?>">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                    </button>
+                                    <?php endif; ?>
+
+                                    <?php if ($hasAny && ($this->hasPermission('packing_videos', 'delete') || $this->hasPermission('all_orders', 'delete'))): ?>
+                                    <button type="button" onclick="deleteOrderPackingVideos('<?= htmlspecialchars($ord['order_number']) ?>')" class="inline-flex items-center justify-center p-1 text-red-500 hover:text-red-700 transition-colors" title="Delete Packing Videos">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
                                     <?php endif; ?>
 
@@ -465,6 +476,53 @@ function submitPackingDetails(e) {
         document.getElementById('packingSubmitBtn').disabled = false;
         document.getElementById('packingCancelBtn').disabled = false;
         Swal.fire('Error', 'Failed to upload packing videos or update status.', 'error');
+    });
+}
+
+function deleteOrderPackingVideos(orderNumber) {
+    Swal.fire({
+        title: 'Delete Packing Videos?',
+        text: 'Are you sure you want to permanently delete the packing videos for order #' + orderNumber + '? This action cannot be undone.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Yes, Delete Videos'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Deleting...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            const fd = new FormData();
+            fd.append('order_number', orderNumber);
+
+            fetch('<?= BASE_URL ?>/admin/orders/delete-packing-video', {
+                method: 'POST',
+                body: fd
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: res.message,
+                        icon: 'success',
+                        confirmButtonColor: '#F25996'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', res.message || 'Failed to delete packing video.', 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                Swal.fire('Error', 'Network or server error while deleting.', 'error');
+            });
+        }
     });
 }
 </script>

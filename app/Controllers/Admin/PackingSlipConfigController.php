@@ -48,7 +48,9 @@ class PackingSlipConfigController extends Controller
 
     public function save()
     {
-        $this->requirePermission('packing_slip_config', 'edit');
+        if (!$this->hasPermission('packing_slip_config', 'edit') && !$this->hasPermission('packing_slip_config', 'create') && !$this->hasPermission('all_orders', 'edit')) {
+            $this->requirePermission('packing_slip_config', 'edit');
+        }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/orders/packing-slip-config');
@@ -90,6 +92,52 @@ class PackingSlipConfigController extends Controller
             }
 
             Session::setFlash('error', 'Error saving configuration: ' . $e->getMessage());
+            $this->redirect('/admin/orders/packing-slip-config');
+        }
+    }
+
+    public function reset()
+    {
+        if (!$this->hasPermission('packing_slip_config', 'delete') && !$this->hasPermission('all_orders', 'delete')) {
+            $this->requirePermission('packing_slip_config', 'delete');
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
+            return;
+        }
+
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+               || (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false)
+               || (isset($_POST['is_ajax']) && $_POST['is_ajax'] === '1');
+
+        try {
+            PackingSlipConfig::save([]);
+
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Packing slip configuration reset to default format successfully.'
+                ]);
+                exit;
+            }
+
+            Session::setFlash('success', 'Packing slip configuration reset to default format successfully.');
+            $this->redirect('/admin/orders/packing-slip-config');
+        } catch (\Throwable $e) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                http_response_code(500);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Failed to reset configuration: ' . $e->getMessage()
+                ]);
+                exit;
+            }
+
+            Session::setFlash('error', 'Error resetting configuration: ' . $e->getMessage());
             $this->redirect('/admin/orders/packing-slip-config');
         }
     }
