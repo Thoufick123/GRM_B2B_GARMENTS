@@ -16,7 +16,7 @@
 
 /* Fixes for Tailwind arbitrary values missing in compiled css */
 .builder-card {
-    height: calc(100vh - 8rem);
+    height: calc(100vh - 10rem);
     min-height: 600px;
 }
 .browser-mockup {
@@ -60,8 +60,8 @@ if (!empty($inactiveComponents)) {
     <div class="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
         
         <!-- Sidebar: Layout Builder -->
-        <div class="lg:col-span-4 xl:col-span-3">
-            <div class="bg-white p-6 shadow-custom flex flex-col builder-card">
+        <div class="lg:col-span-5 xl:col-span-4">
+            <div class="bg-white p-6 shadow-custom flex flex-col builder-card rounded-2xl border border-gray-100">
                 <h2 class="text-2xl font-serif text-gray-800 mb-2">Layout Builder</h2>
                 <p class="text-sm text-gray-500 mb-6 leading-relaxed pr-4">Drag and drop to reorder. Toggle visibility for the customer website.</p>
                 
@@ -250,20 +250,18 @@ if (!empty($inactiveComponents)) {
                 <!-- Buttons -->
                 <div class="mt-6 pt-5 border-t border-gray-100 flex flex-col gap-3">
                     <div class="flex gap-3">
-                        <button id="saveDraftBtn" class="flex-1 py-2.5 rounded-full border border-gray-200 font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors shadow-sm text-sm">Save Draft</button>
-                        <button id="saveLayoutBtn" class="flex-1 py-2.5 rounded-full font-semibold text-white transition-colors bg-gray-900 hover:bg-black text-sm flex items-center justify-center gap-2">Publish</button>
+                        <button id="saveDraftBtn" class="flex-1 py-3 rounded-full font-bold text-white transition-all bg-[#E8437D] hover:bg-[#d8356f] text-sm shadow-sm active:scale-95">Save Draft</button>
+                        <button id="saveLayoutBtn" class="flex-1 py-3 rounded-full font-bold text-white transition-all bg-[#E8437D] hover:bg-[#d8356f] text-sm flex items-center justify-center gap-2 shadow-sm active:scale-95">Publish</button>
                     </div>
-                    <button id="resetBtn" class="w-full py-2.5 rounded-full border border-red-200 font-bold text-red-500 bg-white hover:bg-red-50 transition-colors text-[11px] tracking-wider">RESET TO PUBLISHED</button>
+                    <button id="resetBtn" class="w-full py-2.5 rounded-full border border-pink-200 font-bold text-[#E8437D] bg-white hover:bg-pink-50 transition-colors text-[11px] tracking-wider uppercase">RESET TO PUBLISHED</button>
                 </div>
                 <?php endif; ?>
             </div>
         </div>
-            </div>
-        </div>
 
-        <!-- Main: Live Preview -->
-        <div class="lg:col-span-8 xl:col-span-9">
-            <div class="bg-white p-6 shadow-custom flex flex-col builder-card">
+        <!-- Right Column: Live Preview Area -->
+        <div class="lg:col-span-7 xl:col-span-8">
+            <div class="bg-white p-6 shadow-custom flex flex-col builder-card rounded-2xl border border-gray-100">
                 <div class="flex justify-between items-center mb-5 px-2">
                     <h2 class="text-2xl font-serif text-gray-800">Live Preview</h2>
                     <!-- Device Toggles -->
