@@ -1716,6 +1716,55 @@ if ($currentUserRole === 'super_admin') {
 
                     populateOptions();
 
+                    // Sync helper function to update custom trigger text and selected menu item
+                    function syncCustomSelect() {
+                        const currentOpt = select.options[select.selectedIndex];
+                        if (currentOpt) {
+                            triggerText.textContent = currentOpt.text;
+                            menu.querySelectorAll('.grm-select-option').forEach((o, i) => {
+                                if (i === select.selectedIndex && !o.classList.contains('is-header')) {
+                                    o.classList.add('is-selected');
+                                } else {
+                                    o.classList.remove('is-selected');
+                                }
+                            });
+                        }
+                    }
+
+                    // Expose sync helper directly on the select element for programmatic calls
+                    select._grmSyncSelect = syncCustomSelect;
+
+                    // Intercept programmatic value assignments like select.value = 'inactive'
+                    try {
+                        const proto = HTMLSelectElement.prototype;
+                        const origValDesc = Object.getOwnPropertyDescriptor(proto, 'value');
+                        if (origValDesc && origValDesc.set) {
+                            Object.defineProperty(select, 'value', {
+                                get() {
+                                    return origValDesc.get.call(this);
+                                },
+                                set(v) {
+                                    origValDesc.set.call(this, v);
+                                    syncCustomSelect();
+                                },
+                                configurable: true
+                            });
+                        }
+                        const origIdxDesc = Object.getOwnPropertyDescriptor(proto, 'selectedIndex');
+                        if (origIdxDesc && origIdxDesc.set) {
+                            Object.defineProperty(select, 'selectedIndex', {
+                                get() {
+                                    return origIdxDesc.get.call(this);
+                                },
+                                set(i) {
+                                    origIdxDesc.set.call(this, i);
+                                    syncCustomSelect();
+                                },
+                                configurable: true
+                            });
+                        }
+                    } catch (e) {}
+
                     // Toggle menu
                     trigger.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -1729,24 +1778,16 @@ if ($currentUserRole === 'super_admin') {
                             }
                         });
 
+                        // Re-sync before opening
+                        syncCustomSelect();
+
                         menu.classList.toggle('is-open');
                         trigger.classList.toggle('is-active');
                     });
 
-                    // Sync when native select changes programmatically
-                    select.addEventListener('change', () => {
-                        const currentOpt = select.options[select.selectedIndex];
-                        if (currentOpt) {
-                            triggerText.textContent = currentOpt.text;
-                            menu.querySelectorAll('.grm-select-option').forEach((o, i) => {
-                                if (i === select.selectedIndex && !o.classList.contains('is-header')) {
-                                    o.classList.add('is-selected');
-                                } else {
-                                    o.classList.remove('is-selected');
-                                }
-                            });
-                        }
-                    });
+                    // Sync when native select changes programmatically via events
+                    select.addEventListener('change', syncCustomSelect);
+                    select.addEventListener('input', syncCustomSelect);
 
                     // Observe dynamic option mutations (e.g. AJAX or category chaining)
                     const observer = new MutationObserver(() => {

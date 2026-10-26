@@ -297,10 +297,23 @@ function filterSubCategories() {
 
 function openEditModal(sub) {
     document.getElementById('edit-id').value = sub.id;
-    document.getElementById('edit-category_id').value = sub.category_id;
     document.getElementById('edit-name').value = sub.name;
     document.getElementById('edit-slug').value = sub.slug;
-    document.getElementById('edit-status').value = sub.status;
+    
+    const catSelect = document.getElementById('edit-category_id');
+    if (catSelect) {
+        catSelect.value = sub.category_id;
+        catSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        if (typeof catSelect._grmSyncSelect === 'function') catSelect._grmSyncSelect();
+    }
+
+    const statusSelect = document.getElementById('edit-status');
+    if (statusSelect) {
+        statusSelect.value = (sub.status || 'active').toLowerCase();
+        statusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        if (typeof statusSelect._grmSyncSelect === 'function') statusSelect._grmSyncSelect();
+    }
+
     document.getElementById('edit-modal').classList.remove('hidden');
 }
 

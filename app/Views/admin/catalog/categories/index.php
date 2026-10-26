@@ -567,7 +567,12 @@ function openEditModal(cat) {
     }
     document.getElementById('edit-sgst').value = cat.sgst !== null && cat.sgst !== undefined ? cat.sgst : '0.00';
     document.getElementById('edit-cgst').value = cat.cgst !== null && cat.cgst !== undefined ? cat.cgst : '0.00';
-    document.getElementById('edit-status').value = cat.status;
+    const statusSelect = document.getElementById('edit-status');
+    if (statusSelect) {
+        statusSelect.value = (cat.status || 'active').toLowerCase();
+        statusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        if (typeof statusSelect._grmSyncSelect === 'function') statusSelect._grmSyncSelect();
+    }
     
     // Handle image preview
     const previewContainer = document.getElementById('edit-image-preview-container');
