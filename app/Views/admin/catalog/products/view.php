@@ -265,10 +265,6 @@ $prodMaxAmount = $wholesalePrice;
                                     <p class="text-[10px] text-gray-400">Total: <?= htmlspecialchars($variant['inventory']) ?></p>
                                 </div>
                                 <div>
-                                    <p class="text-xs text-gray-500 mb-1">Barcode</p>
-                                    <p class="font-medium text-gray-900"><?= htmlspecialchars($variant['barcode'] ?? 'N/A') ?: 'N/A' ?></p>
-                                </div>
-                                <div>
                                     <p class="text-xs text-gray-500 mb-1">Weight</p>
                                     <p class="font-medium text-gray-900"><?= $variant['weight'] ? (float)$variant['weight'] . ' kg' : 'N/A' ?></p>
                                 </div>

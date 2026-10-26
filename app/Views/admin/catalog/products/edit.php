@@ -1531,7 +1531,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const inventory = (templateV && templateV.inventory !== null && templateV.inventory !== undefined) ? templateV.inventory : 0;
             const lowStockAlert = (templateV && templateV.low_stock_alert !== null && templateV.low_stock_alert !== undefined) ? templateV.low_stock_alert : 5;
             const actualSku = v ? (v.sku ?? sku) : sku;
-            const barcode = v ? (v.barcode ?? '') : '';
             const weight = (templateV && templateV.weight !== null && templateV.weight !== undefined) ? parseFloat(templateV.weight) : '';
 
             const selectedCatOption = categoryIdInput ? categoryIdInput.options[categoryIdInput.selectedIndex] : null;
