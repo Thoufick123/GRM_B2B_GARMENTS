@@ -21,6 +21,36 @@ class HomeController extends Controller
             foreach ($products as &$product) {
                 $product['variants'] = $variantsMap[$product['id']] ?? [];
             }
+
+            // Sync live approved review stats for home products
+            if (!empty($pIds)) {
+                try {
+                    $pIdList = implode(',', array_map('intval', $pIds));
+                    $revStats = \Core\Database::getInstance()->query("
+                        SELECT product_id, COUNT(*) as cnt, AVG(rating) as avg_rating 
+                        FROM reviews 
+                        WHERE product_id IN ($pIdList) AND is_approved = 1 
+                        GROUP BY product_id
+                    ")->fetchAll(\PDO::FETCH_ASSOC);
+                    $revMap = [];
+                    foreach ($revStats as $rs) {
+                        $revMap[$rs['product_id']] = [
+                            'num_reviews' => (int)$rs['cnt'],
+                            'average_rating' => round((float)$rs['avg_rating'], 2)
+                        ];
+                    }
+                    foreach ($products as &$product) {
+                        if (isset($revMap[$product['id']])) {
+                            $product['num_reviews'] = $revMap[$product['id']]['num_reviews'];
+                            $product['average_rating'] = $revMap[$product['id']]['average_rating'];
+                        }
+                    }
+                    unset($product);
+                } catch (\Throwable $e) {
+                    error_log("Home review sync error: " . $e->getMessage());
+                }
+            }
+
             if (class_exists('\Core\Cache')) {
                 \Core\Cache::set('home_active_products', $products, 600); // 10 minutes cache
             }

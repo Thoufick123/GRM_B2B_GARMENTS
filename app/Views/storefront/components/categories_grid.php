@@ -141,6 +141,36 @@ if (!empty($category_ids)) {
                     $customSizes[$csz['customization_id']][] = $csz['size_name'];
                 }
             }
+
+            // Sync live approved review stats for category grid products
+            $allCgIds = array_column($productsRaw, 'id');
+            if (!empty($allCgIds)) {
+                try {
+                    $pIdList = implode(',', array_map('intval', $allCgIds));
+                    $revStats = $db->query("
+                        SELECT product_id, COUNT(*) as cnt, AVG(rating) as avg_rating 
+                        FROM reviews 
+                        WHERE product_id IN ($pIdList) AND is_approved = 1 
+                        GROUP BY product_id
+                    ")->fetchAll(\PDO::FETCH_ASSOC);
+                    $revMap = [];
+                    foreach ($revStats as $rs) {
+                        $revMap[$rs['product_id']] = [
+                            'num_reviews' => (int)$rs['cnt'],
+                            'average_rating' => round((float)$rs['avg_rating'], 2)
+                        ];
+                    }
+                    foreach ($productsRaw as &$rawP) {
+                        if (isset($revMap[$rawP['id']])) {
+                            $rawP['num_reviews'] = $revMap[$rawP['id']]['num_reviews'];
+                            $rawP['average_rating'] = $revMap[$rawP['id']]['average_rating'];
+                        }
+                    }
+                    unset($rawP);
+                } catch (\Throwable $e) {
+                    error_log("Categories grid review sync error: " . $e->getMessage());
+                }
+            }
             
             foreach ($productsRaw as $p) {
                 $p['images'] = $customImgs[$p['id']] ?? (!empty($p['main_image']) ? [$p['main_image']] : []);
@@ -449,6 +479,11 @@ if (!empty($category_ids)) {
         #<?= $id ?> .catgrid-sidebar-scroll::-webkit-scrollbar-thumb:hover {
             background-color: #94a3b8;
         }
+        #<?= $id ?> .product-rating-row {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.35rem !important;
+        }
     }
 </style>
 
@@ -645,6 +680,26 @@ if (!empty($category_ids)) {
                                                 <a href="<?= $prodDetailUrl ?>"><?= htmlspecialchars($prod['name']) ?></a>
                                             </h2>
 
+                                            <!-- Dynamic Rating & Review Row -->
+                                            <?php
+                                                $cardRatingRaw = (float)($prod['average_rating'] ?? 0);
+                                                $cardReviews   = (int)($prod['num_reviews'] ?? 0);
+                                                $hasReviews    = ($cardReviews > 0 || $cardRatingRaw > 0);
+                                                $cardStars     = max(0, min(5, (int)round($cardRatingRaw)));
+                                                $cardRatingFmt = number_format($cardRatingRaw, 1);
+                                            ?>
+                                            <div class="product-rating-row flex items-center gap-1.5 my-1 text-xs">
+                                                <div class="product-stars flex items-center text-amber-400" style="color: var(--pc-star, #f59e0b);">
+                                                    <?php for ($s = 1; $s <= 5; $s++): ?>
+                                                        <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 <?= ($hasReviews && $s <= $cardStars) ? 'fill-current' : 'text-gray-200 fill-current' ?>" viewBox="0 0 20 20">
+                                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                                        </svg>
+                                                    <?php endfor; ?>
+                                                </div>
+                                                <span class="font-bold text-gray-800 text-[11px] sm:text-xs"><?= $hasReviews ? $cardRatingFmt : '0.0' ?></span>
+                                                <span class="text-gray-400 text-[10px] sm:text-[11px] font-medium">(<?= $cardReviews ?>)</span>
+                                            </div>
+
                                             <!-- Description -->
                                             <p class="text-[10px] text-[#64748b] line-clamp-2 mb-2 leading-tight">
                                                 <?= htmlspecialchars($cCleanDesc) ?>
@@ -760,8 +815,28 @@ if (!empty($category_ids)) {
                                         </a>
                                         
                                         <?php if (!empty($prod['sku'])): ?>
-                                            <p class="font-medium mb-3" style="font-size: 0.875rem; color: <?= htmlspecialchars($subtitle_color) ?>;">SKU: <?= htmlspecialchars($prod['sku']) ?></p>
+                                            <p class="font-medium mb-1" style="font-size: 0.875rem; color: <?= htmlspecialchars($subtitle_color) ?>;">SKU: <?= htmlspecialchars($prod['sku']) ?></p>
                                         <?php endif; ?>
+
+                                        <!-- Dynamic Rating & Review Row -->
+                                        <?php
+                                            $cardRatingRaw = (float)($prod['average_rating'] ?? 0);
+                                            $cardReviews   = (int)($prod['num_reviews'] ?? 0);
+                                            $hasReviews    = ($cardReviews > 0 || $cardRatingRaw > 0);
+                                            $cardStars     = max(0, min(5, (int)round($cardRatingRaw)));
+                                            $cardRatingFmt = number_format($cardRatingRaw, 1);
+                                        ?>
+                                        <div class="product-rating-row flex items-center gap-1.5 my-1 text-xs">
+                                            <div class="product-stars flex items-center text-amber-400" style="color: var(--pc-star, #f59e0b);">
+                                                <?php for ($s = 1; $s <= 5; $s++): ?>
+                                                    <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 <?= ($hasReviews && $s <= $cardStars) ? 'fill-current' : 'text-gray-200 fill-current' ?>" viewBox="0 0 20 20">
+                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                                    </svg>
+                                                <?php endfor; ?>
+                                            </div>
+                                            <span class="font-bold text-gray-800 text-[11px] sm:text-xs"><?= $hasReviews ? $cardRatingFmt : '0.0' ?></span>
+                                            <span class="text-gray-400 text-[10px] sm:text-[11px] font-medium">(<?= $cardReviews ?>)</span>
+                                        </div>
 
                                         <?php if ($isLoggedIn): ?>
                                             <div class="mt-auto">
@@ -1041,6 +1116,26 @@ if (!empty($category_ids)) {
                                 <a href="<?= $mobProdUrl ?>" class="product-link block mb-1">
                                     <h3 class="product-name mobile-card-name"><?= htmlspecialchars($prod['name']) ?></h3>
                                 </a>
+
+                                <!-- Dynamic Rating & Review Row -->
+                                <?php
+                                    $cardRatingRaw = (float)($prod['average_rating'] ?? 0);
+                                    $cardReviews   = (int)($prod['num_reviews'] ?? 0);
+                                    $hasReviews    = ($cardReviews > 0 || $cardRatingRaw > 0);
+                                    $cardStars     = max(0, min(5, (int)round($cardRatingRaw)));
+                                    $cardRatingFmt = number_format($cardRatingRaw, 1);
+                                ?>
+                                <div class="product-rating-row flex items-center gap-1 my-0.5 text-xs">
+                                    <div class="product-stars flex items-center text-amber-400" style="color: var(--pc-star, #f59e0b);">
+                                        <?php for ($s = 1; $s <= 5; $s++): ?>
+                                            <svg class="w-2.5 h-2.5 <?= ($hasReviews && $s <= $cardStars) ? 'fill-current' : 'text-gray-200 fill-current' ?>" viewBox="0 0 20 20">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                            </svg>
+                                        <?php endfor; ?>
+                                    </div>
+                                    <span class="font-bold text-gray-800 text-[10px]"><?= $hasReviews ? $cardRatingFmt : '0.0' ?></span>
+                                    <span class="text-gray-400 text-[9px] font-medium">(<?= $cardReviews ?>)</span>
+                                </div>
                                 <?php if ($isLoggedIn): ?>
                                 <div class="mt-auto flex flex-col justify-end">
                                     <!-- Selling Price, Strikethrough & Discount Badge (Same Row) -->
