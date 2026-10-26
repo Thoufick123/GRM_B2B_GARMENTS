@@ -273,6 +273,16 @@ class Category extends Model
 
     public function delete(int $id)
     {
+        // Ensure products.category_id allows NULL if it was previously NOT NULL
+        try {
+            $col = $this->db->query("SHOW COLUMNS FROM `products` LIKE 'category_id'")->fetch(\PDO::FETCH_ASSOC);
+            if ($col && isset($col['Null']) && strtoupper($col['Null']) === 'NO') {
+                $this->db->exec("ALTER TABLE `products` MODIFY `category_id` BIGINT NULL");
+            }
+        } catch (\Throwable $t) {
+            // Ignore if already nullable or without DDL privileges
+        }
+
         $ownsTx = false;
         if (!$this->db->inTransaction()) {
             $ownsTx = true;

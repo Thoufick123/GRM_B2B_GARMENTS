@@ -144,3 +144,8 @@ ALTER TABLE `order_modification_items`
     ADD COLUMN IF NOT EXISTS `variant_id` BIGINT NULL AFTER `product_id`,
     MODIFY `change_type` ENUM('removed', 'qty_changed', 'price_changed', 'replaced', 'unchanged', 'added') NOT NULL DEFAULT 'unchanged';
 
+-- 13. Ensure products.category_id allows NULL
+ALTER TABLE `products`
+    MODIFY `category_id` BIGINT NULL;
+
+

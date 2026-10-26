@@ -369,7 +369,7 @@ try {
         CREATE TABLE IF NOT EXISTS `products` (
             `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
             `vendor_id` BIGINT NULL,
-            `category_id` BIGINT NOT NULL,
+            `category_id` BIGINT NULL,
             `sub_category_id` BIGINT NULL,
             `size_chart_id` INT NULL,
             `name` VARCHAR(255) NOT NULL,
@@ -1045,6 +1045,12 @@ try {
     $pvCols = array_map('strtolower', $db->query("SHOW COLUMNS FROM `product_variants`")->fetchAll(PDO::FETCH_COLUMN));
     if (!in_array('reserve_stock', $pvCols)) {
         $db->exec("ALTER TABLE `product_variants` ADD COLUMN `reserve_stock` INT NOT NULL DEFAULT 0 AFTER `current_stock`");
+    }
+
+    // Ensure products.category_id allows NULL for unassigned drafting
+    $prodCatCol = $db->query("SHOW COLUMNS FROM `products` LIKE 'category_id'")->fetch(PDO::FETCH_ASSOC);
+    if ($prodCatCol && isset($prodCatCol['Null']) && strtoupper($prodCatCol['Null']) === 'NO') {
+        $db->exec("ALTER TABLE `products` MODIFY `category_id` BIGINT NULL");
     }
 
     // Seed default couriers if empty
