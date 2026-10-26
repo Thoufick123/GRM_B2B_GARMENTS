@@ -213,17 +213,17 @@ function formatStorageSize($bytes) {
                                     <?php if ($hasV1): 
                                         $v1Url = (strpos($ord['packing_video_1'], 'http') === 0) ? $ord['packing_video_1'] : (BASE_URL . '/' . ltrim($ord['packing_video_1'], '/'));
                                     ?>
-                                        <a href="<?= htmlspecialchars($v1Url) ?>" target="_blank" class="px-2.5 py-1 rounded-lg bg-pink-50 hover:bg-pink-100 text-[#F25996] border border-pink-200 font-bold text-xs flex items-center gap-1 transition-colors" title="Video 1: Item & Box Packing">
+                                        <button type="button" onclick="previewPackingVideo('<?= htmlspecialchars($v1Url) ?>', 'Video 1 (Item & Box Packing) - #<?= htmlspecialchars($ord['order_number']) ?>')" class="px-2.5 py-1 rounded-lg bg-pink-50 hover:bg-pink-100 text-[#F25996] border border-pink-200 font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer" title="Watch Video 1">
                                             📹 Video 1
-                                        </a>
+                                        </button>
                                     <?php endif; ?>
 
                                     <?php if ($hasV2): 
                                         $v2Url = (strpos($ord['packing_video_2'], 'http') === 0) ? $ord['packing_video_2'] : (BASE_URL . '/' . ltrim($ord['packing_video_2'], '/'));
                                     ?>
-                                        <a href="<?= htmlspecialchars($v2Url) ?>" target="_blank" class="px-2.5 py-1 rounded-lg bg-pink-50 hover:bg-pink-100 text-[#F25996] border border-pink-200 font-bold text-xs flex items-center gap-1 transition-colors" title="Video 2: Sealing & Label">
+                                        <button type="button" onclick="previewPackingVideo('<?= htmlspecialchars($v2Url) ?>', 'Video 2 (Sealing & Label) - #<?= htmlspecialchars($ord['order_number']) ?>')" class="px-2.5 py-1 rounded-lg bg-pink-50 hover:bg-pink-100 text-[#F25996] border border-pink-200 font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer" title="Watch Video 2">
                                             📹 Video 2
-                                        </a>
+                                        </button>
                                     <?php endif; ?>
 
                                     <?php if (!$hasAny): ?>
@@ -525,4 +525,65 @@ function deleteOrderPackingVideos(orderNumber) {
         }
     });
 }
+
+function previewPackingVideo(videoUrl, title) {
+    const modal = document.getElementById('videoPreviewModal');
+    const player = document.getElementById('previewVideoPlayer');
+    const source = document.getElementById('previewVideoSource');
+    const titleEl = document.getElementById('videoPreviewTitle');
+    const downloadLink = document.getElementById('videoDownloadLink');
+    const newTabLink = document.getElementById('videoNewTabLink');
+
+    titleEl.textContent = title || 'Packing Video';
+    source.src = videoUrl;
+    player.load();
+    downloadLink.href = videoUrl;
+    newTabLink.href = videoUrl;
+
+    modal.classList.remove('hidden');
+    player.play().catch(e => console.log('Autoplay deferred:', e));
+}
+
+function closeVideoPreviewModal() {
+    const modal = document.getElementById('videoPreviewModal');
+    const player = document.getElementById('previewVideoPlayer');
+    player.pause();
+    player.currentTime = 0;
+    modal.classList.add('hidden');
+}
 </script>
+
+<!-- Video Player Modal -->
+<div id="videoPreviewModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-gray-900 bg-opacity-70 backdrop-blur-sm transition-opacity" onclick="closeVideoPreviewModal()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden z-10 border border-gray-100">
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-pink-50 to-purple-50">
+            <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-lg bg-[#F25996] text-white flex items-center justify-center text-sm">📹</span>
+                <div>
+                    <h3 id="videoPreviewTitle" class="text-sm font-bold text-gray-900">Packing Video</h3>
+                    <p class="text-[11px] text-gray-500">Warehouse Quality Verification</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a id="videoDownloadLink" href="#" download target="_blank" class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 text-xs font-bold hover:bg-gray-50 transition-colors flex items-center gap-1 shadow-2xs">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Download
+                </a>
+                <a id="videoNewTabLink" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 text-xs font-bold hover:bg-gray-50 transition-colors flex items-center gap-1 shadow-2xs">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    Open Tab
+                </a>
+                <button type="button" onclick="closeVideoPreviewModal()" class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-gray-800 hover:bg-gray-100 flex items-center justify-center transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="p-4 bg-black flex items-center justify-center">
+            <video id="previewVideoPlayer" controls class="w-full max-h-[60vh] rounded-lg shadow-inner bg-black">
+                <source id="previewVideoSource" src="" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
+</div>

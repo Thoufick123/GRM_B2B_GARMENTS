@@ -23,7 +23,14 @@ class PackingSlipController extends Controller
      */
     public function printSlip()
     {
-        $this->requirePermission('all_orders', 'view');
+        $canView = $this->hasPermission('all_orders', 'view')
+                || $this->hasPermission('packing_slip_config', 'view')
+                || $this->hasPermission('packing_videos', 'view')
+                || $this->hasPermission('custom_orders', 'view');
+        if (!$canView) {
+            $this->requirePermission('all_orders', 'view');
+            return;
+        }
 
         $orderId = $_GET['order_id'] ?? $_GET['id'] ?? null;
         if (!$orderId) {
@@ -63,7 +70,14 @@ class PackingSlipController extends Controller
      */
     public function printBulk()
     {
-        $this->requirePermission('all_orders', 'view');
+        $canView = $this->hasPermission('all_orders', 'view')
+                || $this->hasPermission('packing_slip_config', 'view')
+                || $this->hasPermission('packing_videos', 'view')
+                || $this->hasPermission('custom_orders', 'view');
+        if (!$canView) {
+            $this->requirePermission('all_orders', 'view');
+            return;
+        }
 
         $orderIds = [];
         if (!empty($_POST['order_ids'])) {

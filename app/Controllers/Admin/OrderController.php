@@ -97,7 +97,11 @@ class OrderController extends Controller
 
     public function updateStatus()
     {
-        $this->requirePermission('all_orders', 'edit');
+        $canEdit = $this->hasPermission('all_orders', 'edit')
+                || ($this->hasPermission('packing_videos', 'create') || $this->hasPermission('packing_videos', 'edit'));
+        if (!$canEdit) {
+            $this->requirePermission('all_orders', 'edit');
+        }
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
@@ -425,7 +429,13 @@ class OrderController extends Controller
         header('Content-Type: application/json; charset=utf-8');
 
         try {
-            $this->requirePermission('all_orders', 'edit');
+            $canUpdatePacked = $this->hasPermission('all_orders', 'edit')
+                            || $this->hasPermission('packing_videos', 'create')
+                            || $this->hasPermission('packing_videos', 'edit');
+            if (!$canUpdatePacked) {
+                $this->requirePermission('packing_videos', 'edit');
+                return;
+            }
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 http_response_code(405);
                 echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
@@ -647,10 +657,26 @@ class OrderController extends Controller
 
     public function view()
     {
-        $this->requirePermission('all_orders', 'view');
+        $canView = $this->hasPermission('all_orders', 'view')
+                || $this->hasPermission('packing_videos', 'view')
+                || $this->hasPermission('pending_payments', 'view')
+                || $this->hasPermission('bill_modifications', 'view')
+                || $this->hasPermission('packing_slip_config', 'view')
+                || $this->hasPermission('custom_orders', 'view');
+
+        if (!$canView) {
+            $this->requirePermission('all_orders', 'view');
+            return;
+        }
+
         $id = $_GET['id'] ?? null;
         if (!$id) {
-            $this->redirect('/admin/orders');
+            $fallbackUrl = $this->hasPermission('all_orders', 'view') ? '/admin/orders' : (
+                $this->hasPermission('packing_videos', 'view') ? '/admin/orders/packing-videos' : (
+                    $this->hasPermission('pending_payments', 'view') ? '/admin/orders/pending' : '/admin/dashboard'
+                )
+            );
+            $this->redirect($fallbackUrl);
             return;
         }
 
@@ -669,7 +695,12 @@ class OrderController extends Controller
 
         if (!$order) {
             Session::setFlash('error', 'Order not found');
-            $this->redirect('/admin/orders');
+            $fallbackUrl = $this->hasPermission('all_orders', 'view') ? '/admin/orders' : (
+                $this->hasPermission('packing_videos', 'view') ? '/admin/orders/packing-videos' : (
+                    $this->hasPermission('pending_payments', 'view') ? '/admin/orders/pending' : '/admin/dashboard'
+                )
+            );
+            $this->redirect($fallbackUrl);
             return;
         }
 

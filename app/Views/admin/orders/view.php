@@ -14,16 +14,32 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             Download Invoice PDF
         </a>
-        <?php if (empty($isVendor)): ?>
+        <?php if (empty($isVendor) && ($this->hasPermission('bill_modifications', 'create') || $this->hasPermission('bill_modifications', 'edit') || $this->hasPermission('all_orders', 'edit'))): ?>
         <a href="<?= BASE_URL ?>/admin/order-modifications/create?order=<?= htmlspecialchars($order['order_number']) ?>"
            class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg shadow-sm transition-all whitespace-nowrap cursor-pointer">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             <span>Modify Bill</span>
         </a>
         <?php endif; ?>
-        <a href="<?= BASE_URL ?>/admin/orders" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 font-medium">
+        <?php 
+            $backUrl = BASE_URL . '/admin/orders';
+            $backLabel = 'Back to Orders';
+            if (!$this->hasPermission('all_orders', 'view')) {
+                if ($this->hasPermission('packing_videos', 'view')) {
+                    $backUrl = BASE_URL . '/admin/orders/packing-videos';
+                    $backLabel = 'Back to Packing Videos';
+                } elseif ($this->hasPermission('pending_payments', 'view')) {
+                    $backUrl = BASE_URL . '/admin/orders/pending';
+                    $backLabel = 'Back to Pending Orders';
+                } elseif ($this->hasPermission('bill_modifications', 'view')) {
+                    $backUrl = BASE_URL . '/admin/order-modifications';
+                    $backLabel = 'Back to Modifications';
+                }
+            }
+        ?>
+        <a href="<?= $backUrl ?>" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 font-medium">
             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            Back to Orders
+            <?= $backLabel ?>
         </a>
     </div>
 </div>
