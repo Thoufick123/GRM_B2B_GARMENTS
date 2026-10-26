@@ -360,9 +360,26 @@ class StaffController extends Controller
         if (empty($roleName)) {
             Session::setFlash('error', 'Role name is required.');
             $this->redirect('/admin/staff/roles');
+            return;
         }
 
         $roleModel = new Role();
+
+        // Prevent duplicate role name (case-insensitive check)
+        $existing = $roleModel->findByName($roleName, $roleId ? (int)$roleId : null);
+        if ($existing) {
+            Session::setFlash('error', "A role named '" . htmlspecialchars($roleName) . "' already exists. Please choose a different role name.");
+            $this->redirect('/admin/staff/roles');
+            return;
+        }
+
+        // Prevent reserved system roles
+        $reservedRoles = ['super_admin', 'super admin', 'superadmin'];
+        if (in_array(strtolower($roleName), $reservedRoles)) {
+            Session::setFlash('error', "The role name '" . htmlspecialchars($roleName) . "' is reserved for system administration.");
+            $this->redirect('/admin/staff/roles');
+            return;
+        }
         try {
             if ($roleId) {
                 $roleModel->update($roleId, [

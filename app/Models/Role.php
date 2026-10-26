@@ -19,6 +19,20 @@ class Role extends Model
         return $stmt->fetch();
     }
 
+    public function findByName(string $name, ?int $excludeId = null)
+    {
+        $sql = "SELECT * FROM roles WHERE LOWER(TRIM(name)) = LOWER(TRIM(:name))";
+        $params = ['name' => trim($name)];
+        if ($excludeId !== null && $excludeId > 0) {
+            $sql .= " AND id != :excludeId";
+            $params['excludeId'] = $excludeId;
+        }
+        $sql .= " LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetch();
+    }
+
     public function create(array $data)
     {
         $stmt = $this->db->prepare("

@@ -13,7 +13,7 @@
 
 <?php if ($this->hasPermission('roles', 'create') || $this->hasPermission('roles', 'edit')): ?>
 <div class="bg-white rounded-2xl border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] overflow-hidden">
-    <form action="<?= BASE_URL ?>/admin/staff/roles/store" method="POST" class="p-8">
+    <form action="<?= BASE_URL ?>/admin/staff/roles/store" method="POST" class="p-8" id="roleAssignForm" onsubmit="return validateRoleForm(event)">
         
         <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-gray-100 pb-6 mb-6">
             <div class="w-full max-w-md">
@@ -22,13 +22,22 @@
                 
                 <input type="hidden" id="edit_role_id" name="role_id" value="">
                 <label for="role_name" class="block text-sm font-bold text-gray-700 mb-1">Role Name</label>
-                <input type="text" id="role_name" name="role_name" placeholder="e.g. Marketing Manager" required 
+                <input type="text" id="role_name" name="role_name" placeholder="e.g. Marketing Manager" required oninput="checkRoleDuplicate()"
                         class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white transition-colors">
+                <p id="role_name_error" class="text-xs text-rose-500 font-bold mt-1.5 hidden flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <span id="role_name_error_text">A role with this name already exists.</span>
+                </p>
             </div>
             
-            <button type="submit" id="submit-btn" class="mt-4 md:mt-0 bg-black hover:bg-gray-800 text-white font-bold py-2.5 px-6 rounded-lg transition-colors text-sm">
-                Save Role
-            </button>
+            <div class="mt-4 md:mt-0 flex items-center gap-2">
+                <button type="button" id="cancel-edit-btn" onclick="cancelEditRole()" class="hidden px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-bold text-sm transition-colors cursor-pointer">
+                    Cancel
+                </button>
+                <button type="submit" id="submit-btn" class="bg-black hover:bg-gray-800 text-white font-bold py-2.5 px-6 rounded-lg transition-colors text-sm cursor-pointer shadow-sm">
+                    Save Role
+                </button>
+            </div>
         </div>
 
         <div class="overflow-x-auto">
@@ -144,11 +153,89 @@
 <?php endif; ?>
 
 <script>
+const existingRoles = <?= json_encode(array_values(array_map(function($r) {
+    return [
+        'id'   => (int)$r['id'],
+        'name' => strtolower(trim($r['name']))
+    ];
+}, $roles ?? []))) ?>;
+
+function checkRoleDuplicate() {
+    const nameInput = document.getElementById('role_name');
+    const roleIdInput = document.getElementById('edit_role_id');
+    const errorP = document.getElementById('role_name_error');
+    const errorSpan = document.getElementById('role_name_error_text');
+    const submitBtn = document.getElementById('submit-btn');
+
+    const val = nameInput.value.trim().toLowerCase();
+    const currentId = parseInt(roleIdInput.value) || 0;
+
+    if (!val) {
+        errorP.classList.add('hidden');
+        nameInput.classList.remove('border-rose-400', 'focus:ring-rose-500');
+        submitBtn.disabled = false;
+        return false;
+    }
+
+    const reserved = ['super_admin', 'super admin', 'superadmin'];
+    if (reserved.includes(val)) {
+        errorSpan.textContent = 'This role name is reserved for system administration.';
+        errorP.classList.remove('hidden');
+        nameInput.classList.add('border-rose-400', 'focus:ring-rose-500');
+        submitBtn.disabled = true;
+        return true;
+    }
+
+    const match = existingRoles.find(r => r.name === val && r.id !== currentId);
+    if (match) {
+        errorSpan.textContent = `A role named "${nameInput.value.trim()}" already exists. Role names must be unique.`;
+        errorP.classList.remove('hidden');
+        nameInput.classList.add('border-rose-400', 'focus:ring-rose-500');
+        submitBtn.disabled = true;
+        return true;
+    }
+
+    errorP.classList.add('hidden');
+    nameInput.classList.remove('border-rose-400', 'focus:ring-rose-500');
+    submitBtn.disabled = false;
+    return false;
+}
+
+function validateRoleForm(e) {
+    if (checkRoleDuplicate()) {
+        e.preventDefault();
+        Swal.fire({
+            title: 'Duplicate Role Name',
+            text: `A role with the name "${document.getElementById('role_name').value.trim()}" already exists. Role names must be unique.`,
+            icon: 'warning',
+            confirmButtonColor: '#F25996'
+        });
+        return false;
+    }
+    return true;
+}
+
+function cancelEditRole() {
+    document.getElementById('edit_role_id').value = '';
+    document.getElementById('role_name').value = '';
+    document.getElementById('form-title').textContent = 'Create / Update Role';
+    document.getElementById('submit-btn').textContent = 'Save Role';
+    document.getElementById('cancel-edit-btn').classList.add('hidden');
+    document.getElementById('role_name_error').classList.add('hidden');
+    document.getElementById('role_name').classList.remove('border-rose-400', 'focus:ring-rose-500');
+    document.getElementById('submit-btn').disabled = false;
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+}
+
 function editRole(id, name, permissionsJson) {
     document.getElementById('edit_role_id').value = id;
     document.getElementById('role_name').value = name;
     document.getElementById('form-title').textContent = 'Edit Role: ' + name;
     document.getElementById('submit-btn').textContent = 'Update Role';
+    document.getElementById('cancel-edit-btn').classList.remove('hidden');
+    document.getElementById('role_name_error').classList.add('hidden');
+    document.getElementById('role_name').classList.remove('border-rose-400', 'focus:ring-rose-500');
+    document.getElementById('submit-btn').disabled = false;
     
     // Clear all checkboxes
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
