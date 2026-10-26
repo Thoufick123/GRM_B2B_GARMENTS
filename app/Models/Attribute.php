@@ -133,7 +133,43 @@ class Attribute extends Model
 
     public function delete(int $id)
     {
-        $stmt = $this->db->prepare("DELETE FROM attributes WHERE id = :id");
-        return $stmt->execute(['id' => $id]);
+        $ownsTx = false;
+        if (!$this->db->inTransaction()) {
+            $ownsTx = true;
+            $this->db->beginTransaction();
+        }
+
+        try {
+            $this->db->exec("SET FOREIGN_KEY_CHECKS=0");
+
+            // 1. Dynamically unassign linked products by removing attribute values & variant links
+            $this->db->prepare("DELETE FROM product_variant_attributes WHERE attribute_id = ?")->execute([$id]);
+            $this->db->prepare("DELETE FROM product_attribute_values WHERE attribute_id = ?")->execute([$id]);
+
+            // 2. Delete associated attribute values
+            $this->db->prepare("DELETE FROM attribute_values WHERE attribute_id = ?")->execute([$id]);
+
+            // 3. Delete the attribute record
+            $stmt = $this->db->prepare("DELETE FROM attributes WHERE id = :id");
+            $result = $stmt->execute(['id' => $id]);
+
+            $this->db->exec("SET FOREIGN_KEY_CHECKS=1");
+
+            if ($ownsTx) {
+                $this->db->commit();
+            }
+
+            if (class_exists('\Core\Cache')) {
+                \Core\Cache::delete('catalog_active');
+            }
+
+            return $result;
+        } catch (\Exception $e) {
+            $this->db->exec("SET FOREIGN_KEY_CHECKS=1");
+            if ($ownsTx && $this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
     }
 }

@@ -243,26 +243,19 @@ class SubCategory extends Model
         try {
             $this->db->exec("SET FOREIGN_KEY_CHECKS=0");
 
-            // Unlink products belonging to this subcategory
+            // 1. Dynamically unassign products belonging to this subcategory
             $this->db->prepare("UPDATE products SET sub_category_id = NULL WHERE sub_category_id = :id")->execute(['id' => $id]);
 
-            // Find and delete associated attributes and their values
-            $stmtAttr = $this->db->prepare("SELECT id FROM attributes WHERE sub_category_id = :id");
-            $stmtAttr->execute(['id' => $id]);
-            $attrIds = $stmtAttr->fetchAll(\PDO::FETCH_COLUMN);
+            // 2. Dynamically unassign associated attributes (do NOT delete them)
+            $this->db->prepare("UPDATE attributes SET sub_category_id = NULL WHERE sub_category_id = :id")->execute(['id' => $id]);
 
-            if (!empty($attrIds)) {
-                $attrPlaceholders = implode(',', array_fill(0, count($attrIds), '?'));
-                $this->db->prepare("DELETE FROM product_variant_attributes WHERE attribute_id IN ($attrPlaceholders)")->execute($attrIds);
-                $this->db->prepare("DELETE FROM product_attribute_values WHERE attribute_id IN ($attrPlaceholders)")->execute($attrIds);
-                $this->db->prepare("DELETE FROM attribute_values WHERE attribute_id IN ($attrPlaceholders)")->execute($attrIds);
-                $this->db->prepare("DELETE FROM attributes WHERE id IN ($attrPlaceholders)")->execute($attrIds);
-            }
+            // 3. Dynamically unassign fabric_customizations referencing this subcategory
+            $this->db->prepare("UPDATE fabric_customizations SET sub_category_id = NULL WHERE sub_category_id = :id")->execute(['id' => $id]);
 
-            // Clean up fabric_customizations referencing this subcategory
-            $this->db->prepare("DELETE FROM fabric_customizations WHERE sub_category_id = :id")->execute(['id' => $id]);
+            // 4. Dynamically unassign size_charts referencing this subcategory
+            $this->db->prepare("UPDATE size_charts SET sub_category_id = NULL WHERE sub_category_id = :id")->execute(['id' => $id]);
 
-            // Delete the subcategory
+            // 5. Delete the subcategory
             $stmt = $this->db->prepare("DELETE FROM sub_categories WHERE id = :id");
             $result = $stmt->execute(['id' => $id]);
             

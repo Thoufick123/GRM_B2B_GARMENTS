@@ -276,7 +276,7 @@ try {
         "sub_categories" => "
         CREATE TABLE IF NOT EXISTS `sub_categories` (
             `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-            `category_id` BIGINT NOT NULL,
+            `category_id` BIGINT NULL,
             `name` VARCHAR(255) NOT NULL,
             `slug` VARCHAR(255) UNIQUE NOT NULL,
             `status` ENUM('active', 'inactive') DEFAULT 'active',
@@ -1051,6 +1051,12 @@ try {
     $prodCatCol = $db->query("SHOW COLUMNS FROM `products` LIKE 'category_id'")->fetch(PDO::FETCH_ASSOC);
     if ($prodCatCol && isset($prodCatCol['Null']) && strtoupper($prodCatCol['Null']) === 'NO') {
         $db->exec("ALTER TABLE `products` MODIFY `category_id` BIGINT NULL");
+    }
+
+    // Ensure sub_categories.category_id allows NULL for unassigning
+    $subCatCol = $db->query("SHOW COLUMNS FROM `sub_categories` LIKE 'category_id'")->fetch(PDO::FETCH_ASSOC);
+    if ($subCatCol && isset($subCatCol['Null']) && strtoupper($subCatCol['Null']) === 'NO') {
+        $db->exec("ALTER TABLE `sub_categories` MODIFY `category_id` BIGINT NULL");
     }
 
     // Seed default couriers if empty

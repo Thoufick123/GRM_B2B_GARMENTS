@@ -148,4 +148,9 @@ ALTER TABLE `order_modification_items`
 ALTER TABLE `products`
     MODIFY `category_id` BIGINT NULL;
 
+-- 14. Ensure sub_categories.category_id allows NULL
+ALTER TABLE `sub_categories`
+    MODIFY `category_id` BIGINT NULL;
+
+
 

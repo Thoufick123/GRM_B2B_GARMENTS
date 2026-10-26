@@ -273,11 +273,15 @@ class Category extends Model
 
     public function delete(int $id)
     {
-        // Ensure products.category_id allows NULL if it was previously NOT NULL
+        // Ensure products.category_id and sub_categories.category_id allow NULL
         try {
-            $col = $this->db->query("SHOW COLUMNS FROM `products` LIKE 'category_id'")->fetch(\PDO::FETCH_ASSOC);
-            if ($col && isset($col['Null']) && strtoupper($col['Null']) === 'NO') {
+            $colProd = $this->db->query("SHOW COLUMNS FROM `products` LIKE 'category_id'")->fetch(\PDO::FETCH_ASSOC);
+            if ($colProd && isset($colProd['Null']) && strtoupper($colProd['Null']) === 'NO') {
                 $this->db->exec("ALTER TABLE `products` MODIFY `category_id` BIGINT NULL");
+            }
+            $colSub = $this->db->query("SHOW COLUMNS FROM `sub_categories` LIKE 'category_id'")->fetch(\PDO::FETCH_ASSOC);
+            if ($colSub && isset($colSub['Null']) && strtoupper($colSub['Null']) === 'NO') {
+                $this->db->exec("ALTER TABLE `sub_categories` MODIFY `category_id` BIGINT NULL");
             }
         } catch (\Throwable $t) {
             // Ignore if already nullable or without DDL privileges
@@ -292,62 +296,25 @@ class Category extends Model
         try {
             $this->db->exec("SET FOREIGN_KEY_CHECKS=0");
 
-            // 1. Fetch all subcategories of this category to delete them and their attributes
-            $stmtSubIds = $this->db->prepare("SELECT id FROM sub_categories WHERE category_id = :id");
-            $stmtSubIds->execute(['id' => $id]);
-            $subIds = $stmtSubIds->fetchAll(\PDO::FETCH_COLUMN);
+            // 1. Dynamically unassign all subcategories belonging to this category
+            $this->db->prepare("UPDATE sub_categories SET category_id = NULL WHERE category_id = :id")->execute(['id' => $id]);
 
-            // 2. Find all attributes linked directly to this category or its subcategories
-            $attrIds = [];
-            $stmtAttr = $this->db->prepare("SELECT id FROM attributes WHERE category_id = :id");
-            $stmtAttr->execute(['id' => $id]);
-            $directAttrIds = $stmtAttr->fetchAll(\PDO::FETCH_COLUMN);
-            if (!empty($directAttrIds)) {
-                $attrIds = array_merge($attrIds, $directAttrIds);
-            }
+            // 2. Dynamically unassign all attributes linked to this category
+            $this->db->prepare("UPDATE attributes SET category_id = NULL WHERE category_id = :id")->execute(['id' => $id]);
 
-            if (!empty($subIds)) {
-                $subPlaceholders = implode(',', array_fill(0, count($subIds), '?'));
-                $stmtSubAttr = $this->db->prepare("SELECT id FROM attributes WHERE sub_category_id IN ($subPlaceholders)");
-                $stmtSubAttr->execute($subIds);
-                $subAttrIds = $stmtSubAttr->fetchAll(\PDO::FETCH_COLUMN);
-                if (!empty($subAttrIds)) {
-                    $attrIds = array_merge($attrIds, $subAttrIds);
-                }
-            }
-
-            // 3. Delete attributes, values, and variant attribute links (do NOT leave them unassigned)
-            $attrIds = array_unique(array_filter(array_map('intval', $attrIds)));
-            if (!empty($attrIds)) {
-                $attrPlaceholders = implode(',', array_fill(0, count($attrIds), '?'));
-                $this->db->prepare("DELETE FROM product_variant_attributes WHERE attribute_id IN ($attrPlaceholders)")->execute($attrIds);
-                $this->db->prepare("DELETE FROM product_attribute_values WHERE attribute_id IN ($attrPlaceholders)")->execute($attrIds);
-                $this->db->prepare("DELETE FROM attribute_values WHERE attribute_id IN ($attrPlaceholders)")->execute($attrIds);
-                $this->db->prepare("DELETE FROM attributes WHERE id IN ($attrPlaceholders)")->execute($attrIds);
-            }
-
-            // 4. Delete all subcategories belonging to this category (do NOT leave them unassigned)
-            $this->db->prepare("DELETE FROM sub_categories WHERE category_id = :id")->execute(['id' => $id]);
-
-            // 5. Unassign products belonging to this category or its subcategories, and set status to 'draft'
+            // 3. Dynamically unassign products belonging to this category, and set status to 'draft'
             // This strictly prevents unassigned products from showing in the Storefront UI
             $this->db->prepare("UPDATE products SET category_id = NULL, sub_category_id = NULL, status = 'draft' WHERE category_id = :id")->execute(['id' => $id]);
-            if (!empty($subIds)) {
-                $subPlaceholders = implode(',', array_fill(0, count($subIds), '?'));
-                $this->db->prepare("UPDATE products SET sub_category_id = NULL WHERE sub_category_id IN ($subPlaceholders)")->execute($subIds);
-            }
 
-            // 6. Clean up fabric customizations, order rules, size charts, category requests
-            $this->db->prepare("DELETE FROM fabric_customizations WHERE category_id = :id")->execute(['id' => $id]);
-            if (!empty($subIds)) {
-                $subPlaceholders = implode(',', array_fill(0, count($subIds), '?'));
-                $this->db->prepare("DELETE FROM fabric_customizations WHERE sub_category_id IN ($subPlaceholders)")->execute($subIds);
-            }
-            $this->db->prepare("DELETE FROM order_rules WHERE category_id = :id")->execute(['id' => $id]);
+            // 4. Dynamically unassign fabric customizations, size charts, and category requests
+            $this->db->prepare("UPDATE fabric_customizations SET category_id = NULL WHERE category_id = :id")->execute(['id' => $id]);
             $this->db->prepare("UPDATE size_charts SET category_id = NULL WHERE category_id = :id")->execute(['id' => $id]);
             $this->db->prepare("UPDATE category_requests SET parent_category_id = NULL WHERE parent_category_id = :id")->execute(['id' => $id]);
 
-            // 7. Delete the category record
+            // 5. Delete category-specific order rules
+            $this->db->prepare("DELETE FROM order_rules WHERE category_id = :id")->execute(['id' => $id]);
+
+            // 6. Delete the category record
             $stmtDel = $this->db->prepare("DELETE FROM categories WHERE id = :id");
             $result = $stmtDel->execute(['id' => $id]);
 
