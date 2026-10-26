@@ -20,8 +20,8 @@ class StaffController extends Controller
             'all_orders' => ['label' => 'All Orders', 'actions' => ['view', 'edit']],
             'pending_payments' => ['label' => 'Pending Payments', 'actions' => ['view', 'edit']],
             'bill_modifications' => ['label' => 'Bill Modifications', 'actions' => ['view', 'edit']],
-            'packing_videos' => ['label' => 'Packing Videos & Backup', 'actions' => ['view', 'create', 'edit', 'delete']],
-            'packing_slip_config' => ['label' => 'Packing Slip Config', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'packing_videos' => ['label' => 'Packing Videos & Backup', 'actions' => ['view', 'edit']],
+            'packing_slip_config' => ['label' => 'Packing Slip Config', 'actions' => ['view', 'edit']],
         ],
         'Reviews' => [
             'reviews' => ['label' => 'Reviews', 'actions' => ['view', 'edit', 'delete']],

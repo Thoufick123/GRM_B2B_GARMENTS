@@ -98,7 +98,7 @@ class OrderController extends Controller
     public function updateStatus()
     {
         $canEdit = $this->hasPermission('all_orders', 'edit')
-                || ($this->hasPermission('packing_videos', 'create') || $this->hasPermission('packing_videos', 'edit'));
+                || $this->hasPermission('packing_videos', 'edit');
         if (!$canEdit) {
             $this->requirePermission('all_orders', 'edit');
         }
@@ -430,7 +430,6 @@ class OrderController extends Controller
 
         try {
             $canUpdatePacked = $this->hasPermission('all_orders', 'edit')
-                            || $this->hasPermission('packing_videos', 'create')
                             || $this->hasPermission('packing_videos', 'edit');
             if (!$canUpdatePacked) {
                 $this->requirePermission('packing_videos', 'edit');
@@ -482,17 +481,9 @@ class OrderController extends Controller
             $hasVideoUpload = (isset($_FILES['packing_video_1']) && $_FILES['packing_video_1']['error'] !== UPLOAD_ERR_NO_FILE)
                            || (isset($_FILES['packing_video_2']) && $_FILES['packing_video_2']['error'] !== UPLOAD_ERR_NO_FILE);
             if ($hasVideoUpload) {
-                $hasExistingVideo = !empty($order['packing_video_1']) || !empty($order['packing_video_2']);
-                if ($hasExistingVideo) {
-                    if (!$this->hasPermission('packing_videos', 'edit') && !$this->hasPermission('all_orders', 'edit')) {
-                        echo json_encode(['success' => false, 'message' => 'Permission denied: You do not have permission to edit packing videos.']);
-                        return;
-                    }
-                } else {
-                    if (!$this->hasPermission('packing_videos', 'create') && !$this->hasPermission('packing_videos', 'edit') && !$this->hasPermission('all_orders', 'edit')) {
-                        echo json_encode(['success' => false, 'message' => 'Permission denied: You do not have permission to upload packing videos.']);
-                        return;
-                    }
+                if (!$this->hasPermission('packing_videos', 'edit') && !$this->hasPermission('all_orders', 'edit')) {
+                    echo json_encode(['success' => false, 'message' => 'Permission denied: You do not have permission to upload/edit packing videos.']);
+                    return;
                 }
             }
 
@@ -1105,7 +1096,13 @@ class OrderController extends Controller
      */
     public function cleanupPackingVideos()
     {
-        $this->requirePermission('packing_videos', 'delete');
+        $canCleanup = (\Core\Session::get('user_role') === 'super_admin')
+                   || $this->hasPermission('packing_videos', 'edit')
+                   || $this->hasPermission('all_orders', 'edit');
+        if (!$canCleanup) {
+            $this->requirePermission('packing_videos', 'edit');
+            return;
+        }
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
@@ -1167,7 +1164,13 @@ class OrderController extends Controller
      */
     public function deletePackingVideo()
     {
-        $this->requirePermission('packing_videos', 'delete');
+        $canDelete = (\Core\Session::get('user_role') === 'super_admin')
+                  || $this->hasPermission('packing_videos', 'edit')
+                  || $this->hasPermission('all_orders', 'edit');
+        if (!$canDelete) {
+            $this->requirePermission('packing_videos', 'edit');
+            return;
+        }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);

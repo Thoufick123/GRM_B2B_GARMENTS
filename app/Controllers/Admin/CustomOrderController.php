@@ -245,17 +245,9 @@ class CustomOrderController extends Controller
             $hasVideoUpload = (isset($_FILES['packing_video_1']) && $_FILES['packing_video_1']['error'] !== UPLOAD_ERR_NO_FILE)
                            || (isset($_FILES['packing_video_2']) && $_FILES['packing_video_2']['error'] !== UPLOAD_ERR_NO_FILE);
             if ($hasVideoUpload) {
-                $hasExistingVideo = !empty($order['packing_video_1']) || !empty($order['packing_video_2']);
-                if ($hasExistingVideo) {
-                    if (!$this->hasPermission('packing_videos', 'edit') && !$this->hasPermission('custom_orders', 'edit') && !$this->hasPermission('all_orders', 'edit')) {
-                        echo json_encode(['success' => false, 'message' => 'Permission denied: You do not have permission to edit packing videos.']);
-                        return;
-                    }
-                } else {
-                    if (!$this->hasPermission('packing_videos', 'create') && !$this->hasPermission('packing_videos', 'edit') && !$this->hasPermission('custom_orders', 'edit') && !$this->hasPermission('all_orders', 'edit')) {
-                        echo json_encode(['success' => false, 'message' => 'Permission denied: You do not have permission to upload packing videos.']);
-                        return;
-                    }
+                if (!$this->hasPermission('packing_videos', 'edit') && !$this->hasPermission('custom_orders', 'edit') && !$this->hasPermission('all_orders', 'edit')) {
+                    echo json_encode(['success' => false, 'message' => 'Permission denied: You do not have permission to upload/edit packing videos.']);
+                    return;
                 }
             }
 

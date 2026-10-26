@@ -48,7 +48,7 @@ class PackingSlipConfigController extends Controller
 
     public function save()
     {
-        if (!$this->hasPermission('packing_slip_config', 'edit') && !$this->hasPermission('packing_slip_config', 'create') && !$this->hasPermission('all_orders', 'edit')) {
+        if (!$this->hasPermission('packing_slip_config', 'edit') && !$this->hasPermission('all_orders', 'edit')) {
             $this->requirePermission('packing_slip_config', 'edit');
         }
 
@@ -98,8 +98,8 @@ class PackingSlipConfigController extends Controller
 
     public function reset()
     {
-        if (!$this->hasPermission('packing_slip_config', 'delete') && !$this->hasPermission('all_orders', 'delete')) {
-            $this->requirePermission('packing_slip_config', 'delete');
+        if (!(\Core\Session::get('user_role') === 'super_admin') && !$this->hasPermission('packing_slip_config', 'edit') && !$this->hasPermission('all_orders', 'edit')) {
+            $this->requirePermission('packing_slip_config', 'edit');
         }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
