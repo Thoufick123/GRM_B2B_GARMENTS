@@ -356,9 +356,9 @@ if (!empty($variants)) {
 
                 <!-- Mobile Description -->
                 <?php if (!empty($product['description'])): ?>
-                <div class="lg:hidden mb-5 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <div class="lg:hidden mb-5 bg-gray-50 rounded-xl p-4 border border-gray-100 overflow-hidden min-w-0 max-w-full">
                     <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Description</h3>
-                    <p class="text-gray-600 leading-relaxed text-sm"><?= nl2br(htmlspecialchars($product['description'])) ?></p>
+                    <p class="text-gray-600 leading-relaxed text-sm break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere; max-width: 100%;"><?= nl2br(htmlspecialchars($product['description'])) ?></p>
                 </div>
                 <?php endif; ?>
 
@@ -625,7 +625,7 @@ if (!empty($variants)) {
                         <h3 class="text-lg sm:text-2xl font-black text-gray-900 mb-5 tracking-tight text-left">
                             About <?= htmlspecialchars($product['name']) ?>
                         </h3>
-                        <div class="text-gray-700 text-sm sm:text-base leading-relaxed space-y-3.5 text-left">
+                        <div class="text-gray-700 text-sm sm:text-base leading-relaxed space-y-3.5 text-left overflow-hidden min-w-0 max-w-full">
                             <?php 
                             $descText = trim($product['description'] ?? '');
                             if (!empty($descText)) {
@@ -633,7 +633,7 @@ if (!empty($variants)) {
                                 foreach ($paragraphs as $p) {
                                     $p = trim($p);
                                     if ($p !== '') {
-                                        echo '<p class="leading-relaxed text-gray-700">' . htmlspecialchars($p) . '</p>';
+                                        echo '<p class="leading-relaxed text-gray-700 break-words" style="word-break: break-word; overflow-wrap: anywhere; max-width: 100%;">' . htmlspecialchars($p) . '</p>';
                                     }
                                 }
                             } else {

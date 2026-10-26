@@ -58,7 +58,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
                 
                 <!-- Left Column: Image Gallery (Vertical Thumbnails on Left + 3:4 Main Image on Right) -->
-                <div class="lg:col-span-6 xl:col-span-6 w-full space-y-6">
+                <div class="lg:col-span-6 xl:col-span-6 w-full min-w-0 space-y-6">
                     <div class="flex flex-col-reverse md:flex-row gap-3 sm:gap-4 items-start w-full">
                         
                         <!-- Left Vertical Thumbnails Strip -->
@@ -106,7 +106,7 @@
                                 <img id="fabricMainImage" 
                                      src="<?= htmlspecialchars($mainImgUrl) ?>" 
                                      alt="<?= htmlspecialchars($customization['fabric_name']) ?>" 
-                                     onerror="this.onerror=null; this.src='<?= $fallbackImg ?>';"
+                                     onerror="this.onerror=null; this.src='<?= $fallbackImg ?>';" 
                                      class="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
                                      style="width: 100%; height: 100%; object-fit: cover; display: block;">
                             </div>
@@ -115,7 +115,7 @@
                     </div>
 
                     <!-- Fabric Description & Details Card (Admin Added Description) -->
-                    <div class="bg-gradient-to-br from-pink-50/30 via-white to-gray-50/50 rounded-3xl p-5 sm:p-6 border border-gray-200/90 shadow-2xs space-y-4">
+                    <div class="bg-gradient-to-br from-pink-50/30 via-white to-gray-50/50 rounded-3xl p-5 sm:p-6 border border-gray-200/90 shadow-2xs space-y-4 w-full min-w-0 max-w-full overflow-hidden">
                         <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                             <h3 class="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
                                 <span>📄 Fabric Description &amp; Details</span>
@@ -126,10 +126,21 @@
                         </div>
 
                         <!-- Admin Added Description -->
-                        <div class="text-xs sm:text-sm text-gray-700 leading-relaxed">
-                            <?php if (!empty($customization['fabric_description'])): ?>
-                                <div class="text-gray-700 leading-relaxed whitespace-pre-line bg-white p-4 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm">
-                                    <?= nl2br(htmlspecialchars(trim($customization['fabric_description']))) ?>
+                        <div class="text-xs sm:text-sm text-gray-700 leading-relaxed w-full min-w-0 max-w-full overflow-hidden">
+                            <?php 
+                            $rawDesc = trim($customization['fabric_description'] ?? '');
+                            if (!empty($rawDesc)): 
+                                $paragraphs = explode("\n", $rawDesc);
+                            ?>
+                                <div class="text-gray-700 leading-relaxed bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm space-y-2.5 break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere; overflow: hidden; max-width: 100%;">
+                                    <?php foreach ($paragraphs as $p): 
+                                        $p = trim($p);
+                                        if ($p !== ''):
+                                    ?>
+                                        <p class="leading-relaxed break-words m-0" style="word-break: break-word; overflow-wrap: anywhere; margin-bottom: 0.5rem;"><?= htmlspecialchars($p) ?></p>
+                                    <?php 
+                                        endif;
+                                    endforeach; ?>
                                 </div>
                             <?php else: ?>
                                 <p class="text-xs text-gray-400 italic bg-white p-4 rounded-2xl border border-gray-100">No description provided for this fabric.</p>
