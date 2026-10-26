@@ -740,6 +740,39 @@ function onGstOptionChange(val) {
 function handleGstInput(input) {
     input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15);
     const val = input.value;
+    const errEl = document.getElementById('gst_number_error_msg');
+
+    if (val.length === 15) {
+        if (!/[A-Z]/.test(val) || !/[0-9]/.test(val)) {
+            if (errEl) {
+                errEl.innerText = 'GST number must contain a mix of letters and numbers (cannot be all numbers). Example: 27AAAAA0000A1Z5';
+                errEl.classList.remove('hidden');
+            }
+            input.classList.add('border-rose-400');
+            return;
+        }
+        const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+        if (!gstRegex.test(val)) {
+            if (errEl) {
+                errEl.innerText = 'Invalid GST Number format (e.g. 27AAAAA0000A1Z5). Must be a 15-character valid GSTIN.';
+                errEl.classList.remove('hidden');
+            }
+            input.classList.add('border-rose-400');
+            return;
+        }
+        if (errEl) errEl.classList.add('hidden');
+        input.classList.remove('border-rose-400');
+    } else if (val.length > 0 && val.length < 15) {
+        if (errEl) {
+            errEl.innerText = `15 alphanumeric characters required (${val.length}/15)`;
+            errEl.classList.remove('hidden');
+        }
+        input.classList.add('border-rose-400');
+    } else {
+        if (errEl) errEl.classList.add('hidden');
+        input.classList.remove('border-rose-400');
+    }
+
     if (val.length >= 12) {
         const panPart = val.substring(2, 12);
         if (/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panPart)) {
@@ -1028,6 +1061,11 @@ async function validateVendorStep(currentStep) {
             const gstNum = document.getElementById('gst_number').value.trim();
             if (!gstNum) {
                 alert('Please enter your 15-digit GST Number, or select "Non-GST / Unregistered Vendor" if you do not have GST.');
+                document.getElementById('gst_number').focus();
+                return false;
+            }
+            if (!/[A-Z]/.test(gstNum) || !/[0-9]/.test(gstNum)) {
+                showFieldError('gst_number', 'GST number must contain a mix of letters and numbers (cannot be all numbers). Example: 27AAAAA0000A1Z5');
                 document.getElementById('gst_number').focus();
                 return false;
             }

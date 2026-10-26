@@ -321,8 +321,8 @@ class AuthController extends Controller
                 Session::setFlash('error', 'GST Number is required if you select that you have one.');
                 $this->redirect('/register');
             }
-            if (!preg_match('/^(?=.*[0-9])(?=.*[A-Z])[A-Z0-9]{15}$/i', $gstNumber)) {
-                Session::setFlash('error', 'Please enter a valid 15-character GST number containing both letters and numbers.');
+            if (!preg_match('/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i', $gstNumber)) {
+                Session::setFlash('error', 'Please enter a valid 15-character GST number containing both letters and numbers (e.g. 33AAAAA0000A1Z5).');
                 $this->redirect('/register');
             }
         }

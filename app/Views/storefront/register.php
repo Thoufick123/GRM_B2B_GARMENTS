@@ -421,10 +421,10 @@
                                         <svg class="w-4 h-4 mr-1.5" style="color: #F25996;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                         GST Number
                                     </label>
-                                    <input id="gst_number" name="gst_number" type="text" minlength="15" maxlength="15" pattern="^(?=.*[0-9])(?=.*[A-Z])[A-Z0-9]{15}$" title="Please enter a valid 15-character GST number containing both letters and numbers" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" autocomplete="off" class="form-input px-4 py-3 border border-gray-200 rounded-xl w-full focus:ring-[#F25996] focus:border-[#F25996] text-sm bg-white uppercase font-medium text-gray-900" placeholder="e.g. 22AAAAA0000A1Z5" required>
+                                    <input id="gst_number" name="gst_number" type="text" minlength="15" maxlength="15" pattern="^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$" title="Please enter a valid 15-character GST number containing both letters and numbers (e.g. 33AAAAA0000A1Z5)" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" autocomplete="off" class="form-input px-4 py-3 border border-gray-200 rounded-xl w-full focus:ring-[#F25996] focus:border-[#F25996] text-sm bg-white uppercase font-medium text-gray-900" placeholder="e.g. 33AAAAA0000A1Z5" required>
                                     <div id="gst_number-error" class="hidden mt-1.5 ml-1 text-xs text-red-500 flex items-center font-medium">
                                         <svg class="w-3.5 h-3.5 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        <span id="gst_number-error-text">Please enter a valid 15-character GSTIN number.</span>
+                                        <span id="gst_number-error-text">Please enter a valid 15-character GSTIN containing letters and numbers.</span>
                                     </div>
                                 </div>
 
@@ -921,15 +921,30 @@ function validateSingleField(fieldId) {
     }
 
     if (fieldId === 'gst_number') {
-        const hasGst = document.getElementById('has_gst').checked;
+        const hasGst = document.getElementById('has_gst') ? document.getElementById('has_gst').checked : true;
         if (hasGst) {
             const val = document.getElementById('gst_number').value.trim().toUpperCase();
             if (!val) {
                 setFieldError('gst_number', 'GST number is required.');
                 return false;
             }
-            if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(val) && !/^[A-Z0-9]{15}$/.test(val)) {
-                setFieldError('gst_number', 'Please enter a valid 15-character GSTIN format.');
+            if (val.length < 15) {
+                setFieldError('gst_number', `GST number must be 15 characters with letters and numbers (${val.length}/15 entered).`);
+                return false;
+            }
+            if (val.length > 15) {
+                setFieldError('gst_number', 'GST number cannot exceed 15 characters.');
+                return false;
+            }
+            // Must contain a mix of letters and numbers (cannot be all numbers or all letters)
+            if (!/[A-Z]/.test(val) || !/[0-9]/.test(val)) {
+                setFieldError('gst_number', 'GST number must contain a mix of letters and numbers (cannot be only numbers or letters). Example: 33AAAAA0000A1Z5');
+                return false;
+            }
+            // Standard Indian GSTIN pattern: 2 digits state + 5 letters PAN + 4 digits PAN + 1 letter PAN + 1 entity + 'Z' + 1 check digit
+            const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+            if (!gstPattern.test(val)) {
+                setFieldError('gst_number', 'Invalid GSTIN format (e.g. 33AAAAA0000A1Z5). Must follow state code, PAN, entity, Z and check digit.');
                 return false;
             }
             if (_dbDuplicateErrors['gst_number']) {
