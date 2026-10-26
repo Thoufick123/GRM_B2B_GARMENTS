@@ -308,6 +308,26 @@
                                         <h3 class="product-name font-bold leading-snug line-clamp-2"><?= htmlspecialchars($rp['name']) ?></h3>
                                     </a>
 
+                                    <!-- Dynamic Rating & Review Row -->
+                                    <?php
+                                        $rpRatingRaw = (float)($rp['average_rating'] ?? 0);
+                                        $rpReviews   = (int)($rp['num_reviews'] ?? 0);
+                                        $rpHasRev    = ($rpReviews > 0 || $rpRatingRaw > 0);
+                                        $rpStars     = max(0, min(5, (int)round($rpRatingRaw)));
+                                        $rpRatingFmt = number_format($rpRatingRaw, 1);
+                                    ?>
+                                    <div class="product-rating-row flex items-center gap-1.5 my-1 text-xs">
+                                        <div class="flex items-center text-amber-400" style="color: var(--pc-star, #f59e0b);">
+                                            <?php for ($s = 1; $s <= 5; $s++): ?>
+                                                <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 <?= ($rpHasRev && $s <= $rpStars) ? 'fill-current' : 'text-gray-200 fill-current' ?>" viewBox="0 0 20 20">
+                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                                </svg>
+                                            <?php endfor; ?>
+                                        </div>
+                                        <span class="font-bold text-gray-800 text-[11px]"><?= $rpHasRev ? $rpRatingFmt : '0.0' ?></span>
+                                        <span class="text-gray-400 text-[10px] font-medium">(<?= $rpReviews ?>)</span>
+                                    </div>
+
                                     <div class="mt-auto">
                                         <!-- Selling Price & Strikethrough (Same Row) -->
                                         <div class="product-price-row flex items-baseline gap-1.5 flex-wrap mb-1">

@@ -37,6 +37,35 @@ class CatalogController extends Controller
             foreach ($allProducts as &$product) {
                 $product['variants'] = $variantsMap[$product['id']] ?? [];
             }
+
+            // Sync live approved review stats for catalog products
+            if (!empty($pIds)) {
+                try {
+                    $pIdList = implode(',', array_map('intval', $pIds));
+                    $revStats = \Core\Database::getInstance()->query("
+                        SELECT product_id, COUNT(*) as cnt, AVG(rating) as avg_rating 
+                        FROM reviews 
+                        WHERE product_id IN ($pIdList) AND is_approved = 1 
+                        GROUP BY product_id
+                    ")->fetchAll(\PDO::FETCH_ASSOC);
+                    $revMap = [];
+                    foreach ($revStats as $rs) {
+                        $revMap[$rs['product_id']] = [
+                            'num_reviews' => (int)$rs['cnt'],
+                            'average_rating' => round((float)$rs['avg_rating'], 2)
+                        ];
+                    }
+                    foreach ($allProducts as &$product) {
+                        if (isset($revMap[$product['id']])) {
+                            $product['num_reviews'] = $revMap[$product['id']]['num_reviews'];
+                            $product['average_rating'] = $revMap[$product['id']]['average_rating'];
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    error_log("Catalog review sync error: " . $e->getMessage());
+                }
+            }
+
             if ($catCacheKey && class_exists('\Core\Cache')) {
                 \Core\Cache::set($catCacheKey, $allProducts, 600);
             }

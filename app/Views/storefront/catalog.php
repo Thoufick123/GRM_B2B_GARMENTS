@@ -450,8 +450,28 @@
                                 </a>
                                 
                                 <?php if (!empty($product['sku'])): ?>
-                                    <p class="font-medium mb-1.5 hidden md:block" style="font-size: 0.8125rem; color: <?= htmlspecialchars($subtitle_color) ?>;">SKU: <?= htmlspecialchars($product['sku']) ?></p>
+                                    <p class="font-medium mb-1 hidden md:block" style="font-size: 0.8125rem; color: <?= htmlspecialchars($subtitle_color) ?>;">SKU: <?= htmlspecialchars($product['sku']) ?></p>
                                 <?php endif; ?>
+
+                                <!-- Dynamic Rating & Review Row -->
+                                <?php
+                                    $cardRatingRaw = (float)($product['average_rating'] ?? 0);
+                                    $cardReviews   = (int)($product['num_reviews'] ?? 0);
+                                    $hasReviews    = ($cardReviews > 0 || $cardRatingRaw > 0);
+                                    $cardStars     = max(0, min(5, (int)round($cardRatingRaw)));
+                                    $cardRatingFmt = number_format($cardRatingRaw, 1);
+                                ?>
+                                <div class="product-rating-row flex items-center gap-1.5 my-1 text-xs">
+                                    <div class="flex items-center text-amber-400" style="color: var(--pc-star, #f59e0b);">
+                                        <?php for ($s = 1; $s <= 5; $s++): ?>
+                                            <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 <?= ($hasReviews && $s <= $cardStars) ? 'fill-current' : 'text-gray-200 fill-current' ?>" viewBox="0 0 20 20">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                            </svg>
+                                        <?php endfor; ?>
+                                    </div>
+                                    <span class="font-bold text-gray-800 text-[11px] sm:text-xs"><?= $hasReviews ? $cardRatingFmt : '0.0' ?></span>
+                                    <span class="text-gray-400 text-[10px] sm:text-[11px] font-medium">(<?= $cardReviews ?>)</span>
+                                </div>
 
                                 <?php if ($canAddToCart): ?>
                                     <div class="mt-auto">
@@ -464,19 +484,10 @@
                                         </div>
                                         
                                         <!-- Minimum Order Count -->
-                                        <p class="product-moq-row text-xs font-semibold mb-1.5 md:mb-4 flex items-center gap-1 whitespace-nowrap" style="color: var(--pc-price);">
+                                        <p class="product-moq-row text-xs font-semibold mb-1.5 md:mb-3 flex items-center gap-1 whitespace-nowrap" style="color: var(--pc-price);">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                                             <span>Min. Order: <?= htmlspecialchars($moq) ?> Pcs</span>
                                         </p>
-
-                                        <!-- Rating Row (Shown in list view) -->
-                                        <div class="product-rating-row flex items-center gap-1 mb-2 text-xs">
-                                            <div class="flex items-center text-amber-500">
-                                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                            </div>
-                                            <span class="font-bold text-gray-800 text-[11px] md:text-xs">5.0</span>
-                                            <span class="text-gray-400 text-[10px] md:text-xs">(1)</span>
-                                        </div>
 
                                         <form action="<?= BASE_URL ?>/cart/add" method="POST" onsubmit="ajaxAddToCart(event, this)">
                                             <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
@@ -563,9 +574,11 @@ function catalogPageUrl(int $page): string {
 </div>
 
 <style>
-/* ===== Hide List-specific elements in Grid View ===== */
-#product-grid:not(.list-view) .product-rating-row {
-    display: none !important;
+/* ===== Product Rating Row in Grid & List View ===== */
+.product-card .product-rating-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
 }
 
 /* ===== Desktop List View (min-width: 1024px) - 3 Products Per Row ===== */
