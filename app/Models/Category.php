@@ -273,15 +273,6 @@ class Category extends Model
 
     public function delete(int $id)
     {
-        $counts = $this->getCounts($id);
-        if ($counts['subcategory_count'] > 0 || $counts['attribute_count'] > 0 || $counts['product_count'] > 0) {
-            $reasons = [];
-            if ($counts['subcategory_count'] > 0) $reasons[] = "{$counts['subcategory_count']} sub-category(ies)";
-            if ($counts['attribute_count'] > 0) $reasons[] = "{$counts['attribute_count']} attribute(s)";
-            if ($counts['product_count'] > 0) $reasons[] = "{$counts['product_count']} product(s)";
-            throw new \Exception("Cannot delete category because it is currently linked to " . implode(', ', $reasons) . ". Deletion is restricted to prevent unassigned items.");
-        }
-
         $ownsTx = false;
         if (!$this->db->inTransaction()) {
             $ownsTx = true;
@@ -291,13 +282,62 @@ class Category extends Model
         try {
             $this->db->exec("SET FOREIGN_KEY_CHECKS=0");
 
-            // Remove category-specific rules / references
+            // 1. Fetch all subcategories of this category to delete them and their attributes
+            $stmtSubIds = $this->db->prepare("SELECT id FROM sub_categories WHERE category_id = :id");
+            $stmtSubIds->execute(['id' => $id]);
+            $subIds = $stmtSubIds->fetchAll(\PDO::FETCH_COLUMN);
+
+            // 2. Find all attributes linked directly to this category or its subcategories
+            $attrIds = [];
+            $stmtAttr = $this->db->prepare("SELECT id FROM attributes WHERE category_id = :id");
+            $stmtAttr->execute(['id' => $id]);
+            $directAttrIds = $stmtAttr->fetchAll(\PDO::FETCH_COLUMN);
+            if (!empty($directAttrIds)) {
+                $attrIds = array_merge($attrIds, $directAttrIds);
+            }
+
+            if (!empty($subIds)) {
+                $subPlaceholders = implode(',', array_fill(0, count($subIds), '?'));
+                $stmtSubAttr = $this->db->prepare("SELECT id FROM attributes WHERE sub_category_id IN ($subPlaceholders)");
+                $stmtSubAttr->execute($subIds);
+                $subAttrIds = $stmtSubAttr->fetchAll(\PDO::FETCH_COLUMN);
+                if (!empty($subAttrIds)) {
+                    $attrIds = array_merge($attrIds, $subAttrIds);
+                }
+            }
+
+            // 3. Delete attributes, values, and variant attribute links (do NOT leave them unassigned)
+            $attrIds = array_unique(array_filter(array_map('intval', $attrIds)));
+            if (!empty($attrIds)) {
+                $attrPlaceholders = implode(',', array_fill(0, count($attrIds), '?'));
+                $this->db->prepare("DELETE FROM product_variant_attributes WHERE attribute_id IN ($attrPlaceholders)")->execute($attrIds);
+                $this->db->prepare("DELETE FROM product_attribute_values WHERE attribute_id IN ($attrPlaceholders)")->execute($attrIds);
+                $this->db->prepare("DELETE FROM attribute_values WHERE attribute_id IN ($attrPlaceholders)")->execute($attrIds);
+                $this->db->prepare("DELETE FROM attributes WHERE id IN ($attrPlaceholders)")->execute($attrIds);
+            }
+
+            // 4. Delete all subcategories belonging to this category (do NOT leave them unassigned)
+            $this->db->prepare("DELETE FROM sub_categories WHERE category_id = :id")->execute(['id' => $id]);
+
+            // 5. Unassign products belonging to this category or its subcategories, and set status to 'draft'
+            // This strictly prevents unassigned products from showing in the Storefront UI
+            $this->db->prepare("UPDATE products SET category_id = NULL, sub_category_id = NULL, status = 'draft' WHERE category_id = :id")->execute(['id' => $id]);
+            if (!empty($subIds)) {
+                $subPlaceholders = implode(',', array_fill(0, count($subIds), '?'));
+                $this->db->prepare("UPDATE products SET sub_category_id = NULL WHERE sub_category_id IN ($subPlaceholders)")->execute($subIds);
+            }
+
+            // 6. Clean up fabric customizations, order rules, size charts, category requests
+            $this->db->prepare("DELETE FROM fabric_customizations WHERE category_id = :id")->execute(['id' => $id]);
+            if (!empty($subIds)) {
+                $subPlaceholders = implode(',', array_fill(0, count($subIds), '?'));
+                $this->db->prepare("DELETE FROM fabric_customizations WHERE sub_category_id IN ($subPlaceholders)")->execute($subIds);
+            }
             $this->db->prepare("DELETE FROM order_rules WHERE category_id = :id")->execute(['id' => $id]);
             $this->db->prepare("UPDATE size_charts SET category_id = NULL WHERE category_id = :id")->execute(['id' => $id]);
-            $this->db->prepare("UPDATE fabric_customizations SET category_id = NULL WHERE category_id = :id")->execute(['id' => $id]);
             $this->db->prepare("UPDATE category_requests SET parent_category_id = NULL WHERE parent_category_id = :id")->execute(['id' => $id]);
 
-            // Delete the category record
+            // 7. Delete the category record
             $stmtDel = $this->db->prepare("DELETE FROM categories WHERE id = :id");
             $result = $stmtDel->execute(['id' => $id]);
 
@@ -308,6 +348,13 @@ class Category extends Model
             }
 
             $this->invalidateCategoryCaches();
+            if (class_exists('\Core\Cache')) {
+                \Core\Cache::delete('subcat_all_null');
+                \Core\Cache::delete('subcat_all_0');
+                \Core\Cache::delete('subcat_all_1');
+                \Core\Cache::delete('catalog_default_products');
+                \Core\Cache::delete('home_active_products');
+            }
             return $result;
         } catch (\Exception $e) {
             $this->db->exec("SET FOREIGN_KEY_CHECKS=1");

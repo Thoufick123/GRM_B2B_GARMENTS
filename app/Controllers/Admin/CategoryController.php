@@ -294,22 +294,6 @@ class CategoryController extends Controller
                     $redirectUrl = '/admin/catalog/categories?module=customize';
                 }
 
-                $counts = $categoryModel->getCounts($id);
-                if ($counts['subcategory_count'] > 0 || $counts['attribute_count'] > 0 || $counts['product_count'] > 0) {
-                    $reasons = [];
-                    if ($counts['subcategory_count'] > 0) $reasons[] = "{$counts['subcategory_count']} sub-category(ies)";
-                    if ($counts['attribute_count'] > 0) $reasons[] = "{$counts['attribute_count']} attribute(s)";
-                    if ($counts['product_count'] > 0) $reasons[] = "{$counts['product_count']} product(s)";
-                    $errMsg = "Cannot delete category: Category is currently linked to " . implode(', ', $reasons) . ". Deletion is restricted to prevent unassigned items.";
-                    if ($this->isJsonRequest()) {
-                        $this->json(['success' => false, 'message' => $errMsg]);
-                        return;
-                    }
-                    Session::setFlash('error', $errMsg);
-                    $this->redirect($redirectUrl);
-                    return;
-                }
-
                 $categoryModel->delete($id);
                 if (class_exists('\Core\Cache')) {
                     \Core\Cache::delete('catalog_active');
