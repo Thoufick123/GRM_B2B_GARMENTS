@@ -516,6 +516,7 @@ class DashboardController extends Controller
             
             // Fetch order modifications
             $orderModifications = [];
+            $orderModItems = [];
             $stmtMods = $db->prepare("
                 SELECT om.* FROM order_modifications om
                 JOIN orders o ON om.order_id = o.id
@@ -528,6 +529,37 @@ class DashboardController extends Controller
             foreach ($stmtMods->fetchAll() as $mod) {
                 // Keep overwriting so we get the most recent modification
                 $orderModifications[$mod['order_id']] = $mod;
+            }
+
+            if (!empty($orderModifications)) {
+                $modIds = array_values(array_unique(array_column($orderModifications, 'id')));
+                if (!empty($modIds)) {
+                    $modPlaceholders = implode(',', array_fill(0, count($modIds), '?'));
+                    $stmtModItems = $db->prepare("
+                        SELECT omi.*,
+                               COALESCE(omi.original_product_name, p.name, p2.name, 'Original Item') as original_product_name,
+                               COALESCE(omi.original_variant_name, pv.name, pv2.name) as original_variant_name,
+                               COALESCE(omi.replacement_product_name, p2.name, p.name, 'Replacement Product') as replacement_product_name,
+                               COALESCE(omi.replacement_variant_name, pv2.name, pv.name, rpv.name) as replacement_variant_name,
+                               COALESCE(omi.original_image, pi1.image_path, pi2.image_path) as original_image,
+                               COALESCE(omi.replacement_image, pi2.image_path, pi1.image_path) as replacement_image
+                        FROM order_modification_items omi
+                        LEFT JOIN order_items oi ON omi.order_item_id = oi.id
+                        LEFT JOIN products p ON oi.product_id = p.id
+                        LEFT JOIN product_variants pv ON oi.variant_id = pv.id
+                        LEFT JOIN (SELECT product_id, MIN(image_path) as image_path FROM product_images WHERE is_primary = 1 GROUP BY product_id) pi1 ON p.id = pi1.product_id
+                        LEFT JOIN products p2 ON omi.product_id = p2.id
+                        LEFT JOIN product_variants pv2 ON omi.variant_id = pv2.id
+                        LEFT JOIN (SELECT product_id, MIN(image_path) as image_path FROM product_images WHERE is_primary = 1 GROUP BY product_id) pi2 ON p2.id = pi2.product_id
+                        LEFT JOIN product_variants rpv ON omi.replacement_variant_id = rpv.id
+                        WHERE omi.modification_id IN ($modPlaceholders)
+                        ORDER BY omi.id ASC
+                    ");
+                    $stmtModItems->execute($modIds);
+                    foreach ($stmtModItems->fetchAll(\PDO::FETCH_ASSOC) as $mi) {
+                        $orderModItems[$mi['modification_id']][] = $mi;
+                    }
+                }
             }
         }
         $settingModel = new \App\Models\Setting();
@@ -543,6 +575,7 @@ class DashboardController extends Controller
             'refundRequests' => $refundRequests,
             'orderRules'     => $orderRules,
             'orderModifications' => $orderModifications ?? [],
+            'orderModItems'  => $orderModItems ?? [],
             'cancellationsEnabled' => $cancellationsEnabled,
             'userReviewedMap' => $userReviewedMap,
             'activeTab'      => 'orders'
@@ -636,6 +669,7 @@ class DashboardController extends Controller
 
         // Fetch latest accepted order modification if any
         $modification = null;
+        $modItems = [];
         $stmtMod = $db->prepare("
             SELECT * FROM order_modifications 
             WHERE order_id = ? AND status IN ('accepted', 'applied')
@@ -643,6 +677,31 @@ class DashboardController extends Controller
         ");
         $stmtMod->execute([$order['id']]);
         $modification = $stmtMod->fetch(\PDO::FETCH_ASSOC) ?: null;
+
+        if (!empty($modification)) {
+            $stmtModItems = $db->prepare("
+                SELECT omi.*,
+                       COALESCE(omi.original_product_name, p.name, p2.name, 'Original Item') as original_product_name,
+                       COALESCE(omi.original_variant_name, pv.name, pv2.name) as original_variant_name,
+                       COALESCE(omi.replacement_product_name, p2.name, p.name, 'Replacement Product') as replacement_product_name,
+                       COALESCE(omi.replacement_variant_name, pv2.name, pv.name, rpv.name) as replacement_variant_name,
+                       COALESCE(omi.original_image, pi1.image_path, pi2.image_path) as original_image,
+                       COALESCE(omi.replacement_image, pi2.image_path, pi1.image_path) as replacement_image
+                FROM order_modification_items omi
+                LEFT JOIN order_items oi ON omi.order_item_id = oi.id
+                LEFT JOIN products p ON oi.product_id = p.id
+                LEFT JOIN product_variants pv ON oi.variant_id = pv.id
+                LEFT JOIN (SELECT product_id, MIN(image_path) as image_path FROM product_images WHERE is_primary = 1 GROUP BY product_id) pi1 ON p.id = pi1.product_id
+                LEFT JOIN products p2 ON omi.product_id = p2.id
+                LEFT JOIN product_variants pv2 ON omi.variant_id = pv2.id
+                LEFT JOIN (SELECT product_id, MIN(image_path) as image_path FROM product_images WHERE is_primary = 1 GROUP BY product_id) pi2 ON p2.id = pi2.product_id
+                LEFT JOIN product_variants rpv ON omi.replacement_variant_id = rpv.id
+                WHERE omi.modification_id = ?
+                ORDER BY omi.id ASC
+            ");
+            $stmtModItems->execute([$modification['id']]);
+            $modItems = $stmtModItems->fetchAll(\PDO::FETCH_ASSOC);
+        }
 
         $reviewModel = new \App\Models\Review();
         $userReviewedMap = $reviewModel->getUserReviewedItemMap($userId);
@@ -652,6 +711,7 @@ class DashboardController extends Controller
             'order'           => $order,
             'items'           => $items,
             'modification'    => $modification,
+            'modItems'        => $modItems,
             'userReviewedMap' => $userReviewedMap,
             'activeTab'       => 'orders'
         ]);

@@ -328,27 +328,57 @@ function orderStatusLabel(string $status): string
                         
                         <!-- Order Modified banner -->
                         <?php if (isset($orderModifications[$order['id']])): ?>
-                            <?php $mod = $orderModifications[$order['id']]; ?>
-                            <div class="px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border bg-blue-50 border-blue-200 text-blue-800 text-xs sm:text-sm font-medium">
-                                ⚡ <strong>Order Modified by Admin.</strong>
-                                <p class="mt-1 text-xs text-blue-700">Original Total: ₹<?= number_format($mod['original_total'], 2) ?> &rarr; Revised Total: ₹<?= number_format($mod['revised_total'], 2) ?></p>
-                                <?php if ($mod['reason']): ?>
-                                    <p class="mt-1 text-xs text-blue-700 font-normal">Reason: <?= htmlspecialchars($mod['reason']) ?></p>
+                            <?php 
+                            $mod = $orderModifications[$order['id']];
+                            $diff = (float)$mod['revised_total'] - (float)$mod['original_total'];
+                            $isPending = ($mod['extra_payment_status'] ?? 'pending') === 'pending';
+                            ?>
+                            <div class="px-3.5 py-2.5 sm:px-4 sm:py-3.5 rounded-xl border bg-blue-50 border-blue-200 text-blue-800 text-xs sm:text-sm font-medium space-y-2">
+                                <div class="flex items-center justify-between gap-2 flex-wrap">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-base">⚡</span>
+                                        <strong class="text-blue-900">Order Modified by Admin.</strong>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 uppercase tracking-wide">
+                                        <?= htmlspecialchars(ucfirst($mod['status'])) ?>
+                                    </span>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 py-1 text-xs">
+                                    <div class="bg-white/90 p-2 rounded-lg border border-blue-100">
+                                        <span class="text-gray-500 block text-[10px] font-bold uppercase">Original Total (Paid)</span>
+                                        <span class="font-bold text-gray-800">₹<?= number_format($mod['original_total'], 2) ?></span>
+                                    </div>
+                                    <div class="bg-white/90 p-2 rounded-lg border border-blue-100">
+                                        <span class="text-gray-500 block text-[10px] font-bold uppercase">Revised Total</span>
+                                        <span class="font-black text-indigo-950">₹<?= number_format($mod['revised_total'], 2) ?></span>
+                                    </div>
+                                    <div class="bg-white/90 p-2 rounded-lg border border-blue-100">
+                                        <span class="text-gray-500 block text-[10px] font-bold uppercase"><?= $diff >= 0 ? 'Balance to Pay' : 'Refund' ?></span>
+                                        <span class="font-bold <?= $diff > 0 ? ($isPending ? 'text-red-600' : 'text-green-600') : 'text-green-600' ?>">
+                                            <?= $diff > 0 ? '+₹' . number_format($diff, 2) . ' (' . ($isPending ? 'Pending' : 'Paid') . ')' : ($diff < 0 ? '-₹' . number_format(abs($diff), 2) : '₹0.00') ?>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <?php if (!empty($mod['reason'])): ?>
+                                    <p class="text-xs text-blue-700 font-normal"><strong>Reason:</strong> <?= htmlspecialchars($mod['reason']) ?></p>
                                 <?php endif; ?>
                                 
-                                <?php 
-                                $diff = $mod['revised_total'] - $mod['original_total'];
-                                $isPending = ($mod['extra_payment_status'] ?? 'pending') === 'pending';
-
-                                if ($diff > 0 && $isPending): ?>
-                                    <p class="mt-1.5 text-xs font-bold text-red-600">Balance Due: + ₹<?= number_format($diff, 2) ?></p>
+                                <?php if ($diff > 0 && $isPending): ?>
+                                    <div class="flex items-center justify-between gap-2 pt-1 border-t border-blue-200/60 flex-wrap">
+                                        <p class="text-xs font-bold text-red-600">Balance Due to Pay for Replaced Items: +₹<?= number_format($diff, 2) ?></p>
+                                        <a href="<?= BASE_URL ?>/order-modifications/review/<?= $mod['id'] ?>" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-xs transition inline-flex items-center gap-1">
+                                            💳 Pay / Review Difference (+₹<?= number_format($diff, 2) ?>)
+                                        </a>
+                                    </div>
                                     <?php if (!empty($mod['extra_payment_note'])): ?>
                                         <p class="mt-1 text-xs text-red-500 font-medium bg-red-50 p-2 rounded-lg border border-red-100">Note: <?= htmlspecialchars($mod['extra_payment_note']) ?></p>
                                     <?php endif; ?>
                                 <?php elseif ($diff > 0 && !$isPending): ?>
-                                    <p class="mt-1.5 text-xs font-bold text-green-600">✅ Extra payment complete (₹<?= number_format($diff, 2) ?>)</p>
+                                    <p class="text-xs font-bold text-green-600">✅ Extra payment complete (+₹<?= number_format($diff, 2) ?>)</p>
                                 <?php elseif ($diff < 0): ?>
-                                    <p class="mt-1.5 text-xs font-bold text-green-600">Refund Amount: - ₹<?= number_format(abs($diff), 2) ?></p>
+                                    <p class="text-xs font-bold text-green-600">Refund Amount: -₹<?= number_format(abs($diff), 2) ?></p>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>
@@ -359,8 +389,24 @@ function orderStatusLabel(string $status): string
                                 <p class="text-sm sm:text-lg font-black text-gray-900 truncate">#<?= htmlspecialchars($order['order_number']) ?></p>
                             </div>
                             <div class="bg-gray-50 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border border-gray-100 text-right min-w-0">
-                                <p class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider font-bold mb-0.5 sm:mb-1">Total Paid</p>
-                                <p class="text-sm sm:text-xl font-black text-[#1e1b4b]">₹<?= number_format($order['grand_total'] ?? $order['total_amount']) ?></p>
+                                <?php if (isset($orderModifications[$order['id']])): ?>
+                                    <?php 
+                                    $topMod = $orderModifications[$order['id']];
+                                    $topDiff = (float)$topMod['revised_total'] - (float)$topMod['original_total'];
+                                    $topPending = ($topMod['extra_payment_status'] ?? 'pending') === 'pending';
+                                    ?>
+                                    <?php if ($topDiff > 0 && $topPending): ?>
+                                        <p class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider font-bold mb-0.5 sm:mb-1">Amount Paid (Original)</p>
+                                        <p class="text-sm sm:text-xl font-black text-emerald-700">₹<?= number_format($topMod['original_total'], 2) ?></p>
+                                        <p class="text-[10px] sm:text-xs font-bold text-red-600 mt-0.5">Due: +₹<?= number_format($topDiff, 2) ?></p>
+                                    <?php else: ?>
+                                        <p class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider font-bold mb-0.5 sm:mb-1">Total Paid</p>
+                                        <p class="text-sm sm:text-xl font-black text-[#1e1b4b]">₹<?= number_format($order['grand_total'] ?? $order['total_amount'], 2) ?></p>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <p class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider font-bold mb-0.5 sm:mb-1">Total Paid</p>
+                                    <p class="text-sm sm:text-xl font-black text-[#1e1b4b]">₹<?= number_format($order['grand_total'] ?? $order['total_amount']) ?></p>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -543,9 +589,32 @@ function orderStatusLabel(string $status): string
                                 <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                                 Order Items
                             </h3>
+                            <?php
+                            $mod = $orderModifications[$order['id']] ?? null;
+                            $thisModItems = ($mod && !empty($orderModItems[$mod['id']])) ? $orderModItems[$mod['id']] : [];
+                            $modItemByOI = [];
+                            $removedModItems = [];
+                            if (!empty($thisModItems)) {
+                                foreach ($thisModItems as $mi) {
+                                    if ($mi['change_type'] === 'removed') {
+                                        $removedModItems[] = $mi;
+                                    } elseif (!empty($mi['order_item_id'])) {
+                                        $modItemByOI[$mi['order_item_id']] = $mi;
+                                    } elseif (!empty($mi['product_id'])) {
+                                        $modItemByOI['p_' . $mi['product_id']] = $mi;
+                                    }
+                                }
+                            }
+                            ?>
                             <div class="space-y-3 sm:space-y-4">
-                                <?php foreach($items as $item): ?>
-                                    <div class="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 hover:border-gray-300 transition-colors shadow-sm">
+                                <?php foreach($items as $item): 
+                                    $modItem = $modItemByOI[$item['id']] ?? $modItemByOI['p_' . ($item['product_id'] ?? 0)] ?? null;
+                                    $isReplaced = ($modItem && $modItem['change_type'] === 'replaced');
+                                    $isQtyChanged = ($modItem && $modItem['change_type'] === 'qty_changed');
+                                    $isPriceChanged = ($modItem && $modItem['change_type'] === 'price_changed');
+                                    $isAdded = ($modItem && $modItem['change_type'] === 'added');
+                                ?>
+                                    <div class="bg-white p-3 sm:p-4 rounded-2xl border <?= $isReplaced ? 'border-blue-200 bg-blue-50/10' : 'border-gray-200' ?> hover:border-gray-300 transition-colors shadow-sm">
                                         <div class="flex gap-3 sm:gap-4 items-start">
                                             <!-- Thumbnail -->
                                             <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gray-50 rounded-xl border border-gray-100 shrink-0 flex items-center justify-center overflow-hidden">
@@ -566,9 +635,20 @@ function orderStatusLabel(string $status): string
                                             <!-- Details -->
                                             <div class="flex-1 min-w-0">
                                                 <div class="flex items-start justify-between gap-2">
-                                                    <h4 class="font-bold text-gray-900 text-xs sm:text-base leading-snug line-clamp-2" title="<?= htmlspecialchars($item['name']) ?>">
-                                                        <?= htmlspecialchars($item['name']) ?>
-                                                    </h4>
+                                                    <div>
+                                                        <h4 class="font-bold text-gray-900 text-xs sm:text-base leading-snug line-clamp-2" title="<?= htmlspecialchars($item['name']) ?>">
+                                                            <?= htmlspecialchars($item['name']) ?>
+                                                        </h4>
+                                                        <?php if ($isReplaced): ?>
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200 mt-1">
+                                                                🔄 Replaced Product (Bill Modified)
+                                                            </span>
+                                                        <?php elseif ($isAdded): ?>
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700 border border-green-200 mt-1">
+                                                                ✨ Added to Bill
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </div>
                                                     <div class="text-right shrink-0">
                                                         <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider block sm:hidden">Total</span>
                                                         <span class="font-black text-gray-900 text-sm sm:text-lg whitespace-nowrap">₹<?= number_format($item['total_price']) ?></span>
@@ -592,6 +672,65 @@ function orderStatusLabel(string $status): string
                                                     <?php endif; ?>
                                                     <span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md border border-gray-200">₹<?= number_format($item['unit_price'] ?? ($item['total_price'] / $item['quantity'])) ?> / unit</span>
                                                 </div>
+
+                                                <?php if ($isReplaced): 
+                                                    $origPName = !empty($modItem['original_product_name']) ? $modItem['original_product_name'] : $item['name'];
+                                                    $origVName = !empty($modItem['original_variant_name']) ? $modItem['original_variant_name'] : ($item['variant_name'] ?? '');
+                                                    $origImg   = !empty($modItem['original_image']) ? $modItem['original_image'] : ($modItem['product_image'] ?? $item['image']);
+                                                    $repPName  = !empty($modItem['replacement_product_name']) ? $modItem['replacement_product_name'] : $item['name'];
+                                                    $repVName  = !empty($modItem['replacement_variant_name']) ? $modItem['replacement_variant_name'] : ($item['variant_name'] ?? '');
+                                                    $repImg    = !empty($modItem['replacement_image']) ? $modItem['replacement_image'] : $item['image'];
+                                                    $itemDiff  = ($modItem['new_qty'] * $modItem['new_price']) - ($modItem['old_qty'] * $modItem['old_price']);
+                                                ?>
+                                                    <div class="mt-2.5 p-2.5 sm:p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-xs space-y-2.5">
+                                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                            <!-- Customer First Order Product -->
+                                                            <div class="bg-red-50/50 border border-red-200/80 rounded-lg p-2.5 flex items-center gap-2.5">
+                                                                <div class="w-12 h-12 bg-white rounded-md border border-red-200 shrink-0 overflow-hidden flex items-center justify-center">
+                                                                    <?php if (!empty($origImg)): ?>
+                                                                        <img src="<?= htmlspecialchars(get_image_url($origImg)) ?>" class="w-full h-full object-contain p-0.5">
+                                                                    <?php else: ?>
+                                                                        <svg class="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                                <div class="flex-1 min-w-0">
+                                                                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-red-700 block">⏮️ First Order Product</span>
+                                                                    <p class="font-bold text-gray-900 text-xs truncate" title="<?= htmlspecialchars($origPName) ?>"><?= htmlspecialchars($origPName) ?></p>
+                                                                    <?php if (!empty($origVName)): ?>
+                                                                        <p class="text-[10px] text-gray-500">Variant: <?= htmlspecialchars($origVName) ?></p>
+                                                                    <?php endif; ?>
+                                                                    <p class="text-[10px] text-gray-600 font-medium"><?= $modItem['old_qty'] ?> × ₹<?= number_format($modItem['old_price'], 2) ?> = <strong class="text-gray-900">₹<?= number_format($modItem['old_qty'] * $modItem['old_price'], 2) ?></strong></p>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Replaced Product -->
+                                                            <div class="bg-blue-50/50 border border-blue-200 rounded-lg p-2.5 flex items-center gap-2.5">
+                                                                <div class="w-12 h-12 bg-white rounded-md border border-blue-200 shrink-0 overflow-hidden flex items-center justify-center">
+                                                                    <?php if (!empty($repImg)): ?>
+                                                                        <img src="<?= htmlspecialchars(get_image_url($repImg)) ?>" class="w-full h-full object-contain p-0.5">
+                                                                    <?php else: ?>
+                                                                        <svg class="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                                <div class="flex-1 min-w-0">
+                                                                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-blue-700 block">🔄 Replaced Product</span>
+                                                                    <p class="font-bold text-gray-900 text-xs truncate" title="<?= htmlspecialchars($repPName) ?>"><?= htmlspecialchars($repPName) ?></p>
+                                                                    <?php if (!empty($repVName)): ?>
+                                                                        <p class="text-[10px] text-blue-600">Variant: <?= htmlspecialchars($repVName) ?></p>
+                                                                    <?php endif; ?>
+                                                                    <p class="text-[10px] text-gray-600 font-medium"><?= $modItem['new_qty'] ?> × ₹<?= number_format($modItem['new_price'], 2) ?> = <strong class="text-brand-700">₹<?= number_format($modItem['new_qty'] * $modItem['new_price'], 2) ?></strong></p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="pt-1.5 border-t border-blue-200/60 flex items-center justify-between text-[11px]">
+                                                            <span class="text-gray-600 font-medium">Difference for this item:</span>
+                                                            <span class="font-bold <?= $itemDiff >= 0 ? 'text-red-600' : 'text-green-700' ?>">
+                                                                <?= $itemDiff >= 0 ? '+₹' . number_format($itemDiff, 2) . ' (To pay for replacement)' : '-₹' . number_format(abs($itemDiff), 2) . ' (Refund / Adjustment)' ?>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                <?php endif; ?>
 
                                                 <?php if ($order['status'] === 'delivered'): 
                                                     $rCid = !empty($item['customization_id']) ? $item['customization_id'] : '0';
@@ -636,6 +775,29 @@ function orderStatusLabel(string $status): string
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
+
+                                <?php if (!empty($removedModItems)): ?>
+                                    <?php foreach ($removedModItems as $remItem): ?>
+                                        <div class="bg-red-50/50 p-3 sm:p-4 rounded-2xl border border-red-200 opacity-80">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <div>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 mb-1">
+                                                        ❌ Removed from Bill
+                                                    </span>
+                                                    <h4 class="font-bold text-gray-700 text-xs sm:text-sm line-through">
+                                                        <?= htmlspecialchars($remItem['original_product_name'] ?? 'Removed Product') ?><?= !empty($remItem['original_variant_name']) ? ' (' . htmlspecialchars($remItem['original_variant_name']) . ')' : '' ?>
+                                                    </h4>
+                                                    <p class="text-[11px] text-gray-500 mt-0.5">
+                                                        Old Bill: <?= $remItem['old_qty'] ?> × ₹<?= number_format($remItem['old_price'], 2) ?> = ₹<?= number_format($remItem['old_qty'] * $remItem['old_price'], 2) ?>
+                                                    </p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <span class="text-xs font-bold text-green-700">Deducted from Bill</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </div>
                             
                             <!-- Fees Summary -->
@@ -697,17 +859,21 @@ function orderStatusLabel(string $status): string
                                 ?>
                                 <div class="w-full max-w-sm bg-indigo-50/80 p-3 rounded-xl border border-indigo-100 mt-2 space-y-1.5 text-xs text-left">
                                     <div class="flex justify-between text-gray-700">
-                                        <span>Amount Already Paid:</span>
+                                        <span>Amount Already Paid (Old Bill):</span>
                                         <span class="font-semibold text-gray-900">₹<?= number_format($origPaid, 2) ?></span>
+                                    </div>
+                                    <div class="flex justify-between text-gray-700">
+                                        <span>Revised Bill Total:</span>
+                                        <span class="font-bold text-[#1e1b4b]">₹<?= number_format($revisedTotal, 2) ?></span>
                                     </div>
                                     <?php if ($diff > 0): ?>
                                         <div class="flex justify-between font-bold text-red-600 pt-1 border-t border-indigo-100 text-xs sm:text-sm">
-                                            <span>Balance Amount (Due):</span>
+                                            <span>Balance Due (To Pay for Replaced Items):</span>
                                             <span>+₹<?= number_format($diff, 2) ?></span>
                                         </div>
                                     <?php elseif ($diff < 0): ?>
                                         <div class="flex justify-between font-bold text-green-700 pt-1 border-t border-indigo-100 text-xs sm:text-sm">
-                                            <span>Refund Amount:</span>
+                                            <span>Refund Amount Due:</span>
                                             <span>-₹<?= number_format(abs($diff), 2) ?></span>
                                         </div>
                                     <?php else: ?>

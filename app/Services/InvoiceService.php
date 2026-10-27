@@ -86,9 +86,14 @@ class InvoiceService
         if ($modification) {
             $miStmt = $db->prepare("
                 SELECT omi.*,
-                       COALESCE(p.name, p2.name) as product_name,
-                       COALESCE(pv.name, pv2.name) as variant_name,
-                       COALESCE(pi1.image_path, pi2.image_path) as product_image,
+                       COALESCE(omi.original_product_name, p.name, p2.name, 'Original Item') as original_product_name,
+                       COALESCE(omi.original_variant_name, pv.name, pv2.name) as original_variant_name,
+                       COALESCE(omi.replacement_product_name, p2.name, p.name, 'Replacement Product') as replacement_product_name,
+                       COALESCE(omi.replacement_variant_name, pv2.name, pv.name) as replacement_variant_name,
+                       COALESCE(omi.original_product_name, p.name, p2.name) as product_name,
+                       COALESCE(omi.original_variant_name, pv.name, pv2.name) as variant_name,
+                       COALESCE(omi.original_image, pi1.image_path, pi2.image_path) as product_image,
+                       COALESCE(omi.replacement_image, pi2.image_path, pi1.image_path) as replacement_image,
                        COALESCE(c.hsn_code, c2.hsn_code, '5208') as category_hsn_code,
                        COALESCE(pv.sgst, pv2.sgst, p.sgst, p2.sgst, c.sgst, c2.sgst, 0) as sgst_rate,
                        COALESCE(pv.cgst, pv2.cgst, p.cgst, p2.cgst, c.cgst, c2.cgst, 0) as cgst_rate,
@@ -867,7 +872,32 @@ class InvoiceService
       </tr>
     </thead>
     <tbody>
-      <?php if ($hasModification && !empty($calculatedModItems)): ?>
+      <?php if ($hasModification && !empty($calculatedModItems)): 
+        $changeTypeLabel = [
+            'added'         => 'Added',
+            'removed'       => 'Removed',
+            'qty_changed'   => 'Qty Changed',
+            'price_changed' => 'Price Changed',
+            'replaced'      => 'Replaced',
+            'unchanged'     => 'Unchanged',
+        ];
+        $changeTypeBg = [
+            'added'         => '#dcfce7',
+            'removed'       => '#fee2e2',
+            'qty_changed'   => '#fef3c7',
+            'price_changed' => '#f3e8ff',
+            'replaced'      => '#e0f2fe',
+            'unchanged'     => '#f1f5f9',
+        ];
+        $changeTypeColor = [
+            'added'         => '#15803d',
+            'removed'       => '#b91c1c',
+            'qty_changed'   => '#b45309',
+            'price_changed' => '#7e22ce',
+            'replaced'      => '#0369a1',
+            'unchanged'     => '#475569',
+        ];
+      ?>
         <?php foreach ($calculatedModItems as $idx => $item): 
           $ct = $item['change_type'];
           $isRemoved = $ct === 'removed';
@@ -880,12 +910,48 @@ class InvoiceService
           <tr style="<?= $isRemoved ? 'background-color: #fff1f2;' : '' ?>">
             <td style="text-align: center; color: #64748b;"><?= $idx + 1 ?></td>
             <td>
-              <strong style="color: #0f172a; <?= $isRemoved ? 'text-decoration: line-through; color: #991b1b;' : '' ?>"><?= htmlspecialchars($item['product_name']) ?></strong>
-              <?php if (!empty($item['variant_name'])): ?>
-                <div style="font-size: 7.5px; color: #64748b;"><?= htmlspecialchars($item['variant_name']) ?></div>
+              <?php if ($ct === 'replaced'): ?>
+                <div style="font-weight: 800; color: #0f172a; font-size: 8.5px;">
+                  <?= htmlspecialchars($item['replacement_product_name'] ?? $item['product_name']) ?>
+                  <?php if (!empty($item['replacement_variant_name'] ?? $item['variant_name'])): ?>
+                    <span style="font-size: 7.5px; color: #475569; font-weight: normal;">(<?= htmlspecialchars($item['replacement_variant_name'] ?? $item['variant_name']) ?>)</span>
+                  <?php endif; ?>
+                </div>
+                <div style="font-size: 7.5px; color: #991b1b; margin-top: 2px; background: #fef2f2; padding: 2px 4px; border-radius: 3px; border-left: 2px solid #ef4444;">
+                  <strong>Old Bill Item:</strong> <?= htmlspecialchars($item['original_product_name'] ?? $item['product_name']) ?><?= !empty($item['original_variant_name']) ? ' (' . htmlspecialchars($item['original_variant_name']) . ')' : '' ?> &bull; <?= $item['old_qty'] ?> &times; ₹<?= number_format($item['old_price'], 2) ?> = ₹<?= number_format($item['old_qty'] * $item['old_price'], 2) ?>
+                </div>
+                <div style="font-size: 7.5px; color: #166534; margin-top: 1.5px; background: #f0fdf4; padding: 2px 4px; border-radius: 3px; border-left: 2px solid #22c55e;">
+                  <strong>Replaced with:</strong> <?= htmlspecialchars($item['replacement_product_name'] ?? $item['product_name']) ?><?= !empty($item['replacement_variant_name']) ? ' (' . htmlspecialchars($item['replacement_variant_name']) . ')' : '' ?> &bull; <?= $item['new_qty'] ?> &times; ₹<?= number_format($item['new_price'], 2) ?> = ₹<?= number_format($item['new_qty'] * $item['new_price'], 2) ?>
+                </div>
+                <?php
+                  $itemOldTotal = $item['old_qty'] * $item['old_price'];
+                  $itemNewTotal = $item['new_qty'] * $item['new_price'];
+                  $itemDiff = $itemNewTotal - $itemOldTotal;
+                ?>
+                <div style="font-size: 7px; color: <?= $itemDiff >= 0 ? '#b91c1c' : '#15803d' ?>; font-weight: bold; margin-top: 1.5px;">
+                  Item Diff: <?= ($itemDiff >= 0 ? '+' : '-') ?>₹<?= number_format(abs($itemDiff), 2) ?>
+                </div>
+              <?php elseif ($ct === 'removed'): ?>
+                <strong style="color: #991b1b; text-decoration: line-through;"><?= htmlspecialchars($item['original_product_name'] ?? $item['product_name']) ?></strong>
+                <?php if (!empty($item['original_variant_name'] ?? $item['variant_name'])): ?>
+                  <div style="font-size: 7.5px; color: #991b1b; text-decoration: line-through;"><?= htmlspecialchars($item['original_variant_name'] ?? $item['variant_name']) ?></div>
+                <?php endif; ?>
+                <div style="font-size: 7.5px; color: #991b1b; margin-top: 1px;">
+                  Original: <?= $item['old_qty'] ?> &times; ₹<?= number_format($item['old_price'], 2) ?> = ₹<?= number_format($item['old_qty'] * $item['old_price'], 2) ?>
+                </div>
+              <?php else: ?>
+                <strong style="color: #0f172a;"><?= htmlspecialchars($item['product_name']) ?></strong>
+                <?php if (!empty($item['variant_name'])): ?>
+                  <div style="font-size: 7.5px; color: #64748b;"><?= htmlspecialchars($item['variant_name']) ?></div>
+                <?php endif; ?>
+                <?php if ($ct === 'price_changed'): ?>
+                  <div style="font-size: 7.5px; color: #5b21b6; margin-top: 1px;">
+                    Price: ₹<?= number_format($item['old_price'], 2) ?> &rarr; ₹<?= number_format($item['new_price'], 2) ?>
+                  </div>
+                <?php endif; ?>
               <?php endif; ?>
               <?php if (!empty($item['note'])): ?>
-                <div style="font-size: 7px; color: #94a3b8; font-style: italic;">Note: <?= htmlspecialchars($item['note']) ?></div>
+                <div style="font-size: 7px; color: #94a3b8; font-style: italic; margin-top: 1px;">Note: <?= htmlspecialchars($item['note']) ?></div>
               <?php endif; ?>
             </td>
             <td style="text-align: center; font-family: monospace; font-size: 8px; font-weight: 700; color: #334155;">
@@ -897,7 +963,7 @@ class InvoiceService
               </span>
             </td>
             <td style="text-align: center; font-weight: 700; <?= $isRemoved ? 'text-decoration: line-through;' : '' ?>">
-              <?php if ($ct === 'qty_changed'): ?>
+              <?php if ($ct === 'qty_changed' || $ct === 'replaced'): ?>
                 <span style="color: #94a3b8; font-size: 7.5px;"><?= $item['old_qty'] ?> &rarr; </span><strong><?= $item['new_qty'] ?></strong>
               <?php else: ?>
                 <?= $isRemoved ? $item['old_qty'] : $item['new_qty'] ?>
@@ -1002,15 +1068,25 @@ class InvoiceService
     
     $storedGrandTotal = $hasModification ? (float)$modification['revised_total'] : (float)($order['grand_total'] ?? $order['total_amount']);
     $unroundedTotal = $displayItemsTotal + $shippingFee + $platformFee + $packagingFee + $weightFee;
+    $otherAdjustment = 0.0;
 
-    if ($storedGrandTotal > 0 && abs($unroundedTotal - $storedGrandTotal) < 0.05) {
+    if ($hasModification && $storedGrandTotal > 0) {
         $finalGrandTotal = $storedGrandTotal;
+        $diffFromUnrounded = round($storedGrandTotal - $unroundedTotal, 2);
+        if (abs($diffFromUnrounded) >= 0.05) {
+            $otherAdjustment = $diffFromUnrounded;
+        }
         $roundOff = 0.0;
     } else {
-        $finalGrandTotal = (float)round($unroundedTotal);
-        $roundOff = round($finalGrandTotal - $unroundedTotal, 2);
-        if (abs($roundOff) < 0.001) {
+        if ($storedGrandTotal > 0 && abs($unroundedTotal - $storedGrandTotal) < 0.05) {
+            $finalGrandTotal = $storedGrandTotal;
             $roundOff = 0.0;
+        } else {
+            $finalGrandTotal = (float)round($unroundedTotal);
+            $roundOff = round($finalGrandTotal - $unroundedTotal, 2);
+            if (abs($roundOff) < 0.001) {
+                $roundOff = 0.0;
+            }
         }
     }
   ?>
@@ -1113,6 +1189,12 @@ class InvoiceService
               <td>₹<?= number_format($packagingFee, 2) ?></td>
             </tr>
           <?php endif; ?>
+          <?php if ($otherAdjustment != 0): ?>
+            <tr>
+              <td><?= $otherAdjustment > 0 ? 'Other Charges / Fees' : 'Modification Discount' ?></td>
+              <td><?= ($otherAdjustment > 0 ? '+ ' : '- ') ?>₹<?= number_format(abs($otherAdjustment), 2) ?></td>
+            </tr>
+          <?php endif; ?>
           <tr>
             <td>Round Off</td>
             <td>
@@ -1127,6 +1209,31 @@ class InvoiceService
             <td style="color: #ffffff; border-right: 1px solid #3b82f6;">GRAND TOTAL</td>
             <td style="color: #ffffff;">₹<?= number_format($finalGrandTotal, 2) ?></td>
           </tr>
+          <?php if ($hasModification): 
+            $origPaid = (float)$modification['original_total'];
+            $balanceDue = $finalGrandTotal - $origPaid;
+          ?>
+            <tr style="background-color: #f1f5f9; font-weight: 700; color: #334155;">
+              <td style="border-right: 1px solid #cbd5e1; font-weight: 700;">Amount Already Paid (Original Bill)</td>
+              <td style="text-align: right; color: #0f172a; font-weight: 800;">₹<?= number_format($origPaid, 2) ?></td>
+            </tr>
+            <?php if ($balanceDue > 0): ?>
+              <tr style="background-color: #fef2f2; font-weight: 900; color: #b91c1c;">
+                <td style="border-right: 1px solid #fecaca; color: #991b1b; font-weight: 800;">Balance Amount Due (To Pay for Replaced Items)</td>
+                <td style="text-align: right; color: #dc2626; font-weight: 900;">+ ₹<?= number_format($balanceDue, 2) ?></td>
+              </tr>
+            <?php elseif ($balanceDue < 0): ?>
+              <tr style="background-color: #f0fdf4; font-weight: 900; color: #166534;">
+                <td style="border-right: 1px solid #bbf7d0; color: #166534; font-weight: 800;">Refund Amount</td>
+                <td style="text-align: right; color: #16a34a; font-weight: 900;">- ₹<?= number_format(abs($balanceDue), 2) ?></td>
+              </tr>
+            <?php else: ?>
+              <tr style="background-color: #f8fafc; font-weight: 700; color: #475569;">
+                <td style="border-right: 1px solid #e2e8f0;">Balance Amount</td>
+                <td style="text-align: right;">₹0.00</td>
+              </tr>
+            <?php endif; ?>
+          <?php endif; ?>
         </table>
 
         <!-- Official Signatory & Seal (Right Bottom) -->

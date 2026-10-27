@@ -127,6 +127,9 @@ foreach ($items as $item) {
                     <input type="hidden" name="item_id[<?= $idx ?>]" value="<?= $item['id'] ?>">
                     <input type="hidden" name="old_qty[<?= $idx ?>]" value="<?= $item['quantity'] ?>">
                     <input type="hidden" name="old_price[<?= $idx ?>]" value="<?= $item['unit_price'] ?>">
+                    <input type="hidden" name="orig_p_name[<?= $idx ?>]" value="<?= htmlspecialchars($item['product_name']) ?>">
+                    <input type="hidden" name="orig_v_name[<?= $idx ?>]" value="<?= htmlspecialchars($item['variant_name'] ?? '') ?>">
+                    <input type="hidden" name="orig_p_img[<?= $idx ?>]" value="<?= htmlspecialchars($item['product_image'] ?? '') ?>">
 
                     <!-- New Qty -->
                     <div class="w-32 flex-shrink-0">
@@ -158,41 +161,23 @@ foreach ($items as $item) {
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-brand-500 focus:border-brand-500">
                     </div>
 
-                    <!-- Remove toggle -->
+                    <!-- Action -->
                     <div class="flex-shrink-0">
                         <label class="block text-xs text-gray-500 mb-1">Change</label>
                         <button type="button" onclick="openReplacementModal(<?= $item['id'] ?>)"
-                            class="h-10 px-3 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 text-xs font-semibold transition-colors mb-1">
+                            class="h-10 px-3 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 text-xs font-semibold transition-colors">
                             Replace
-                        </button>
-                        <button type="button" onclick="toggleRemove(<?= $idx ?>, <?= $item['id'] ?>)"
-                            id="remove-btn-<?= $idx ?>"
-                            title="Remove this item" class="w-10 h-10 rounded-full border-2 border-gray-200 text-gray-400 hover:border-red-400 hover:text-red-500 transition-colors flex items-center justify-center">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                         <input type="hidden" name="removed_flags[<?= $idx ?>]" id="removed-flag-<?= $idx ?>" value="0">
                     </div>
                 </div>
                 <?php endforeach; ?>
             </div>
-            
-            <!-- Add New Product Button -->
-            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-center">
-                <button type="button" onclick="openProductModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-brand-200 text-brand-700 text-sm font-semibold rounded-lg hover:bg-brand-50 hover:border-brand-300 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    <?= !empty($isCustomOrder) ? 'Add Customizable Fabric / Product' : 'Add New Product to Bill' ?>
-                </button>
-            </div>
         </div>
 
         <!-- Live Revised Total -->
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
             <div class="flex justify-between items-center text-sm text-gray-600 mb-3">
-                <span class="font-medium text-gray-600">Original Items Total</span>
-                <span class="font-semibold text-gray-800">₹<?= number_format($itemSubtotal, 2) ?></span>
-            </div>
-
-            <div class="border-t pt-3 flex justify-between items-center text-sm text-gray-600 mb-3">
                 <span class="font-medium text-gray-700">Revised Items Total</span>
                 <span class="text-lg font-semibold text-gray-900" id="revisedItemsTotal">₹<?= number_format($itemSubtotal, 2) ?></span>
             </div>
@@ -322,16 +307,20 @@ function toggleRemove(idx, itemId) {
     
     if (removedItems.has(itemId)) {
         removedItems.delete(itemId);
-        row.classList.remove('opacity-40');
-        btn.classList.remove('border-red-500', 'text-red-500', 'bg-red-50');
-        btn.classList.add('border-gray-200', 'text-gray-400');
-        flag.value = '0';
+        if (row) row.classList.remove('opacity-40');
+        if (btn) {
+            btn.classList.remove('border-red-500', 'text-red-500', 'bg-red-50');
+            btn.classList.add('border-gray-200', 'text-gray-400');
+        }
+        if (flag) flag.value = '0';
     } else {
         removedItems.add(itemId);
-        row.classList.add('opacity-40');
-        btn.classList.remove('border-gray-200', 'text-gray-400');
-        btn.classList.add('border-red-500', 'text-red-500', 'bg-red-50');
-        flag.value = '1';
+        if (row) row.classList.add('opacity-40');
+        if (btn) {
+            btn.classList.remove('border-gray-200', 'text-gray-400');
+            btn.classList.add('border-red-500', 'text-red-500', 'bg-red-50');
+        }
+        if (flag) flag.value = '1';
     }
     recalcTotal();
 }
@@ -637,6 +626,8 @@ function addNewProductToBill(id, productId, variantId, name, price, gstRate, ima
             <input type="hidden" name="new_p_id[${newProductCount}]" value="${productId}">
             <input type="hidden" name="new_v_id[${newProductCount}]" value="${variantId}">
             <input type="hidden" name="new_replace_item_id[${newProductCount}]" value="${replaceItemId || ''}">
+            <input type="hidden" name="new_p_name[${newProductCount}]" value="${name}">
+            <input type="hidden" name="new_p_image[${newProductCount}]" value="${image || ''}">
 
             <!-- Qty -->
             <div class="w-32 flex-shrink-0">

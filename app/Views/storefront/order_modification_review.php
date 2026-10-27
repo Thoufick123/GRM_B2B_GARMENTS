@@ -49,22 +49,99 @@ $changeTypeLabels = [
             <?php foreach ($mod['items'] as $item):
                 $ct        = $changeTypeLabels[$item['change_type']] ?? ['label' => $item['change_type'], 'badge' => 'bg-gray-100 text-gray-500'];
                 $isRemoved = $item['change_type'] === 'removed';
+                $isReplaced = $item['change_type'] === 'replaced';
                 $isUnchanged = $item['change_type'] === 'unchanged';
+                $itemDiff = ($item['new_qty'] * $item['new_price']) - ($item['old_qty'] * $item['old_price']);
             ?>
+            <?php if ($isReplaced): 
+                $origPName = !empty($item['original_product_name']) ? $item['original_product_name'] : $item['product_name'];
+                $origVName = !empty($item['original_variant_name']) ? $item['original_variant_name'] : ($item['variant_name'] ?? '');
+                $origImg   = !empty($item['original_image']) ? $item['original_image'] : $item['product_image'];
+                $repPName  = !empty($item['replacement_product_name']) ? $item['replacement_product_name'] : $item['product_name'];
+                $repVName  = !empty($item['replacement_product_variant_name']) ? $item['replacement_product_variant_name'] : ($item['replacement_variant_name'] ?? '');
+                $repImg    = !empty($item['replacement_image']) ? $item['replacement_image'] : $item['product_image'];
+            ?>
+            <div class="px-6 py-5 bg-gradient-to-r from-blue-50/40 via-indigo-50/20 to-blue-50/40">
+                <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                            🔄 Replaced Product (Modification)
+                        </span>
+                        <?php if (!empty($item['note'])): ?>
+                            <span class="text-xs text-gray-500 italic">Note: <?= htmlspecialchars($item['note']) ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="text-xs font-bold px-2.5 py-1 rounded-lg border <?= $itemDiff >= 0 ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200' ?>">
+                        <?= $itemDiff >= 0 ? 'Difference: +₹' . number_format($itemDiff, 2) . ' (To pay for replacement)' : 'Difference: -₹' . number_format(abs($itemDiff), 2) . ' (Refund / Adjustment)' ?>
+                    </div>
+                </div>
+
+                <!-- Dual Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-stretch">
+                    <!-- 1. Customer First Order Product -->
+                    <div class="bg-white rounded-xl border border-red-200/90 p-3.5 shadow-sm flex items-center gap-3.5 relative">
+                        <span class="absolute -top-2.5 left-3 px-2 py-0.5 rounded text-[9.5px] font-extrabold uppercase tracking-wider bg-red-100 text-red-700 border border-red-200">
+                            ⏮️ First Order Product
+                        </span>
+                        <div class="w-14 h-14 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                            <?php if (!empty($origImg)): ?>
+                                <img src="<?= htmlspecialchars(get_image_url($origImg)) ?>" class="w-full h-full object-cover">
+                            <?php else: ?>
+                                <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <?php endif; ?>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-gray-900 text-xs sm:text-sm truncate" title="<?= htmlspecialchars($origPName) ?>"><?= htmlspecialchars($origPName) ?></p>
+                            <?php if (!empty($origVName)): ?>
+                                <p class="text-[11px] text-gray-500 font-medium">Variant: <?= htmlspecialchars($origVName) ?></p>
+                            <?php endif; ?>
+                            <div class="mt-1 text-xs text-gray-600 font-medium">
+                                <span><?= $item['old_qty'] ?> × ₹<?= number_format($item['old_price'], 2) ?></span>
+                                <span class="font-bold text-gray-900 ml-1.5">= ₹<?= number_format($item['old_qty'] * $item['old_price'], 2) ?></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Replaced Product -->
+                    <div class="bg-white rounded-xl border border-blue-200 p-3.5 shadow-sm flex items-center gap-3.5 relative">
+                        <span class="absolute -top-2.5 left-3 px-2 py-0.5 rounded text-[9.5px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-700 border border-blue-200">
+                            🔄 Replaced Product
+                        </span>
+                        <div class="w-14 h-14 rounded-lg bg-gray-100 border border-blue-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                            <?php if (!empty($repImg)): ?>
+                                <img src="<?= htmlspecialchars(get_image_url($repImg)) ?>" class="w-full h-full object-cover">
+                            <?php else: ?>
+                                <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <?php endif; ?>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-gray-900 text-xs sm:text-sm truncate" title="<?= htmlspecialchars($repPName) ?>"><?= htmlspecialchars($repPName) ?></p>
+                            <?php if (!empty($repVName)): ?>
+                                <p class="text-[11px] text-blue-600 font-medium">Variant: <?= htmlspecialchars($repVName) ?></p>
+                            <?php endif; ?>
+                            <div class="mt-1 text-xs text-gray-600 font-medium">
+                                <span><?= $item['new_qty'] ?> × ₹<?= number_format($item['new_price'], 2) ?></span>
+                                <span class="font-bold text-brand-700 ml-1.5">= ₹<?= number_format($item['new_qty'] * $item['new_price'], 2) ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php else: ?>
             <div class="flex items-start gap-4 px-6 py-5 <?= $isRemoved ? 'bg-red-50/50' : '' ?>">
                 <!-- Image -->
                 <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 mt-0.5">
                     <?php if (!empty($item['product_image'])): ?>
-                        <img src="<?= htmlspecialchars($item['product_image']) ?>" class="w-full h-full object-cover <?= $isRemoved ? 'grayscale opacity-50' : '' ?>">
+                        <img src="<?= htmlspecialchars(get_image_url($item['product_image'])) ?>" class="w-full h-full object-cover <?= $isRemoved ? 'grayscale opacity-50' : '' ?>">
                     <?php endif; ?>
                 </div>
-                <div class="flex-1">
+                <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
                         <p class="font-semibold text-gray-900 <?= $isRemoved ? 'line-through text-gray-400' : '' ?>">
                             <?= htmlspecialchars($item['product_name']) ?>
                         </p>
                         <?php if ($item['variant_name']): ?>
-                            <span class="text-xs text-gray-400">(<?= htmlspecialchars($item['variant_name']) ?>)</span>
+                            <span class="text-xs text-gray-500">(<?= htmlspecialchars($item['variant_name']) ?>)</span>
                         <?php endif; ?>
                         <?php if (!$isUnchanged): ?>
                         <span class="px-2 py-0.5 rounded-full text-xs font-semibold <?= $ct['badge'] ?>">
@@ -72,9 +149,11 @@ $changeTypeLabels = [
                         </span>
                         <?php endif; ?>
                     </div>
+
                     <?php if (!empty($item['note'])): ?>
-                        <p class="text-xs text-gray-500 italic mt-0.5"><?= htmlspecialchars($item['note']) ?></p>
+                        <p class="text-xs text-gray-500 italic mt-1"><?= htmlspecialchars($item['note']) ?></p>
                     <?php endif; ?>
+                    
                     <div class="mt-2 text-sm flex items-center gap-3 flex-wrap">
                         <?php if ($isRemoved): ?>
                             <span class="text-gray-400 line-through"><?= $item['old_qty'] ?> × ₹<?= number_format($item['old_price'], 2) ?></span>
@@ -93,6 +172,7 @@ $changeTypeLabels = [
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
             <?php endforeach; ?>
         </div>
     </div>
@@ -100,17 +180,17 @@ $changeTypeLabels = [
     <!-- Bill Summary -->
     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
         <h3 class="font-semibold text-gray-800 mb-4">Bill Summary</h3>
-        <div class="space-y-2 text-sm text-gray-600">
+        <div class="space-y-2.5 text-sm text-gray-600">
             <div class="flex justify-between">
-                <span>Original Total</span>
+                <span>Amount Already Paid (Old Bill)</span>
                 <span class="line-through text-gray-400">₹<?= number_format($mod['original_total'], 2) ?></span>
             </div>
             <div class="flex justify-between font-semibold text-gray-900 pt-2 border-t border-gray-100">
-                <span>Revised Total</span>
+                <span>Revised Grand Total</span>
                 <span class="text-xl text-brand-700">₹<?= number_format($mod['revised_total'], 2) ?></span>
             </div>
-            <div class="flex justify-between text-sm <?= $diffClass ?> font-medium">
-                <span><?= $isSaving ? 'You Save' : 'Additional Amount' ?></span>
+            <div class="flex justify-between text-sm <?= $diffClass ?> font-bold pt-1 border-t border-gray-100">
+                <span><?= $isSaving ? 'Refund Amount' : 'Balance to Pay for Replaced Items' ?></span>
                 <span><?= $diffText ?></span>
             </div>
         </div>

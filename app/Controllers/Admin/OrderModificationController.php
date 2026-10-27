@@ -300,14 +300,25 @@ class OrderModificationController extends Controller
                     return;
                 }
 
+                $origName = trim($_POST['orig_p_name'][$existingChangeIndex] ?? '');
+                $origVName = trim($_POST['orig_v_name'][$existingChangeIndex] ?? '');
+                $origImg = trim($_POST['orig_p_img'][$existingChangeIndex] ?? '');
+                $repName = trim($_POST['new_p_name'][$idx] ?? '');
+                $repImg = trim($_POST['new_p_image'][$idx] ?? '');
+
                 $itemChanges[$existingChangeIndex] = array_merge($itemChanges[$existingChangeIndex], [
-                    'change_type' => 'replaced',
-                    'new_qty' => $qty,
-                    'new_price' => $price,
-                    'product_id' => $pid,
-                    'variant_id' => $vid,
-                    'replacement_variant_id' => $vid,
-                    'note' => $note,
+                    'change_type'               => 'replaced',
+                    'new_qty'                   => $qty,
+                    'new_price'                 => $price,
+                    'product_id'                => $pid,
+                    'variant_id'                => $vid,
+                    'replacement_variant_id'    => $vid,
+                    'note'                      => $note,
+                    'original_product_name'     => $origName ?: null,
+                    'original_variant_name'     => $origVName ?: null,
+                    'original_image'            => $origImg ?: null,
+                    'replacement_product_name'  => $repName ?: null,
+                    'replacement_image'         => $repImg ?: null,
                 ]);
                 continue;
             }

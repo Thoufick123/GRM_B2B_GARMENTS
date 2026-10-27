@@ -730,11 +730,48 @@ class OrderController extends Controller
             return;
         }
 
+        // Fetch latest accepted or applied modification if any
+        $stmtMod = $db->prepare("
+            SELECT om.*, a.name as admin_name
+            FROM order_modifications om
+            JOIN users a ON om.modified_by = a.id
+            WHERE om.order_id = ? AND om.status IN ('accepted', 'applied')
+            ORDER BY om.created_at DESC LIMIT 1
+        ");
+        $stmtMod->execute([$order['id']]);
+        $modification = $stmtMod->fetch(\PDO::FETCH_ASSOC) ?: null;
+
+        $modItems = [];
+        if (!empty($modification)) {
+            $stmtModItems = $db->prepare("
+                SELECT omi.*,
+                       COALESCE(omi.original_product_name, p.name, p2.name, 'Original Item') as original_product_name,
+                       COALESCE(omi.original_variant_name, pv.name, pv2.name) as original_variant_name,
+                       COALESCE(omi.replacement_product_name, p2.name, p.name, 'Replacement Product') as replacement_product_name,
+                       COALESCE(omi.replacement_variant_name, pv2.name, pv.name, rpv.name) as replacement_variant_name,
+                       COALESCE(omi.original_image, (SELECT image_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1), (SELECT image_path FROM product_images WHERE product_id = p2.id AND is_primary = 1 LIMIT 1)) as product_image,
+                       COALESCE(omi.replacement_image, (SELECT image_path FROM product_images WHERE product_id = p2.id AND is_primary = 1 LIMIT 1), (SELECT image_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1)) as replacement_image
+                FROM order_modification_items omi
+                LEFT JOIN order_items oi ON omi.order_item_id = oi.id
+                LEFT JOIN products p ON oi.product_id = p.id
+                LEFT JOIN product_variants pv ON oi.variant_id = pv.id
+                LEFT JOIN products p2 ON omi.product_id = p2.id
+                LEFT JOIN product_variants pv2 ON omi.variant_id = pv2.id
+                LEFT JOIN product_variants rpv ON omi.replacement_variant_id = rpv.id
+                WHERE omi.modification_id = ?
+                ORDER BY omi.id ASC
+            ");
+            $stmtModItems->execute([$modification['id']]);
+            $modItems = $stmtModItems->fetchAll(\PDO::FETCH_ASSOC);
+        }
+
         $this->render('admin/orders/view', [
-            'title' => 'Order Details - ' . $order['order_number'],
-            'order' => $order,
-            'items' => $items,
-            'isVendor' => $isVendor
+            'title'        => 'Order Details - ' . $order['order_number'],
+            'order'        => $order,
+            'items'        => $items,
+            'isVendor'     => $isVendor,
+            'modification' => $modification,
+            'modItems'     => $modItems,
         ], 'admin');
     }
 

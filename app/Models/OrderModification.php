@@ -24,6 +24,24 @@ class OrderModification extends Model
         if (!isset($columnMap['variant_id'])) {
             $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `variant_id` BIGINT NULL");
         }
+        if (!isset($columnMap['original_product_name'])) {
+            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `original_product_name` VARCHAR(255) NULL");
+        }
+        if (!isset($columnMap['original_variant_name'])) {
+            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `original_variant_name` VARCHAR(255) NULL");
+        }
+        if (!isset($columnMap['original_image'])) {
+            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `original_image` VARCHAR(255) NULL");
+        }
+        if (!isset($columnMap['replacement_product_name'])) {
+            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `replacement_product_name` VARCHAR(255) NULL");
+        }
+        if (!isset($columnMap['replacement_variant_name'])) {
+            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `replacement_variant_name` VARCHAR(255) NULL");
+        }
+        if (!isset($columnMap['replacement_image'])) {
+            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `replacement_image` VARCHAR(255) NULL");
+        }
         if (isset($columnMap['change_type']) && strpos($columnMap['change_type']['Type'], "'added'") === false) {
             $this->db->exec("
                 ALTER TABLE `order_modification_items`
@@ -58,27 +76,86 @@ class OrderModification extends Model
             ]);
             $modId = (int)$this->db->lastInsertId();
 
-            // Insert per-item changes
+            // Prepare lookup statements for original item and replacement product details
+            $getOrigDetails = $this->db->prepare("
+                SELECT oi.product_id, oi.variant_id,
+                       p.name as orig_pname, pv.name as orig_vname,
+                       COALESCE(
+                           (SELECT image_path FROM product_images WHERE variant_id = oi.variant_id ORDER BY is_primary DESC, id ASC LIMIT 1),
+                           (SELECT image_path FROM product_images WHERE product_id = oi.product_id ORDER BY is_primary DESC, id ASC LIMIT 1)
+                       ) as orig_img
+                FROM order_items oi
+                LEFT JOIN products p ON oi.product_id = p.id
+                LEFT JOIN product_variants pv ON oi.variant_id = pv.id
+                WHERE oi.id = ?
+            ");
+
+            $getRepDetails = $this->db->prepare("
+                SELECT p.name as rep_pname, pv.name as rep_vname,
+                       COALESCE(
+                           (SELECT image_path FROM product_images WHERE variant_id = ? ORDER BY is_primary DESC, id ASC LIMIT 1),
+                           (SELECT image_path FROM product_images WHERE product_id = ? ORDER BY is_primary DESC, id ASC LIMIT 1)
+                       ) as rep_img
+                FROM products p
+                LEFT JOIN product_variants pv ON pv.id = ?
+                WHERE p.id = ?
+            ");
+
+            // Insert per-item changes with original and replacement names
             $itemStmt = $this->db->prepare("
                 INSERT INTO order_modification_items
-                    (modification_id, order_item_id, product_id, variant_id, change_type, old_qty, new_qty, old_price, new_price, replacement_variant_id, note)
+                    (modification_id, order_item_id, product_id, variant_id, change_type, old_qty, new_qty, old_price, new_price, replacement_variant_id, note, original_product_name, original_variant_name, original_image, replacement_product_name, replacement_variant_name, replacement_image)
                 VALUES
-                    (:mid, :item_id, :pid, :vid, :ctype, :oqty, :nqty, :oprice, :nprice, :rep_vid, :note)
+                    (:mid, :item_id, :pid, :vid, :ctype, :oqty, :nqty, :oprice, :nprice, :rep_vid, :note, :orig_pname, :orig_vname, :orig_img, :rep_pname, :rep_vname, :rep_img)
             ");
             foreach ($itemChanges as $change) {
-                $itemStmt->execute([
-                    'mid'     => $modId,
-                    'item_id' => $change['order_item_id'] ?? null,
-                    'pid'     => $change['product_id'] ?? null,
-                    'vid'     => $change['variant_id'] ?? null,
-                    'ctype'   => $change['change_type'],
+                $origPName = !empty($change['original_product_name']) ? $change['original_product_name'] : null;
+                $origVName = !empty($change['original_variant_name']) ? $change['original_variant_name'] : null;
+                $origImg   = !empty($change['original_image']) ? $change['original_image'] : null;
+                $repPName  = !empty($change['replacement_product_name']) ? $change['replacement_product_name'] : null;
+                $repVName  = !empty($change['replacement_variant_name']) ? $change['replacement_variant_name'] : null;
+                $repImg    = !empty($change['replacement_image']) ? $change['replacement_image'] : null;
 
-                    'oqty'    => $change['old_qty'],
-                    'nqty'    => $change['new_qty'],
-                    'oprice'  => $change['old_price'],
-                    'nprice'  => $change['new_price'],
-                    'rep_vid' => $change['replacement_variant_id'] ?? null,
-                    'note'    => $change['note'] ?? null,
+                if ((empty($origPName) || empty($origImg)) && !empty($change['order_item_id'])) {
+                    $getOrigDetails->execute([$change['order_item_id']]);
+                    $origInfo = $getOrigDetails->fetch(\PDO::FETCH_ASSOC);
+                    if ($origInfo) {
+                        if (empty($origPName)) $origPName = $origInfo['orig_pname'];
+                        if (empty($origVName)) $origVName = $origInfo['orig_vname'];
+                        if (empty($origImg))   $origImg   = $origInfo['orig_img'];
+                    }
+                }
+
+                if ((empty($repPName) || empty($repImg)) && !empty($change['product_id'])) {
+                    $vidParam = $change['variant_id'] ?? null;
+                    $getRepDetails->execute([$vidParam, $change['product_id'], $vidParam, $change['product_id']]);
+                    $repInfo = $getRepDetails->fetch(\PDO::FETCH_ASSOC);
+                    if ($repInfo) {
+                        if (empty($repPName)) $repPName = $repInfo['rep_pname'];
+                        if (empty($repVName)) $repVName = $repInfo['rep_vname'];
+                        if (empty($repImg))   $repImg   = $repInfo['rep_img'];
+                    }
+                }
+
+                $itemStmt->execute([
+                    'mid'        => $modId,
+                    'item_id'    => $change['order_item_id'] ?? null,
+                    'pid'        => $change['product_id'] ?? null,
+                    'vid'        => $change['variant_id'] ?? null,
+                    'ctype'      => $change['change_type'],
+
+                    'oqty'       => $change['old_qty'],
+                    'nqty'       => $change['new_qty'],
+                    'oprice'     => $change['old_price'],
+                    'nprice'     => $change['new_price'],
+                    'rep_vid'    => $change['replacement_variant_id'] ?? null,
+                    'note'       => $change['note'] ?? null,
+                    'orig_pname' => $origPName,
+                    'orig_vname' => $origVName,
+                    'orig_img'   => $origImg,
+                    'rep_pname'  => $repPName,
+                    'rep_vname'  => $repVName,
+                    'rep_img'    => $repImg,
                 ]);
             }
 
@@ -252,15 +329,28 @@ class OrderModification extends Model
         $iStmt = $this->db->prepare("
             SELECT omi.*,
                    oi.quantity as orig_qty, oi.unit_price as orig_unit_price,
-                   COALESCE(p.name, p2.name) as product_name,
-                   COALESCE(pv.name, pv2.name) as variant_name,
-                   p2.name as replacement_product_name,
-                   pv2.name as replacement_product_variant_name,
+                   COALESCE(omi.original_product_name, p.name, p2.name, 'Customer First Order Product') as original_product_name,
+                   COALESCE(omi.original_variant_name, pv.name, pv2.name) as original_variant_name,
+                   COALESCE(omi.replacement_product_name, p2.name, p.name, 'Replacement Product') as replacement_product_name,
+                   COALESCE(omi.replacement_variant_name, pv2.name, pv.name, rpv.name) as replacement_variant_name,
+                   COALESCE(omi.replacement_variant_name, pv2.name, pv.name, rpv.name) as replacement_product_variant_name,
                    COALESCE(
+                       omi.original_image,
                        (SELECT image_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
                        (SELECT image_path FROM product_images WHERE product_id = p2.id AND is_primary = 1 LIMIT 1)
-                   ) as product_image,
-                   rpv.name as replacement_variant_name
+                   ) as original_image,
+                   COALESCE(
+                       omi.replacement_image,
+                       (SELECT image_path FROM product_images WHERE product_id = p2.id AND is_primary = 1 LIMIT 1),
+                       (SELECT image_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1)
+                   ) as replacement_image,
+                   COALESCE(omi.original_product_name, p.name, p2.name, 'Original Item') as product_name,
+                   COALESCE(omi.original_variant_name, pv.name, pv2.name) as variant_name,
+                   COALESCE(
+                       omi.original_image,
+                       (SELECT image_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
+                       (SELECT image_path FROM product_images WHERE product_id = p2.id AND is_primary = 1 LIMIT 1)
+                   ) as product_image
             FROM order_modification_items omi
             LEFT JOIN order_items oi ON omi.order_item_id = oi.id
             LEFT JOIN products p ON oi.product_id = p.id
