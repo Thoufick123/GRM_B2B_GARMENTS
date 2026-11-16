@@ -126,12 +126,6 @@
                     <tbody class="divide-y divide-gray-100 bg-white">
                         <?php 
                         $existingPermissions = isset($staff) && !empty($staff['permissions']) ? $staff['permissions'] : [];
-                        if (empty($existingPermissions['fabric_customizations']) && !empty($existingPermissions['customization_labels'])) {
-                            $existingPermissions['fabric_customizations'] = $existingPermissions['customization_labels'];
-                        }
-                        if (empty($existingPermissions['fabric_customizations']) && !empty($existingPermissions['customize_products'])) {
-                            $existingPermissions['fabric_customizations'] = $existingPermissions['customize_products'];
-                        }
                         ?>
                         
                         <?php foreach ($modules as $groupName => $subModules): ?>

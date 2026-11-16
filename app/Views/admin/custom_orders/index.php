@@ -31,17 +31,23 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                 <span>Print</span>
             </button>
+            <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('packing_slip_config', 'view')): ?>
             <a href="<?= BASE_URL ?>/admin/orders/packing-slip-config" class="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-[#F25996] flex items-center justify-center transition-colors shadow-xs shrink-0" title="Packing Slip Configuration & Section Ordering">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
             </a>
+            <?php endif; ?>
+            <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('customize_products', 'view')): ?>
             <a href="<?= BASE_URL ?>/admin/catalog/products?module=customize" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-bold rounded-full shadow-xs uppercase tracking-wider transition-colors">
                 <svg class="w-4 h-4 text-[#F25996]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                 <span>Customizable Fabrics</span>
             </a>
+            <?php endif; ?>
+            <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('customize_products', 'create')): ?>
             <a href="<?= BASE_URL ?>/admin/catalog/products/create?module=customize" class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#F25996] hover:bg-[#d8407d] text-white text-xs font-bold rounded-full shadow-md uppercase tracking-widest transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 <span>+ Add Customizable Fabric</span>
             </a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -311,7 +317,7 @@
                 <!-- Actions -->
                 <td class="px-6 py-4 text-right">
                     <div class="flex items-center justify-end space-x-1.5">
-                        <?php if ($this->hasPermission('custom_orders', 'edit') && in_array($cStatus, ['placed', 'packed'])): ?>
+                        <?php if ((\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('packing_videos', 'edit')) && in_array($cStatus, ['placed', 'packed'])): ?>
                             <button type="button" onclick="openPackingModal('<?= $order['id'] ?>', '<?= htmlspecialchars($order['order_number']) ?>')"
                                     class="inline-flex items-center justify-center p-1.5 text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-lg transition-colors"
                                     title="<?= ($hasV1 || $hasV2) ? 'Update Packing Videos' : 'Upload Packing Video & Mark Packed' ?>">

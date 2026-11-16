@@ -245,7 +245,7 @@ class CustomOrderController extends Controller
             $hasVideoUpload = (isset($_FILES['packing_video_1']) && $_FILES['packing_video_1']['error'] !== UPLOAD_ERR_NO_FILE)
                            || (isset($_FILES['packing_video_2']) && $_FILES['packing_video_2']['error'] !== UPLOAD_ERR_NO_FILE);
             if ($hasVideoUpload) {
-                if (!$this->hasPermission('packing_videos', 'edit') && !$this->hasPermission('custom_orders', 'edit') && !$this->hasPermission('all_orders', 'edit')) {
+                if (!$this->hasPermission('packing_videos', 'edit')) {
                     echo json_encode(['success' => false, 'message' => 'Permission denied: You do not have permission to upload/edit packing videos.']);
                     return;
                 }

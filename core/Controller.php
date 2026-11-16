@@ -106,50 +106,6 @@ class Controller
             return false;
         }
 
-        // Fabric Customization Rules: check explicit perms, then customization_labels, then customize_products, then products
-        if ($module === 'fabric_customizations') {
-            $relevant = ['fabric_customizations', 'customization_labels', 'customize_products', 'products'];
-            foreach ($relevant as $rel) {
-                if (!empty($this->userPermissions[$rel][$action])) {
-                    return true;
-                }
-                // Write actions inherently grant view permission
-                if ($action === 'view' && (
-                    !empty($this->userPermissions[$rel]['create']) ||
-                    !empty($this->userPermissions[$rel]['edit']) ||
-                    !empty($this->userPermissions[$rel]['delete'])
-                )) {
-                    return true;
-                }
-                // Create permission allows editing rules (configuration)
-                if ($action === 'edit' && !empty($this->userPermissions[$rel]['create'])) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        // Customization Labels: check explicit perms, then fabric_customizations, then customize_products, then products
-        if ($module === 'customization_labels') {
-            $relevant = ['customization_labels', 'fabric_customizations', 'customize_products', 'products'];
-            foreach ($relevant as $rel) {
-                if (!empty($this->userPermissions[$rel][$action])) {
-                    return true;
-                }
-                if ($action === 'view' && (
-                    !empty($this->userPermissions[$rel]['create']) ||
-                    !empty($this->userPermissions[$rel]['edit']) ||
-                    !empty($this->userPermissions[$rel]['delete'])
-                )) {
-                    return true;
-                }
-                if ($action === 'edit' && !empty($this->userPermissions[$rel]['create'])) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         // If the specific module key is set in userPermissions, strictly use its configured permissions
         if (isset($this->userPermissions[$module])) {
             if (!empty($this->userPermissions[$module][$action])) {
@@ -166,15 +122,8 @@ class Controller
             return false;
         }
 
-        // Fallback mappings for legacy roles
+        // Fallback mappings for legacy CMS builder sections only
         $fallbacks = [
-            'customize_categories' => 'categories',
-            'customize_subcategories' => 'subcategories',
-            'customize_attributes' => 'attributes',
-            'customize_products' => 'products',
-            'custom_orders' => 'all_orders',
-            'packing_videos' => 'all_orders',
-            'packing_slip_config' => 'all_orders',
             'cms_navbars' => 'cms_builder',
             'cms_topbars' => 'cms_builder',
             'cms_hero_banners' => 'cms_builder',
@@ -231,24 +180,6 @@ class Controller
             return in_array($module, $vendorAllowedModules);
         }
 
-        if ($module === 'fabric_customizations') {
-            foreach (['view', 'create', 'edit', 'delete'] as $action) {
-                if ($this->hasPermission('fabric_customizations', $action)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        if ($module === 'customization_labels') {
-            foreach (['view', 'create', 'edit', 'delete'] as $action) {
-                if ($this->hasPermission('customization_labels', $action)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         if (isset($this->userPermissions[$module])) {
             foreach (['view', 'create', 'edit', 'delete'] as $action) {
                 if (!empty($this->userPermissions[$module][$action])) {
@@ -259,13 +190,6 @@ class Controller
         }
 
         $fallbacks = [
-            'customize_categories' => 'categories',
-            'customize_subcategories' => 'subcategories',
-            'customize_attributes' => 'attributes',
-            'customize_products' => 'products',
-            'custom_orders' => 'all_orders',
-            'packing_videos' => 'all_orders',
-            'packing_slip_config' => 'all_orders',
             'cms_navbars' => 'cms_builder',
             'cms_topbars' => 'cms_builder',
             'cms_hero_banners' => 'cms_builder',
