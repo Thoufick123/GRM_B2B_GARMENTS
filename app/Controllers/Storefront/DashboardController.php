@@ -37,6 +37,16 @@ class DashboardController extends Controller
         $profile = $bpModel->findByUserId($userId);
 
         $db = \Core\Database::getInstance();
+
+        // Auto-heal: Ensure profile_picture column exists in users table
+        try {
+            $db->query("SELECT profile_picture FROM users LIMIT 1");
+        } catch (\Throwable $t) {
+            try {
+                $db->exec("ALTER TABLE `users` ADD COLUMN `profile_picture` VARCHAR(500) NULL AFTER `phone`");
+            } catch (\Throwable $ignore) {}
+        }
+
         $stmt = $db->prepare("SELECT * FROM media WHERE user_id = ? AND purpose = 'shop_verification'");
         $stmt->execute([$userId]);
         $shopImages = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -128,8 +138,24 @@ class DashboardController extends Controller
 
         try {
             if ($profilePicturePath !== null) {
-                $stmt = $db->prepare("UPDATE users SET name = ?, phone = ?, profile_picture = ? WHERE id = ?");
-                $stmt->execute([$name, $phone, $profilePicturePath, $userId]);
+                try {
+                    $stmt = $db->prepare("UPDATE users SET name = ?, phone = ?, profile_picture = ? WHERE id = ?");
+                    $stmt->execute([$name, $phone, $profilePicturePath, $userId]);
+                } catch (\PDOException $colEx) {
+                    // Auto-heal: If profile_picture column is missing in production DB, add it and retry
+                    if (str_contains($colEx->getMessage(), 'Unknown column') || str_contains($colEx->getMessage(), '1054') || stripos($colEx->getMessage(), 'profile_picture') !== false) {
+                        try {
+                            $db->exec("ALTER TABLE `users` ADD COLUMN `profile_picture` VARCHAR(500) NULL AFTER `phone`");
+                            $stmt = $db->prepare("UPDATE users SET name = ?, phone = ?, profile_picture = ? WHERE id = ?");
+                            $stmt->execute([$name, $phone, $profilePicturePath, $userId]);
+                        } catch (\Throwable $alterEx) {
+                            error_log('[Profile Update] Auto-migration for profile_picture failed: ' . $alterEx->getMessage());
+                            throw $colEx;
+                        }
+                    } else {
+                        throw $colEx;
+                    }
+                }
             } else {
                 $stmt = $db->prepare("UPDATE users SET name = ?, phone = ? WHERE id = ?");
                 $stmt->execute([$name, $phone, $userId]);
@@ -139,7 +165,7 @@ class DashboardController extends Controller
             Session::setFlash(
                 'error',
                 $profilePicturePath !== null
-                    ? 'Profile photo could not be saved. Please ensure the profile photo database update has been applied.'
+                    ? 'Profile photo could not be saved: ' . $e->getMessage()
                     : 'Your profile could not be saved. Please try again.'
             );
             $this->redirect('/dashboard/profile');

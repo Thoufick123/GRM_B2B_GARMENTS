@@ -132,17 +132,15 @@ function orderStatusLabel(string $status): string
                                 <?php endif; ?>
                             </div>
 
-                            <?php if ($refundReq): ?>
+                            <?php if ($refundReq && $refundReq['status'] !== 'pending_admin_approval'): ?>
                                 <?php
                                 $rBadge = [
-                                    'pending_admin_approval' => 'bg-amber-50 text-amber-700 border border-amber-200',
                                     'processing'             => 'bg-sky-50 text-sky-700 border border-sky-200',
                                     'completed'              => 'bg-emerald-50 text-emerald-700 border border-emerald-200',
                                     'rejected'               => 'bg-rose-50 text-rose-700 border border-rose-200',
                                 ][$refundReq['status']] ?? 'bg-gray-50 text-gray-600 border border-gray-200';
                                 $rAmt = (float)($refundReq['amount'] ?? $refundReq['refund_amount'] ?? 0);
                                 $rLabel = [
-                                    'pending_admin_approval' => '⏳ Refund Under Review' . ($rAmt > 0 ? ' (₹' . number_format($rAmt, 2) . ')' : ''),
                                     'processing'             => '🔄 Refund Processing' . ($rAmt > 0 ? ' (₹' . number_format($rAmt, 2) . ')' : ''),
                                     'completed'              => '✅ Refunded ₹' . number_format($rAmt, 2),
                                     'rejected'               => '❌ Refund Rejected',
@@ -189,19 +187,17 @@ function orderStatusLabel(string $status): string
                                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full <?= orderStatusBadge($order['status']) ?> uppercase tracking-wider">
                                                     <?= orderStatusLabel($order['status']) ?>
                                                 </span>
-                                                <?php if ($refundReq): ?>
+                                                <?php if ($refundReq && $refundReq['status'] !== 'pending_admin_approval'): ?>
                                                     <?php
                                                     $rBadge = [
-                                                        'pending_admin_approval' => 'bg-amber-50 text-amber-700 border border-amber-200',
-                                                        'processing'             => 'bg-sky-50 text-sky-700 border border-sky-200',
-                                                        'completed'              => 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-                                                        'rejected'               => 'bg-rose-50 text-rose-700 border border-rose-200',
+                                                        'processing' => 'bg-sky-50 text-sky-700 border border-sky-200',
+                                                        'completed'  => 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                                                        'rejected'   => 'bg-rose-50 text-rose-700 border border-rose-200',
                                                     ][$refundReq['status']] ?? 'bg-gray-50 text-gray-600 border border-gray-200';
                                                     $rLabel = [
-                                                        'pending_admin_approval' => '⏳ Refund Under Review',
-                                                        'processing'             => '🔄 Refund Processing',
-                                                        'completed'              => '✅ Refunded ₹' . number_format($refundReq['amount']),
-                                                        'rejected'               => '❌ Refund Rejected',
+                                                        'processing' => '🔄 Refund Processing',
+                                                        'completed'  => '✅ Refunded ₹' . number_format($refundReq['amount']),
+                                                        'rejected'   => '❌ Refund Rejected',
                                                     ][$refundReq['status']] ?? $refundReq['status'];
                                                     ?>
                                                     <span class="px-2.5 py-0.5 inline-flex text-xs font-bold rounded-full <?= $rBadge ?>">
