@@ -116,64 +116,118 @@
 
                     <!-- Fabric Description & Details Card (Admin Added Description & Custom Fields) -->
                     <div class="bg-gradient-to-br from-pink-50/30 via-white to-gray-50/50 rounded-3xl p-5 sm:p-6 border border-gray-200/90 shadow-2xs space-y-4 w-full min-w-0 max-w-full overflow-hidden">
+                        <?php 
+                        $rawDesc = trim($customization['fabric_description'] ?? '');
+                        $rawCustomFields = $customFieldsList ?? $customization['custom_fields_list'] ?? $customization['fabric_custom_fields'] ?? $customization['custom_fields'] ?? [];
+                        if (is_string($rawCustomFields)) {
+                            $cfItems = json_decode($rawCustomFields, true) ?: [];
+                        } elseif (is_array($rawCustomFields)) {
+                            $cfItems = $rawCustomFields;
+                        } else {
+                            $cfItems = [];
+                        }
+
+                        // Filter valid custom fields
+                        $validCfItems = [];
+                        if (!empty($cfItems)) {
+                            foreach ($cfItems as $cf) {
+                                if (trim($cf['name'] ?? '') !== '' || trim($cf['value'] ?? '') !== '') {
+                                    $validCfItems[] = $cf;
+                                }
+                            }
+                        }
+                        $hasMultipleSections = !empty($validCfItems);
+                        $paragraphs = !empty($rawDesc) ? explode("\n", $rawDesc) : [];
+                        ?>
+
                         <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                             <h3 class="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
                                 <span>📄 Fabric Description &amp; Details</span>
                             </h3>
                             <span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-pink-50 text-[#F25996] border border-pink-200">
-                                Fabric Details
+                                <?= $hasMultipleSections ? (1 + count($validCfItems)) . ' Sections' : 'Fabric Details' ?>
                             </span>
                         </div>
 
-                        <!-- Admin Added Description & Dynamic Custom Fields -->
-                        <div class="text-xs sm:text-sm text-gray-700 leading-relaxed w-full min-w-0 max-w-full overflow-hidden space-y-3.5">
-                            <?php 
-                            $rawDesc = trim($customization['fabric_description'] ?? '');
-                            $rawCustomFields = $customFieldsList ?? $customization['custom_fields_list'] ?? $customization['fabric_custom_fields'] ?? $customization['custom_fields'] ?? [];
-                            if (is_string($rawCustomFields)) {
-                                $cfItems = json_decode($rawCustomFields, true) ?: [];
-                            } elseif (is_array($rawCustomFields)) {
-                                $cfItems = $rawCustomFields;
-                            } else {
-                                $cfItems = [];
-                            }
+                        <!-- Section Switcher Tabs in the Same Row (Selectable) -->
+                        <?php if ($hasMultipleSections): ?>
+                        <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar hide-scrollbar">
+                            <!-- Tab 1: Primary Description (Default Selected) -->
+                            <button type="button" 
+                                    onclick="selectFabricDescSection('fabric-sec-panel-main', this)" 
+                                    class="fabric-sec-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs bg-[#F25996] text-white cursor-pointer shrink-0 border border-[#F25996]" 
+                                    data-target="fabric-sec-panel-main">
+                                <span>📄 Description</span>
+                            </button>
+                            
+                            <!-- Dynamic Custom Field Tabs in the Same Row -->
+                            <?php foreach ($validCfItems as $cfIdx => $cf): 
+                                $cfName = trim($cf['name'] ?? '');
+                                if ($cfName === '') $cfName = 'Field ' . ($cfIdx + 1);
                             ?>
+                                <button type="button" 
+                                        onclick="selectFabricDescSection('fabric-sec-panel-cf-<?= $cfIdx ?>', this)" 
+                                        class="fabric-sec-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 hover:text-gray-900 cursor-pointer shrink-0" 
+                                        data-target="fabric-sec-panel-cf-<?= $cfIdx ?>">
+                                    <span>🧵 <?= htmlspecialchars($cfName) ?></span>
+                                </button>
+                            <?php endforeach; ?>
 
-                            <?php if (!empty($rawDesc)): 
-                                $paragraphs = explode("\n", $rawDesc);
-                            ?>
-                                <div class="text-gray-700 leading-relaxed bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm space-y-2.5 break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere; overflow: hidden; max-width: 100%;">
-                                    <?php foreach ($paragraphs as $p): 
-                                        $p = trim($p);
-                                        if ($p !== ''):
-                                    ?>
-                                        <p class="leading-relaxed break-words m-0" style="word-break: break-word; overflow-wrap: anywhere; margin-bottom: 0.5rem;"><?= htmlspecialchars($p) ?></p>
-                                    <?php 
-                                        endif;
-                                    endforeach; ?>
-                                </div>
-                            <?php elseif (empty($cfItems)): ?>
-                                <p class="text-xs text-gray-400 italic bg-white p-4 rounded-2xl border border-gray-100">No description provided for this fabric.</p>
-                            <?php endif; ?>
+                            <!-- View All (Side-by-Side in Same Row) -->
+                            <button type="button" 
+                                    onclick="selectFabricDescSection('fabric-sec-panel-all', this)" 
+                                    class="fabric-sec-tab-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 border border-gray-200 text-gray-500 bg-white hover:bg-gray-50 hover:text-gray-900 cursor-pointer shrink-0 ml-auto" 
+                                    data-target="fabric-sec-panel-all"
+                                    title="View all sections side by side in the same row">
+                                <span>⚡ All Sections</span>
+                            </button>
+                        </div>
+                        <?php endif; ?>
 
-                            <!-- Additional Custom Description Fields (Added via Admin + Add Field) -->
-                            <?php if (!empty($cfItems)): ?>
-                                <?php foreach ($cfItems as $cf): 
+                        <!-- Section Panels Content -->
+                        <div class="text-xs sm:text-sm text-gray-700 leading-relaxed w-full min-w-0 max-w-full overflow-hidden">
+                            <!-- 1. Primary Description Panel -->
+                            <div id="fabric-sec-panel-main" class="fabric-sec-panel block transition-all duration-200">
+                                <?php if (!empty($paragraphs)): ?>
+                                    <div class="text-gray-700 leading-relaxed bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm space-y-2.5 break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere; overflow: hidden; max-width: 100%;">
+                                        <?php if ($hasMultipleSections): ?>
+                                            <div class="flex items-center gap-2 pb-2.5 border-b border-gray-100">
+                                                <span class="w-2 h-2 rounded-full bg-[#F25996]"></span>
+                                                <h4 class="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-wide m-0">Description</h4>
+                                            </div>
+                                        <?php endif; ?>
+                                        <div class="space-y-2 pt-0.5">
+                                            <?php foreach ($paragraphs as $p): 
+                                                $p = trim($p);
+                                                if ($p !== ''):
+                                            ?>
+                                                <p class="leading-relaxed break-words m-0" style="word-break: break-word; overflow-wrap: anywhere; margin-bottom: 0.5rem;"><?= htmlspecialchars($p) ?></p>
+                                            <?php 
+                                                endif;
+                                            endforeach; ?>
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <p class="text-xs text-gray-400 italic bg-white p-4 rounded-2xl border border-gray-100">No description provided for this fabric.</p>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- 2. Dynamic Custom Field Panels -->
+                            <?php if ($hasMultipleSections): ?>
+                                <?php foreach ($validCfItems as $cfIdx => $cf): 
                                     $cfName = trim($cf['name'] ?? '');
+                                    if ($cfName === '') $cfName = 'Field ' . ($cfIdx + 1);
                                     $cfVal = trim($cf['value'] ?? '');
-                                    if ($cfName === '' && $cfVal === '') continue;
                                     $cfParagraphs = explode("\n", $cfVal);
                                 ?>
-                                    <div class="text-gray-700 leading-relaxed bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm space-y-2.5 break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere; overflow: hidden; max-width: 100%;">
-                                        <?php if (!empty($cfName)): ?>
+                                    <div id="fabric-sec-panel-cf-<?= $cfIdx ?>" class="fabric-sec-panel hidden transition-all duration-200">
+                                        <div class="text-gray-700 leading-relaxed bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm space-y-2.5 break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere; overflow: hidden; max-width: 100%;">
                                             <div class="flex items-center gap-2 pb-2.5 border-b border-gray-100">
                                                 <span class="w-2 h-2 rounded-full bg-[#F25996]"></span>
                                                 <h4 class="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-wide m-0">
                                                     <?= htmlspecialchars($cfName) ?>
                                                 </h4>
                                             </div>
-                                        <?php endif; ?>
-                                        <?php if (!empty($cfVal)): ?>
                                             <div class="space-y-2 pt-0.5">
                                                 <?php foreach ($cfParagraphs as $cp): 
                                                     $cp = trim($cp);
@@ -184,11 +238,82 @@
                                                     endif;
                                                 endforeach; ?>
                                             </div>
-                                        <?php endif; ?>
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
+
+                                <!-- 3. All Sections Side-by-Side in Same Row Panel -->
+                                <div id="fabric-sec-panel-all" class="fabric-sec-panel hidden transition-all duration-200">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 items-start">
+                                        <!-- Main Description -->
+                                        <?php if (!empty($paragraphs)): ?>
+                                            <div class="text-gray-700 leading-relaxed bg-white p-4 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm space-y-2 break-words overflow-hidden">
+                                                <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
+                                                    <span class="w-2 h-2 rounded-full bg-[#F25996]"></span>
+                                                    <h4 class="text-xs font-black text-gray-900 uppercase tracking-wide m-0">Description</h4>
+                                                </div>
+                                                <div class="space-y-1.5 pt-0.5">
+                                                    <?php foreach ($paragraphs as $p): 
+                                                        $p = trim($p);
+                                                        if ($p !== ''):
+                                                    ?>
+                                                        <p class="leading-relaxed break-words m-0" style="word-break: break-word; margin-bottom: 0.35rem;"><?= htmlspecialchars($p) ?></p>
+                                                    <?php endif; endforeach; ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <!-- Custom Fields -->
+                                        <?php foreach ($validCfItems as $cfIdx => $cf): 
+                                            $cfName = trim($cf['name'] ?? '');
+                                            if ($cfName === '') $cfName = 'Field ' . ($cfIdx + 1);
+                                            $cfVal = trim($cf['value'] ?? '');
+                                            $cfParagraphs = explode("\n", $cfVal);
+                                        ?>
+                                            <div class="text-gray-700 leading-relaxed bg-white p-4 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm space-y-2 break-words overflow-hidden">
+                                                <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
+                                                    <span class="w-2 h-2 rounded-full bg-[#F25996]"></span>
+                                                    <h4 class="text-xs font-black text-gray-900 uppercase tracking-wide m-0">
+                                                        <?= htmlspecialchars($cfName) ?>
+                                                    </h4>
+                                                </div>
+                                                <div class="space-y-1.5 pt-0.5">
+                                                    <?php foreach ($cfParagraphs as $cp): 
+                                                        $cp = trim($cp);
+                                                        if ($cp !== ''):
+                                                    ?>
+                                                        <p class="leading-relaxed break-words m-0" style="word-break: break-word; margin-bottom: 0.35rem;"><?= htmlspecialchars($cp) ?></p>
+                                                    <?php endif; endforeach; ?>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
                             <?php endif; ?>
                         </div>
+
+                        <?php if ($hasMultipleSections): ?>
+                        <script>
+                        function selectFabricDescSection(targetId, btn) {
+                            document.querySelectorAll('.fabric-sec-panel').forEach(function(p) {
+                                p.classList.add('hidden');
+                                p.classList.remove('block');
+                            });
+                            var target = document.getElementById(targetId);
+                            if (target) {
+                                target.classList.remove('hidden');
+                                target.classList.add('block');
+                            }
+                            document.querySelectorAll('.fabric-sec-tab-btn').forEach(function(b) {
+                                b.className = 'fabric-sec-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 hover:text-gray-900 cursor-pointer shrink-0';
+                            });
+                            if (btn) {
+                                btn.className = 'fabric-sec-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs bg-[#F25996] text-white cursor-pointer shrink-0 border border-[#F25996]';
+                            }
+                        }
+                        </script>
+                        <?php endif; ?>
+                    </div>
                     </div>
                 </div>
 
