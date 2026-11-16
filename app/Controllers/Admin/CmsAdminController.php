@@ -66,7 +66,7 @@ class CmsAdminController extends Controller
 
     public function deleteComponent()
     {
-        $this->requirePermission('cms_builder', 'edit');
+        $this->requirePermission('cms_builder', 'delete');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/cms/builder');
         }

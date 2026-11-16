@@ -11,6 +11,7 @@ class CmsApiController extends Controller
 
     public function __construct()
     {
+        parent::__construct();
         $this->db = Database::getInstance();
     }
 
@@ -75,7 +76,7 @@ class CmsApiController extends Controller
     {
         $userId = \Core\Session::get('user_id');
         $userRole = \Core\Session::get('user_role');
-        if (!$userId || $userRole !== 'super_admin') {
+        if (!$userId || ($userRole !== 'super_admin' && !$this->hasPermission('cms_builder', 'edit'))) {
             $this->jsonResponse(['error' => 'Unauthorized'], 401);
             return;
         }

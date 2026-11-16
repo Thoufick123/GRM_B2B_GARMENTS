@@ -54,7 +54,7 @@ class StaffController extends Controller
             'fee_rules' => ['label' => 'Fee Rules', 'actions' => ['view', 'create', 'edit', 'delete']],
         ],
         'CMS Builder' => [
-            'cms_builder' => ['label' => 'Layout Builder', 'actions' => ['view', 'edit']],
+            'cms_builder' => ['label' => 'Layout Builder', 'actions' => ['view', 'edit', 'delete']],
             'cms_navbars' => ['label' => 'Navbars', 'actions' => ['view', 'create', 'edit', 'delete']],
             'cms_topbars' => ['label' => 'Top Bars', 'actions' => ['view', 'create', 'edit', 'delete']],
             'cms_hero_banners' => ['label' => 'Hero Banners', 'actions' => ['view', 'create', 'edit', 'delete']],
