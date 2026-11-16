@@ -164,7 +164,7 @@
                                             </span>
                                         <?php endforeach; ?>
                                         <?php if(count($attr['values']) > 4): ?>
-                                            <span class="text-[11px] text-brand-600 font-semibold px-1.5 py-1 bg-brand-50 rounded-md border border-brand-100">+<?= count($attr['values']) - 4 ?> more</span>
+                                            <span class="text-[11px] text-brand-600 font-semibold px-1.5 py-1 bg-brand-50 rounded-md border border-brand-100 cursor-help" title="<?= htmlspecialchars(implode(', ', array_map(fn($v) => $v['value'], array_slice($attr['values'], 4)))) ?>">+<?= count($attr['values']) - 4 ?> more</span>
                                         <?php endif; ?>
                                     <?php else: ?>
                                         <span class="text-gray-400 italic text-xs">No values</span>
