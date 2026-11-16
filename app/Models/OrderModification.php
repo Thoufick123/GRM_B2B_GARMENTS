@@ -5,50 +5,89 @@ use Core\Model;
 
 class OrderModification extends Model
 {
-    private function ensureModificationItemsSchema(): void
+    public function __construct()
     {
-        $columns = $this->db->query("SHOW COLUMNS FROM `order_modification_items`")->fetchAll(\PDO::FETCH_ASSOC);
-        $columnMap = [];
-        foreach ($columns as $column) {
-            $columnMap[strtolower($column['Field'])] = $column;
-        }
+        parent::__construct();
+        self::ensureSchema($this->db);
+    }
 
-        if (!isset($columnMap['order_item_id'])) {
-            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `order_item_id` BIGINT NULL");
-        } elseif (strtoupper($columnMap['order_item_id']['Null']) !== 'YES') {
-            $this->db->exec("ALTER TABLE `order_modification_items` MODIFY COLUMN `order_item_id` BIGINT NULL");
+    public static function ensureSchema(?\PDO $db = null): void
+    {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+
+        try {
+            $pdo = $db ?? \Core\Database::getInstance();
+            $columns = $pdo->query("SHOW COLUMNS FROM `order_modification_items`")->fetchAll(\PDO::FETCH_ASSOC);
+            $columnMap = [];
+            foreach ($columns as $column) {
+                $columnMap[strtolower($column['Field'])] = $column;
+            }
+
+            if (!isset($columnMap['order_item_id'])) {
+                $pdo->exec("ALTER TABLE `order_modification_items` ADD COLUMN `order_item_id` BIGINT NULL");
+            } elseif (isset($columnMap['order_item_id']['Null']) && strtoupper($columnMap['order_item_id']['Null']) !== 'YES') {
+                $pdo->exec("ALTER TABLE `order_modification_items` MODIFY COLUMN `order_item_id` BIGINT NULL");
+            }
+            if (!isset($columnMap['product_id'])) {
+                $pdo->exec("ALTER TABLE `order_modification_items` ADD COLUMN `product_id` BIGINT NULL");
+            }
+            if (!isset($columnMap['variant_id'])) {
+                $pdo->exec("ALTER TABLE `order_modification_items` ADD COLUMN `variant_id` BIGINT NULL");
+            }
+            if (!isset($columnMap['original_product_name'])) {
+                $pdo->exec("ALTER TABLE `order_modification_items` ADD COLUMN `original_product_name` VARCHAR(255) NULL");
+            }
+            if (!isset($columnMap['original_variant_name'])) {
+                $pdo->exec("ALTER TABLE `order_modification_items` ADD COLUMN `original_variant_name` VARCHAR(255) NULL");
+            }
+            if (!isset($columnMap['original_image'])) {
+                $pdo->exec("ALTER TABLE `order_modification_items` ADD COLUMN `original_image` VARCHAR(255) NULL");
+            }
+            if (!isset($columnMap['replacement_product_name'])) {
+                $pdo->exec("ALTER TABLE `order_modification_items` ADD COLUMN `replacement_product_name` VARCHAR(255) NULL");
+            }
+            if (!isset($columnMap['replacement_variant_name'])) {
+                $pdo->exec("ALTER TABLE `order_modification_items` ADD COLUMN `replacement_variant_name` VARCHAR(255) NULL");
+            }
+            if (!isset($columnMap['replacement_image'])) {
+                $pdo->exec("ALTER TABLE `order_modification_items` ADD COLUMN `replacement_image` VARCHAR(255) NULL");
+            }
+            if (isset($columnMap['change_type']) && strpos($columnMap['change_type']['Type'], "'added'") === false) {
+                $pdo->exec("
+                    ALTER TABLE `order_modification_items`
+                    MODIFY COLUMN `change_type` ENUM('removed', 'qty_changed', 'price_changed', 'replaced', 'unchanged', 'added')
+                    NOT NULL DEFAULT 'unchanged'
+                ");
+            }
+        } catch (\Throwable $e) {
+            // Silently ignore schema migration exceptions to prevent fatal crashes
         }
-        if (!isset($columnMap['product_id'])) {
-            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `product_id` BIGINT NULL");
-        }
-        if (!isset($columnMap['variant_id'])) {
-            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `variant_id` BIGINT NULL");
-        }
-        if (!isset($columnMap['original_product_name'])) {
-            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `original_product_name` VARCHAR(255) NULL");
-        }
-        if (!isset($columnMap['original_variant_name'])) {
-            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `original_variant_name` VARCHAR(255) NULL");
-        }
-        if (!isset($columnMap['original_image'])) {
-            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `original_image` VARCHAR(255) NULL");
-        }
-        if (!isset($columnMap['replacement_product_name'])) {
-            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `replacement_product_name` VARCHAR(255) NULL");
-        }
-        if (!isset($columnMap['replacement_variant_name'])) {
-            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `replacement_variant_name` VARCHAR(255) NULL");
-        }
-        if (!isset($columnMap['replacement_image'])) {
-            $this->db->exec("ALTER TABLE `order_modification_items` ADD COLUMN `replacement_image` VARCHAR(255) NULL");
-        }
-        if (isset($columnMap['change_type']) && strpos($columnMap['change_type']['Type'], "'added'") === false) {
-            $this->db->exec("
-                ALTER TABLE `order_modification_items`
-                MODIFY COLUMN `change_type` ENUM('removed', 'qty_changed', 'price_changed', 'replaced', 'unchanged', 'added')
-                NOT NULL DEFAULT 'unchanged'
-            ");
-        }
+    }
+
+    public static function normalizeItem(array $item): array
+    {
+        $origPName = !empty($item['original_product_name']) ? $item['original_product_name'] : (!empty($item['fallback_orig_pname']) ? $item['fallback_orig_pname'] : (!empty($item['fallback_rep_pname']) ? $item['fallback_rep_pname'] : (!empty($item['name']) ? $item['name'] : 'Customer First Order Product')));
+        $origVName = !empty($item['original_variant_name']) ? $item['original_variant_name'] : (!empty($item['fallback_orig_vname']) ? $item['fallback_orig_vname'] : (!empty($item['variant_name']) ? $item['variant_name'] : null));
+        $repPName  = !empty($item['replacement_product_name']) ? $item['replacement_product_name'] : (!empty($item['fallback_rep_pname']) ? $item['fallback_rep_pname'] : (!empty($item['fallback_orig_pname']) ? $item['fallback_orig_pname'] : (!empty($item['name']) ? $item['name'] : 'Replacement Product')));
+        $repVName  = !empty($item['replacement_variant_name']) ? $item['replacement_variant_name'] : (!empty($item['fallback_rep_vname']) ? $item['fallback_rep_vname'] : (!empty($item['fallback_rep_vname_alt']) ? $item['fallback_rep_vname_alt'] : (!empty($item['fallback_orig_vname']) ? $item['fallback_orig_vname'] : null)));
+        
+        $origImg   = !empty($item['original_image']) ? $item['original_image'] : (!empty($item['fallback_orig_img']) ? $item['fallback_orig_img'] : (!empty($item['fallback_rep_img']) ? $item['fallback_rep_img'] : null));
+        $repImg    = !empty($item['replacement_image']) ? $item['replacement_image'] : (!empty($item['fallback_rep_img']) ? $item['fallback_rep_img'] : (!empty($item['fallback_orig_img']) ? $item['fallback_orig_img'] : null));
+
+        $item['original_product_name']            = $origPName;
+        $item['original_variant_name']            = $origVName;
+        $item['replacement_product_name']         = $repPName;
+        $item['replacement_variant_name']         = $repVName;
+        $item['replacement_product_variant_name'] = $repVName;
+        $item['original_image']                   = $origImg;
+        $item['replacement_image']                = $repImg;
+        $item['product_name']                      = $origPName;
+        $item['variant_name']                      = $origVName;
+        $item['product_image']                     = $origImg;
+
+        return $item;
     }
 
     /**
@@ -56,7 +95,7 @@ class OrderModification extends Model
      */
     public function createModification(int $orderId, int $adminId, string $reason, float $originalTotal, float $revisedTotal, array $itemChanges, ?string $screenshotPath = null, string $extraPaymentStatus = 'pending', ?string $extraPaymentNote = null): int
     {
-        $this->ensureModificationItemsSchema();
+        self::ensureSchema($this->db);
         $this->db->beginTransaction();
         try {
             // Insert modification header
@@ -102,12 +141,27 @@ class OrderModification extends Model
             ");
 
             // Insert per-item changes with original and replacement names
-            $itemStmt = $this->db->prepare("
-                INSERT INTO order_modification_items
-                    (modification_id, order_item_id, product_id, variant_id, change_type, old_qty, new_qty, old_price, new_price, replacement_variant_id, note, original_product_name, original_variant_name, original_image, replacement_product_name, replacement_variant_name, replacement_image)
-                VALUES
-                    (:mid, :item_id, :pid, :vid, :ctype, :oqty, :nqty, :oprice, :nprice, :rep_vid, :note, :orig_pname, :orig_vname, :orig_img, :rep_pname, :rep_vname, :rep_img)
-            ");
+            $hasCols = true;
+            try {
+                $chk = $this->db->query("SHOW COLUMNS FROM `order_modification_items` LIKE 'original_product_name'")->fetchAll();
+                $hasCols = !empty($chk);
+            } catch (\Throwable $e) {}
+
+            if ($hasCols) {
+                $itemStmt = $this->db->prepare("
+                    INSERT INTO order_modification_items
+                        (modification_id, order_item_id, product_id, variant_id, change_type, old_qty, new_qty, old_price, new_price, replacement_variant_id, note, original_product_name, original_variant_name, original_image, replacement_product_name, replacement_variant_name, replacement_image)
+                    VALUES
+                        (:mid, :item_id, :pid, :vid, :ctype, :oqty, :nqty, :oprice, :nprice, :rep_vid, :note, :orig_pname, :orig_vname, :orig_img, :rep_pname, :rep_vname, :rep_img)
+                ");
+            } else {
+                $itemStmt = $this->db->prepare("
+                    INSERT INTO order_modification_items
+                        (modification_id, order_item_id, product_id, variant_id, change_type, old_qty, new_qty, old_price, new_price, replacement_variant_id, note)
+                    VALUES
+                        (:mid, :item_id, :pid, :vid, :ctype, :oqty, :nqty, :oprice, :nprice, :rep_vid, :note)
+                ");
+            }
             foreach ($itemChanges as $change) {
                 $origPName = !empty($change['original_product_name']) ? $change['original_product_name'] : null;
                 $origVName = !empty($change['original_variant_name']) ? $change['original_variant_name'] : null;
@@ -137,7 +191,7 @@ class OrderModification extends Model
                     }
                 }
 
-                $itemStmt->execute([
+                $params = [
                     'mid'        => $modId,
                     'item_id'    => $change['order_item_id'] ?? null,
                     'pid'        => $change['product_id'] ?? null,
@@ -150,13 +204,16 @@ class OrderModification extends Model
                     'nprice'     => $change['new_price'],
                     'rep_vid'    => $change['replacement_variant_id'] ?? null,
                     'note'       => $change['note'] ?? null,
-                    'orig_pname' => $origPName,
-                    'orig_vname' => $origVName,
-                    'orig_img'   => $origImg,
-                    'rep_pname'  => $repPName,
-                    'rep_vname'  => $repVName,
-                    'rep_img'    => $repImg,
-                ]);
+                ];
+                if ($hasCols) {
+                    $params['orig_pname'] = $origPName;
+                    $params['orig_vname'] = $origVName;
+                    $params['orig_img']   = $origImg;
+                    $params['rep_pname']  = $repPName;
+                    $params['rep_vname']  = $repVName;
+                    $params['rep_img']    = $repImg;
+                }
+                $itemStmt->execute($params);
             }
 
             // Fetch the modification items to apply them immediately
@@ -325,32 +382,15 @@ class OrderModification extends Model
         $mod = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!$mod) return null;
 
-        // Get item changes
+        // Get item changes safely without referencing newly added columns directly in SELECT clause
         $iStmt = $this->db->prepare("
             SELECT omi.*,
                    oi.quantity as orig_qty, oi.unit_price as orig_unit_price,
-                   COALESCE(omi.original_product_name, p.name, p2.name, 'Customer First Order Product') as original_product_name,
-                   COALESCE(omi.original_variant_name, pv.name, pv2.name) as original_variant_name,
-                   COALESCE(omi.replacement_product_name, p2.name, p.name, 'Replacement Product') as replacement_product_name,
-                   COALESCE(omi.replacement_variant_name, pv2.name, pv.name, rpv.name) as replacement_variant_name,
-                   COALESCE(omi.replacement_variant_name, pv2.name, pv.name, rpv.name) as replacement_product_variant_name,
-                   COALESCE(
-                       omi.original_image,
-                       (SELECT image_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
-                       (SELECT image_path FROM product_images WHERE product_id = p2.id AND is_primary = 1 LIMIT 1)
-                   ) as original_image,
-                   COALESCE(
-                       omi.replacement_image,
-                       (SELECT image_path FROM product_images WHERE product_id = p2.id AND is_primary = 1 LIMIT 1),
-                       (SELECT image_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1)
-                   ) as replacement_image,
-                   COALESCE(omi.original_product_name, p.name, p2.name, 'Original Item') as product_name,
-                   COALESCE(omi.original_variant_name, pv.name, pv2.name) as variant_name,
-                   COALESCE(
-                       omi.original_image,
-                       (SELECT image_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1),
-                       (SELECT image_path FROM product_images WHERE product_id = p2.id AND is_primary = 1 LIMIT 1)
-                   ) as product_image
+                   p.name as fallback_orig_pname, pv.name as fallback_orig_vname,
+                   p2.name as fallback_rep_pname, pv2.name as fallback_rep_vname,
+                   rpv.name as fallback_rep_vname_alt,
+                   (SELECT image_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as fallback_orig_img,
+                   (SELECT image_path FROM product_images WHERE product_id = p2.id AND is_primary = 1 LIMIT 1) as fallback_rep_img
             FROM order_modification_items omi
             LEFT JOIN order_items oi ON omi.order_item_id = oi.id
             LEFT JOIN products p ON oi.product_id = p.id
@@ -361,7 +401,12 @@ class OrderModification extends Model
             WHERE omi.modification_id = :mid
         ");
         $iStmt->execute(['mid' => $modId]);
-        $mod['items'] = $iStmt->fetchAll(\PDO::FETCH_ASSOC);
+        $rawItems = $iStmt->fetchAll(\PDO::FETCH_ASSOC);
+        $items = [];
+        foreach ($rawItems as $raw) {
+            $items[] = self::normalizeItem($raw);
+        }
+        $mod['items'] = $items;
 
         return $mod;
     }

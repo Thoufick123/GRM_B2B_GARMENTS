@@ -628,6 +628,12 @@ try {
             `new_price` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
             `replacement_variant_id` BIGINT NULL,
             `note` VARCHAR(255) NULL,
+            `original_product_name` VARCHAR(255) NULL,
+            `original_variant_name` VARCHAR(255) NULL,
+            `original_image` VARCHAR(255) NULL,
+            `replacement_product_name` VARCHAR(255) NULL,
+            `replacement_variant_name` VARCHAR(255) NULL,
+            `replacement_image` VARCHAR(255) NULL,
             FOREIGN KEY (`modification_id`) REFERENCES `order_modifications`(`id`) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
 

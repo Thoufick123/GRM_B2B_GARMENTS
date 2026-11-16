@@ -39,10 +39,36 @@ CREATE TABLE IF NOT EXISTS order_modification_items (
     new_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     replacement_variant_id BIGINT NULL,
     note VARCHAR(255) NULL,
+    original_product_name VARCHAR(255) NULL,
+    original_variant_name VARCHAR(255) NULL,
+    original_image VARCHAR(255) NULL,
+    replacement_product_name VARCHAR(255) NULL,
+    replacement_variant_name VARCHAR(255) NULL,
+    replacement_image VARCHAR(255) NULL,
     FOREIGN KEY (modification_id) REFERENCES order_modifications(id) ON DELETE CASCADE
 )
 ");
 echo "order_modification_items table created\n";
+
+// Add snapshot columns if table already existed
+$modItemCols = $db->query("SHOW COLUMNS FROM order_modification_items")->fetchAll(PDO::FETCH_COLUMN);
+$modItemColsLower = array_map('strtolower', $modItemCols);
+$newColumns = [
+    'order_item_id' => "ALTER TABLE order_modification_items MODIFY order_item_id BIGINT NULL",
+    'product_id' => "ALTER TABLE order_modification_items ADD COLUMN product_id BIGINT NULL",
+    'variant_id' => "ALTER TABLE order_modification_items ADD COLUMN variant_id BIGINT NULL",
+    'original_product_name' => "ALTER TABLE order_modification_items ADD COLUMN original_product_name VARCHAR(255) NULL",
+    'original_variant_name' => "ALTER TABLE order_modification_items ADD COLUMN original_variant_name VARCHAR(255) NULL",
+    'original_image' => "ALTER TABLE order_modification_items ADD COLUMN original_image VARCHAR(255) NULL",
+    'replacement_product_name' => "ALTER TABLE order_modification_items ADD COLUMN replacement_product_name VARCHAR(255) NULL",
+    'replacement_variant_name' => "ALTER TABLE order_modification_items ADD COLUMN replacement_variant_name VARCHAR(255) NULL",
+    'replacement_image' => "ALTER TABLE order_modification_items ADD COLUMN replacement_image VARCHAR(255) NULL",
+];
+foreach ($newColumns as $col => $sql) {
+    if (!in_array($col, $modItemColsLower)) {
+        try { $db->exec($sql); } catch (\Throwable $e) {}
+    }
+}
 
 // 3. Add has_modification flag to orders for quick lookup
 $cols = $db->query("SHOW COLUMNS FROM orders LIKE 'has_modification'")->fetchAll();

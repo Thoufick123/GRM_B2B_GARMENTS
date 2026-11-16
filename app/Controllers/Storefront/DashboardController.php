@@ -534,15 +534,15 @@ class DashboardController extends Controller
             if (!empty($orderModifications)) {
                 $modIds = array_values(array_unique(array_column($orderModifications, 'id')));
                 if (!empty($modIds)) {
+                    \App\Models\OrderModification::ensureSchema($db);
                     $modPlaceholders = implode(',', array_fill(0, count($modIds), '?'));
                     $stmtModItems = $db->prepare("
                         SELECT omi.*,
-                               COALESCE(omi.original_product_name, p.name, p2.name, 'Original Item') as original_product_name,
-                               COALESCE(omi.original_variant_name, pv.name, pv2.name) as original_variant_name,
-                               COALESCE(omi.replacement_product_name, p2.name, p.name, 'Replacement Product') as replacement_product_name,
-                               COALESCE(omi.replacement_variant_name, pv2.name, pv.name, rpv.name) as replacement_variant_name,
-                               COALESCE(omi.original_image, pi1.image_path, pi2.image_path) as original_image,
-                               COALESCE(omi.replacement_image, pi2.image_path, pi1.image_path) as replacement_image
+                               p.name as fallback_orig_pname, pv.name as fallback_orig_vname,
+                               p2.name as fallback_rep_pname, pv2.name as fallback_rep_vname,
+                               rpv.name as fallback_rep_vname_alt,
+                               pi1.image_path as fallback_orig_img,
+                               pi2.image_path as fallback_rep_img
                         FROM order_modification_items omi
                         LEFT JOIN order_items oi ON omi.order_item_id = oi.id
                         LEFT JOIN products p ON oi.product_id = p.id
@@ -557,7 +557,7 @@ class DashboardController extends Controller
                     ");
                     $stmtModItems->execute($modIds);
                     foreach ($stmtModItems->fetchAll(\PDO::FETCH_ASSOC) as $mi) {
-                        $orderModItems[$mi['modification_id']][] = $mi;
+                        $orderModItems[$mi['modification_id']][] = \App\Models\OrderModification::normalizeItem($mi);
                     }
                 }
             }
@@ -679,14 +679,14 @@ class DashboardController extends Controller
         $modification = $stmtMod->fetch(\PDO::FETCH_ASSOC) ?: null;
 
         if (!empty($modification)) {
+            \App\Models\OrderModification::ensureSchema($db);
             $stmtModItems = $db->prepare("
                 SELECT omi.*,
-                       COALESCE(omi.original_product_name, p.name, p2.name, 'Original Item') as original_product_name,
-                       COALESCE(omi.original_variant_name, pv.name, pv2.name) as original_variant_name,
-                       COALESCE(omi.replacement_product_name, p2.name, p.name, 'Replacement Product') as replacement_product_name,
-                       COALESCE(omi.replacement_variant_name, pv2.name, pv.name, rpv.name) as replacement_variant_name,
-                       COALESCE(omi.original_image, pi1.image_path, pi2.image_path) as original_image,
-                       COALESCE(omi.replacement_image, pi2.image_path, pi1.image_path) as replacement_image
+                       p.name as fallback_orig_pname, pv.name as fallback_orig_vname,
+                       p2.name as fallback_rep_pname, pv2.name as fallback_rep_vname,
+                       rpv.name as fallback_rep_vname_alt,
+                       pi1.image_path as fallback_orig_img,
+                       pi2.image_path as fallback_rep_img
                 FROM order_modification_items omi
                 LEFT JOIN order_items oi ON omi.order_item_id = oi.id
                 LEFT JOIN products p ON oi.product_id = p.id
@@ -700,7 +700,11 @@ class DashboardController extends Controller
                 ORDER BY omi.id ASC
             ");
             $stmtModItems->execute([$modification['id']]);
-            $modItems = $stmtModItems->fetchAll(\PDO::FETCH_ASSOC);
+            $rawModItems = $stmtModItems->fetchAll(\PDO::FETCH_ASSOC);
+            $modItems = [];
+            foreach ($rawModItems as $mi) {
+                $modItems[] = \App\Models\OrderModification::normalizeItem($mi);
+            }
         }
 
         $reviewModel = new \App\Models\Review();

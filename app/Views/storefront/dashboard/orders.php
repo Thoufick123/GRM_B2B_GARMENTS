@@ -234,10 +234,6 @@ function orderStatusLabel(string $status): string
                                                         class="text-red-600 font-bold bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-2 rounded-lg transition-colors shadow-sm text-xs">
                                                         Cancel Order
                                                     </button>
-                                                <?php elseif ($refundReq && $refundReq['status'] === 'pending_admin_approval'): ?>
-                                                    <span class="text-amber-700 bg-amber-50 border border-amber-200 px-4 py-2 rounded-lg font-bold text-xs cursor-default">
-                                                        Request Submitted
-                                                    </span>
                                                 <?php endif; ?>
                                             </div>
                                         </td>

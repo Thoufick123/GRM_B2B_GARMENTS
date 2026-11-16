@@ -142,6 +142,12 @@ ALTER TABLE `order_modification_items`
     MODIFY `order_item_id` BIGINT NULL,
     ADD COLUMN IF NOT EXISTS `product_id` BIGINT NULL AFTER `order_item_id`,
     ADD COLUMN IF NOT EXISTS `variant_id` BIGINT NULL AFTER `product_id`,
+    ADD COLUMN IF NOT EXISTS `original_product_name` VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS `original_variant_name` VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS `original_image` VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS `replacement_product_name` VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS `replacement_variant_name` VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS `replacement_image` VARCHAR(255) NULL,
     MODIFY `change_type` ENUM('removed', 'qty_changed', 'price_changed', 'replaced', 'unchanged', 'added') NOT NULL DEFAULT 'unchanged';
 
 -- 13. Ensure products.category_id allows NULL

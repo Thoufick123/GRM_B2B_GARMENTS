@@ -134,6 +134,10 @@ class DashboardController extends Controller
             $regularProducts = $cachedStats['regularProducts'] ?? $totalProducts;
             $customizedProducts = $cachedStats['customizedProducts'] ?? 0;
             $totalOrders = $cachedStats['totalOrders'] ?? 0;
+            $regularOrders = $cachedStats['regularOrders'] ?? 0;
+            $regularPendingOrders = $cachedStats['regularPendingOrders'] ?? 0;
+            $customizedOrders = $cachedStats['customizedOrders'] ?? 0;
+            $customizedPendingOrders = $cachedStats['customizedPendingOrders'] ?? 0;
             $pendingOrders = $cachedStats['pendingOrders'] ?? 0;
             $adminCancelledOrders = $cachedStats['adminCancelledOrders'] ?? 0;
             $buyerCancelledOrders = $cachedStats['buyerCancelledOrders'] ?? 0;
@@ -289,17 +293,92 @@ class DashboardController extends Controller
                 $customizedProducts = (int)($productCounts['customized'] ?? 0);
             } catch (\Exception $e) {}
             
-            // Fetch Total Orders
+            // Fetch Orders (Separated: Total, Regular Catalog Orders, Customized Fabric Orders)
             $totalOrders = 0;
             $pendingOrders = 0;
+            $regularOrders = 0;
+            $regularPendingOrders = 0;
+            $customizedOrders = 0;
+            $customizedPendingOrders = 0;
             $adminCancelledOrders = 0;
             $buyerCancelledOrders = 0;
             try {
+                $orderDateFilter = str_replace('created_at', 'o.created_at', $dateFilter);
+
+                // Overall Total Orders
                 $stmt = $db->query("SELECT count(id) as count FROM orders WHERE status NOT IN ('cancelled')" . $dateFilter);
-                $totalOrders = $stmt->fetch()['count'] ?? 0;
+                $totalOrders = (int)($stmt->fetch()['count'] ?? 0);
                 
                 $stmtPending = $db->query("SELECT count(DISTINCT user_id) as count FROM orders WHERE status NOT IN ('cancelled', 'delivered', 'shipped', 'processing') AND payment_status NOT IN ('paid', 'completed')" . $dateFilter);
-                $pendingOrders = $stmtPending->fetch()['count'] ?? 0;
+                $pendingOrders = (int)($stmtPending->fetch()['count'] ?? 0);
+
+                // Regular (Standard Catalog) Orders
+                $stmtRegular = $db->query("
+                    SELECT COUNT(o.id) as count 
+                    FROM orders o 
+                    WHERE o.status NOT IN ('cancelled') 
+                      AND NOT EXISTS (
+                          SELECT 1 FROM order_items oi_chk 
+                          WHERE oi_chk.order_id = o.id 
+                            AND (oi_chk.customization_id IS NOT NULL OR oi_chk.customization_data IS NOT NULL)
+                      ) 
+                      AND o.order_number NOT LIKE 'GBC%' 
+                      AND o.order_number NOT LIKE 'GRM-CUST-%'
+                      {$orderDateFilter}
+                ");
+                $regularOrders = (int)($stmtRegular->fetch()['count'] ?? 0);
+
+                $stmtRegularPending = $db->query("
+                    SELECT COUNT(DISTINCT o.user_id) as count 
+                    FROM orders o 
+                    WHERE o.status NOT IN ('cancelled', 'delivered', 'shipped', 'processing') 
+                      AND o.payment_status NOT IN ('paid', 'completed')
+                      AND NOT EXISTS (
+                          SELECT 1 FROM order_items oi_chk 
+                          WHERE oi_chk.order_id = o.id 
+                            AND (oi_chk.customization_id IS NOT NULL OR oi_chk.customization_data IS NOT NULL)
+                      ) 
+                      AND o.order_number NOT LIKE 'GBC%' 
+                      AND o.order_number NOT LIKE 'GRM-CUST-%'
+                      {$orderDateFilter}
+                ");
+                $regularPendingOrders = (int)($stmtRegularPending->fetch()['count'] ?? 0);
+
+                // Customized (Fabric & Garment) Orders
+                $stmtCustom = $db->query("
+                    SELECT COUNT(o.id) as count 
+                    FROM orders o 
+                    WHERE o.status NOT IN ('cancelled') 
+                      AND (
+                          EXISTS (
+                              SELECT 1 FROM order_items oi_chk 
+                              WHERE oi_chk.order_id = o.id 
+                                AND (oi_chk.customization_id IS NOT NULL OR oi_chk.customization_data IS NOT NULL)
+                          ) 
+                          OR o.order_number LIKE 'GBC%' 
+                          OR o.order_number LIKE 'GRM-CUST-%'
+                      )
+                      {$orderDateFilter}
+                ");
+                $customizedOrders = (int)($stmtCustom->fetch()['count'] ?? 0);
+
+                $stmtCustomPending = $db->query("
+                    SELECT COUNT(DISTINCT o.user_id) as count 
+                    FROM orders o 
+                    WHERE (o.status NOT IN ('cancelled', 'delivered', 'shipped', 'processing') OR o.payment_status = 'request_pending')
+                      AND o.payment_status NOT IN ('paid', 'completed')
+                      AND (
+                          EXISTS (
+                              SELECT 1 FROM order_items oi_chk 
+                              WHERE oi_chk.order_id = o.id 
+                                AND (oi_chk.customization_id IS NOT NULL OR oi_chk.customization_data IS NOT NULL)
+                          ) 
+                          OR o.order_number LIKE 'GBC%' 
+                          OR o.order_number LIKE 'GRM-CUST-%'
+                      )
+                      {$orderDateFilter}
+                ");
+                $customizedPendingOrders = (int)($stmtCustomPending->fetch()['count'] ?? 0);
 
                 try {
                     $stmtAdminCancel = $db->query("SELECT count(id) as count FROM orders WHERE status = 'cancelled' AND cancelled_by_role = 'admin'" . $dateFilter);
@@ -493,6 +572,10 @@ class DashboardController extends Controller
                 'regularProducts' => $regularProducts,
                 'customizedProducts' => $customizedProducts,
                 'totalOrders' => $totalOrders,
+                'regularOrders' => $regularOrders,
+                'regularPendingOrders' => $regularPendingOrders,
+                'customizedOrders' => $customizedOrders,
+                'customizedPendingOrders' => $customizedPendingOrders,
                 'pendingOrders' => $pendingOrders,
                 'adminCancelledOrders' => $adminCancelledOrders ?? 0,
                 'buyerCancelledOrders' => $buyerCancelledOrders ?? 0,
@@ -511,8 +594,11 @@ class DashboardController extends Controller
             'revenue' => [20, 24, 22, 28, 25, 30, 27, 34, 31, 38, 35, 42],
             'tax_revenue' => [12, 15, 14, 18, 16, 20, 18, 24, 21, 26, 23, 28],
             'orders' => [15, 18, 14, 22, 19, 25, 21, 28, 24, 30, 27, 32],
+            'regular_orders' => [12, 15, 11, 17, 14, 19, 16, 21, 18, 23, 20, 24],
+            'custom_orders' => [8, 10, 9, 13, 11, 15, 14, 18, 16, 20, 19, 23],
             'customers' => [10, 12, 11, 15, 13, 17, 16, 20, 18, 22, 20, 25],
-            'products' => [30, 28, 29, 26, 28, 25, 27, 24, 25, 23, 24, 22]
+            'products' => [30, 28, 29, 26, 28, 25, 27, 24, 25, 23, 24, 22],
+            'custom_products' => [12, 14, 16, 13, 17, 19, 18, 22, 20, 24, 23, 27]
         ];
 
         $this->render('admin/dashboard', [
@@ -530,6 +616,10 @@ class DashboardController extends Controller
             'regularProducts' => $regularProducts,
             'customizedProducts' => $customizedProducts,
             'totalOrders' => $totalOrders,
+            'regularOrders' => $regularOrders,
+            'regularPendingOrders' => $regularPendingOrders,
+            'customizedOrders' => $customizedOrders,
+            'customizedPendingOrders' => $customizedPendingOrders,
             'pendingOrders' => $pendingOrders,
             'adminCancelledOrders' => $adminCancelledOrders ?? 0,
             'buyerCancelledOrders' => $buyerCancelledOrders ?? 0,

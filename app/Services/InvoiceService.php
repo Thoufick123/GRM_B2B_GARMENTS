@@ -84,16 +84,13 @@ class InvoiceService
         // Fetch modification items if modification exists
         $modItems = [];
         if ($modification) {
+            \App\Models\OrderModification::ensureSchema($db);
             $miStmt = $db->prepare("
                 SELECT omi.*,
-                       COALESCE(omi.original_product_name, p.name, p2.name, 'Original Item') as original_product_name,
-                       COALESCE(omi.original_variant_name, pv.name, pv2.name) as original_variant_name,
-                       COALESCE(omi.replacement_product_name, p2.name, p.name, 'Replacement Product') as replacement_product_name,
-                       COALESCE(omi.replacement_variant_name, pv2.name, pv.name) as replacement_variant_name,
-                       COALESCE(omi.original_product_name, p.name, p2.name) as product_name,
-                       COALESCE(omi.original_variant_name, pv.name, pv2.name) as variant_name,
-                       COALESCE(omi.original_image, pi1.image_path, pi2.image_path) as product_image,
-                       COALESCE(omi.replacement_image, pi2.image_path, pi1.image_path) as replacement_image,
+                       p.name as fallback_orig_pname, pv.name as fallback_orig_vname,
+                       p2.name as fallback_rep_pname, pv2.name as fallback_rep_vname,
+                       pi1.image_path as fallback_orig_img,
+                       pi2.image_path as fallback_rep_img,
                        COALESCE(c.hsn_code, c2.hsn_code, '5208') as category_hsn_code,
                        COALESCE(pv.sgst, pv2.sgst, p.sgst, p2.sgst, c.sgst, c2.sgst, 0) as sgst_rate,
                        COALESCE(pv.cgst, pv2.cgst, p.cgst, p2.cgst, c.cgst, c2.cgst, 0) as cgst_rate,
@@ -115,7 +112,10 @@ class InvoiceService
                 ORDER BY omi.change_type ASC
             ");
             $miStmt->execute([$modification['id']]);
-            $modItems = $miStmt->fetchAll(\PDO::FETCH_ASSOC);
+            $rawItems = $miStmt->fetchAll(\PDO::FETCH_ASSOC);
+            foreach ($rawItems as $mItem) {
+                $modItems[] = \App\Models\OrderModification::normalizeItem($mItem);
+            }
         }
 
         // Fetch shipping address

@@ -45,6 +45,30 @@
             grid-template-columns: 1fr;
         }
     }
+    .dashboard-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+    @media (min-width: 640px) {
+        .dashboard-kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (min-width: 768px) {
+        .dashboard-kpi-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+    @media (min-width: 1024px) {
+        .dashboard-kpi-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+    @media (min-width: 1280px) {
+        .dashboard-kpi-grid {
+            grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        }
+    }
 </style>
 
 <div class="w-full max-w-full font-sans text-slate-800">
@@ -138,8 +162,8 @@
         </div>
     </div>
 
-    <!-- 5 Key Metric Cards with Sparklines -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5 mb-6">
+    <!-- Key Metric Cards with Sparklines (Separated Regular & Customized Orders) -->
+    <div class="dashboard-kpi-grid gap-4 mb-6">
         
         <!-- Total Revenue Card -->
         <div class="saas-card p-5 relative overflow-hidden flex flex-col justify-between">
@@ -197,47 +221,66 @@
             </div>
         </div>
 
-        <!-- Total Orders Card -->
-        <div class="saas-card p-5 relative overflow-hidden flex flex-col justify-between">
+        <!-- Regular Orders Card -->
+        <a href="<?= BASE_URL ?>/admin/orders" class="saas-card p-5 relative overflow-hidden flex flex-col justify-between hover:border-blue-200 transition group block">
             <div>
                 <div class="flex items-center space-x-3 mb-2">
-                    <div class="w-9 h-9 rounded-xl bg-[#fdf2f7] text-[#F25996] border border-[#fbaed2] flex items-center justify-center font-bold">
+                    <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold group-hover:scale-105 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                     </div>
-                    <span class="text-xs font-medium text-slate-500">Total Orders</span>
+                    <span class="text-xs font-medium text-slate-500 group-hover:text-blue-600 transition">Regular Orders</span>
                 </div>
                 <div class="text-2xl font-extrabold text-slate-900 mt-2">
-                    <?= number_format($totalOrders) ?>
+                    <?= number_format($regularOrders) ?>
                 </div>
                 <div class="mt-1 flex items-center text-[11px] font-semibold">
-                    <span class="text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full mr-2"><?= number_format($pendingOrders ?? 0) ?> pending</span> 
+                    <span class="text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full mr-2"><?= number_format($regularPendingOrders ?? 0) ?> pending</span> 
                     <span class="text-slate-400 font-normal">needs attention</span>
                 </div>
-                <?php if (($adminCancelledOrders ?? 0) > 0 || ($buyerCancelledOrders ?? 0) > 0): ?>
-                <div class="mt-1.5 flex items-center text-[10px] font-semibold text-slate-500 space-x-2">
-                    <?php if (($adminCancelledOrders ?? 0) > 0): ?>
-                        <span class="text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Admin Canceled: <?= $adminCancelledOrders ?></span>
-                    <?php endif; ?>
-                    <?php if (($buyerCancelledOrders ?? 0) > 0): ?>
-                        <span class="text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">Buyer Canceled: <?= $buyerCancelledOrders ?></span>
-                    <?php endif; ?>
+                <div class="mt-1 text-[10px] text-slate-400">
+                    Standard catalog orders
                 </div>
-                <?php endif; ?>
             </div>
             <!-- Blue Sparkline -->
             <div class="w-full h-9 mt-3">
-                <canvas id="sparklineOrders"></canvas>
+                <canvas id="sparklineRegularOrders"></canvas>
             </div>
-        </div>
+        </a>
 
-        <!-- Total Customers Card -->
-        <div class="saas-card p-5 relative overflow-hidden flex flex-col justify-between">
+        <!-- Customized Orders Card -->
+        <a href="<?= BASE_URL ?>/admin/custom-orders" class="saas-card p-5 relative overflow-hidden flex flex-col justify-between hover:border-pink-200 transition group block">
             <div>
                 <div class="flex items-center space-x-3 mb-2">
-                    <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <div class="w-9 h-9 rounded-xl bg-[#fdf2f7] text-[#F25996] border border-[#fbaed2] flex items-center justify-center font-bold group-hover:scale-105 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                    </div>
+                    <span class="text-xs font-medium text-slate-500 group-hover:text-[#F25996] transition">Customized Orders</span>
+                </div>
+                <div class="text-2xl font-extrabold text-slate-900 mt-2">
+                    <?= number_format($customizedOrders) ?>
+                </div>
+                <div class="mt-1 flex items-center text-[11px] font-semibold">
+                    <span class="text-[#F25996] bg-pink-50 px-2 py-0.5 rounded-full mr-2"><?= number_format($customizedPendingOrders ?? 0) ?> pending</span> 
+                    <span class="text-slate-400 font-normal">requests/review</span>
+                </div>
+                <div class="mt-1 text-[10px] text-slate-400">
+                    Custom fabric & garment orders
+                </div>
+            </div>
+            <!-- Pink Sparkline -->
+            <div class="w-full h-9 mt-3">
+                <canvas id="sparklineCustomOrders"></canvas>
+            </div>
+        </a>
+
+        <!-- Total Customers Card -->
+        <a href="<?= BASE_URL ?>/admin/buyers" class="saas-card p-5 relative overflow-hidden flex flex-col justify-between hover:border-emerald-200 transition group block">
+            <div>
+                <div class="flex items-center space-x-3 mb-2">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
-                    <span class="text-xs font-medium text-slate-500">Total Customers</span>
+                    <span class="text-xs font-medium text-slate-500 group-hover:text-emerald-600 transition">Total Customers</span>
                 </div>
                 <div class="text-2xl font-extrabold text-slate-900 mt-2">
                     <?= number_format($totalBuyers) ?>
@@ -250,16 +293,16 @@
             <div class="w-full h-9 mt-3">
                 <canvas id="sparklineCustomers"></canvas>
             </div>
-        </div>
+        </a>
 
         <!-- Regular Products Card -->
-        <div class="saas-card p-5 relative overflow-hidden flex flex-col justify-between">
+        <a href="<?= BASE_URL ?>/admin/catalog/products" class="saas-card p-5 relative overflow-hidden flex flex-col justify-between hover:border-orange-200 transition group block">
             <div>
                 <div class="flex items-center space-x-3 mb-2">
-                    <div class="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+                    <div class="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-105 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                     </div>
-                    <span class="text-xs font-medium text-slate-500">Regular Products</span>
+                    <span class="text-xs font-medium text-slate-500 group-hover:text-orange-600 transition">Regular Products</span>
                 </div>
                 <div class="text-2xl font-extrabold text-slate-900 mt-2">
                     <?= number_format($regularProducts) ?>
@@ -272,16 +315,16 @@
             <div class="w-full h-9 mt-3">
                 <canvas id="sparklineProducts"></canvas>
             </div>
-        </div>
+        </a>
 
         <!-- Customized Products Card -->
-        <div class="saas-card p-5 relative overflow-hidden flex flex-col justify-between">
+        <a href="<?= BASE_URL ?>/admin/customize/products" class="saas-card p-5 relative overflow-hidden flex flex-col justify-between hover:border-pink-200 transition group block">
             <div>
                 <div class="flex items-center space-x-3 mb-2">
-                    <div class="w-9 h-9 rounded-xl bg-pink-50 text-[#F25996] border border-pink-100 flex items-center justify-center">
+                    <div class="w-9 h-9 rounded-xl bg-pink-50 text-[#F25996] border border-pink-100 flex items-center justify-center group-hover:scale-105 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-5.5M11 5.5l6 6M14 3l7 7"/></svg>
                     </div>
-                    <span class="text-xs font-medium text-slate-500">Customized Products</span>
+                    <span class="text-xs font-medium text-slate-500 group-hover:text-[#F25996] transition">Customized Products</span>
                 </div>
                 <div class="text-2xl font-extrabold text-slate-900 mt-2">
                     <?= number_format($customizedProducts) ?>
@@ -290,8 +333,11 @@
                     <span class="text-slate-400 font-normal">Customizable catalog products</span>
                 </div>
             </div>
-            <div class="w-full h-9 mt-3"></div>
-        </div>
+            <!-- Custom Products Pink Sparkline -->
+            <div class="w-full h-9 mt-3">
+                <canvas id="sparklineCustomProducts"></canvas>
+            </div>
+        </a>
 
     </div>
 
@@ -477,9 +523,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // 1. Sparklines
     createSparkline('sparklineRevenue', <?= json_encode($sparklines['revenue'] ?? [20, 24, 22, 28, 25, 30, 27, 34, 31, 38, 35, 42]) ?>, '#F25996');
     createSparkline('sparklineTaxRevenue', <?= json_encode($sparklines['tax_revenue'] ?? [12, 15, 14, 18, 16, 20, 18, 24, 21, 26, 23, 28]) ?>, '#0D9488');
-    createSparkline('sparklineOrders', <?= json_encode($sparklines['orders'] ?? [15, 18, 14, 22, 19, 25, 21, 28, 24, 30, 27, 32]) ?>, '#F25996');
+    createSparkline('sparklineRegularOrders', <?= json_encode($sparklines['regular_orders'] ?? [12, 15, 11, 17, 14, 19, 16, 21, 18, 23, 20, 24]) ?>, '#3B82F6');
+    createSparkline('sparklineCustomOrders', <?= json_encode($sparklines['custom_orders'] ?? [8, 10, 9, 13, 11, 15, 14, 18, 16, 20, 19, 23]) ?>, '#F25996');
     createSparkline('sparklineCustomers', <?= json_encode($sparklines['customers'] ?? [10, 12, 11, 15, 13, 17, 16, 20, 18, 22, 20, 25]) ?>, '#22C55E');
     createSparkline('sparklineProducts', <?= json_encode($sparklines['products'] ?? [30, 28, 29, 26, 28, 25, 27, 24, 25, 23, 24, 22]) ?>, '#FB923C');
+    createSparkline('sparklineCustomProducts', <?= json_encode($sparklines['custom_products'] ?? [12, 14, 16, 13, 17, 19, 18, 22, 20, 24, 23, 27]) ?>, '#EC4899');
 
     // 2. Revenue Analytics Smooth Spline Area Chart
     const ctxRevenue = document.getElementById('revenueAnalyticsChart');
@@ -673,7 +721,9 @@ function exportDashboardPDF() {
         ['GST Tax Revenue', 'Rs. <?= number_format($totalGstTaxRevenue ?? 0, 2, '.', '') ?> (SGST: Rs. <?= number_format($totalSgstRevenue ?? 0, 2, '.', '') ?> + CGST: Rs. <?= number_format($totalCgstRevenue ?? 0, 2, '.', '') ?>)'],
         ['Taxable Base Revenue', 'Rs. <?= number_format($totalBaseRevenue ?? 0, 2, '.', '') ?>'],
         ['Refunded Amount', 'Rs. <?= number_format($totalRefunds ?? 0, 2, '.', '') ?>'],
-        ['Total Orders', '<?= $totalOrders ?> (<?= number_format($pendingOrders ?? 0) ?> pending)'],
+        ['Total Orders', '<?= $totalOrders ?>'],
+        ['Regular Orders', '<?= $regularOrders ?> (<?= number_format($regularPendingOrders ?? 0) ?> pending)'],
+        ['Customized Orders', '<?= $customizedOrders ?> (<?= number_format($customizedPendingOrders ?? 0) ?> pending)'],
         ['Total Customers', '<?= $totalBuyers ?>'],
         ['Total Products', '<?= $totalProducts ?>'],
         ['Regular Products', '<?= $regularProducts ?>'],
@@ -762,7 +812,10 @@ function exportDashboardCSV() {
     csv.push(["Taxable Base Revenue", "Rs. <?= number_format($totalBaseRevenue ?? 0, 2, '.', '') ?>"]);
     csv.push(["Refunded Amount", "Rs. <?= number_format($totalRefunds ?? 0, 2, '.', '') ?>"]);
     csv.push(["Total Orders", "<?= $totalOrders ?>"]);
-    csv.push(["Pending Orders", "<?= $pendingOrders ?? 0 ?>"]);
+    csv.push(["Regular Orders", "<?= $regularOrders ?>"]);
+    csv.push(["Regular Pending Orders", "<?= $regularPendingOrders ?? 0 ?>"]);
+    csv.push(["Customized Orders", "<?= $customizedOrders ?>"]);
+    csv.push(["Customized Pending Orders", "<?= $customizedPendingOrders ?? 0 ?>"]);
     csv.push(["Total Customers", "<?= $totalBuyers ?>"]);
     csv.push(["Total Products", "<?= $totalProducts ?>"]);
     csv.push(["Regular Products", "<?= $regularProducts ?>"]);
