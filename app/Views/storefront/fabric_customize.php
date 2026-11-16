@@ -114,8 +114,8 @@
 
                     </div>
 
-                    <!-- Fabric Description & Details Card (Admin Added Description & Custom Fields) -->
-                    <div class="bg-gradient-to-br from-pink-50/30 via-white to-gray-50/50 rounded-3xl p-5 sm:p-6 border border-gray-200/90 shadow-2xs space-y-4 w-full min-w-0 max-w-full overflow-hidden">
+                    <!-- Fabric Description & Details Card (Image 2 "All details" Style) -->
+                    <div class="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200/90 shadow-sm space-y-4 w-full min-w-0 max-w-full overflow-hidden">
                         <?php 
                         $rawDesc = trim($customization['fabric_description'] ?? '');
                         $rawCustomFields = $customFieldsList ?? $customization['custom_fields_list'] ?? $customization['fabric_custom_fields'] ?? $customization['custom_fields'] ?? [];
@@ -131,72 +131,68 @@
                         $validCfItems = [];
                         if (!empty($cfItems)) {
                             foreach ($cfItems as $cf) {
-                                if (trim($cf['name'] ?? '') !== '' || trim($cf['value'] ?? '') !== '') {
-                                    $validCfItems[] = $cf;
+                                $cfNameTrim = trim($cf['name'] ?? '');
+                                $cfValTrim  = trim($cf['value'] ?? '');
+                                if ($cfNameTrim !== '' || $cfValTrim !== '') {
+                                    $validCfItems[] = [
+                                        'name'  => $cfNameTrim !== '' ? $cfNameTrim : 'Details',
+                                        'value' => $cfValTrim
+                                    ];
                                 }
                             }
                         }
-                        $hasMultipleSections = !empty($validCfItems);
                         $paragraphs = !empty($rawDesc) ? explode("\n", $rawDesc) : [];
+                        $hasMainDesc = !empty($paragraphs);
+                        $defaultActiveTab = $hasMainDesc ? 'all-details-panel-main' : (!empty($validCfItems) ? 'all-details-panel-cf-0' : 'all-details-panel-main');
                         ?>
 
-                        <div class="flex items-center justify-between border-b border-gray-100 pb-3">
-                            <h3 class="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                                <span>📄 Fabric Description &amp; Details</span>
+                        <!-- Header: "All details" with Accordion Chevron (Reference: Image 2) -->
+                        <div class="flex items-center justify-between pb-3 border-b border-gray-100 cursor-pointer select-none" onclick="toggleAllDetailsAccordion()">
+                            <h3 class="text-base sm:text-lg font-bold text-gray-900 tracking-tight">
+                                All details
                             </h3>
-                            <span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-pink-50 text-[#F25996] border border-pink-200">
-                                <?= $hasMultipleSections ? (1 + count($validCfItems)) . ' Sections' : 'Fabric Details' ?>
-                            </span>
-                        </div>
-
-                        <!-- Section Switcher Tabs in the Same Row (Selectable) -->
-                        <?php if ($hasMultipleSections): ?>
-                        <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar hide-scrollbar">
-                            <!-- Tab 1: Primary Description (Default Selected) -->
                             <button type="button" 
-                                    onclick="selectFabricDescSection('fabric-sec-panel-main', this)" 
-                                    class="fabric-sec-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs bg-[#F25996] text-white cursor-pointer shrink-0 border border-[#F25996]" 
-                                    data-target="fabric-sec-panel-main">
-                                <span>📄 Description</span>
-                            </button>
-                            
-                            <!-- Dynamic Custom Field Tabs in the Same Row -->
-                            <?php foreach ($validCfItems as $cfIdx => $cf): 
-                                $cfName = trim($cf['name'] ?? '');
-                                if ($cfName === '') $cfName = 'Field ' . ($cfIdx + 1);
-                            ?>
-                                <button type="button" 
-                                        onclick="selectFabricDescSection('fabric-sec-panel-cf-<?= $cfIdx ?>', this)" 
-                                        class="fabric-sec-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 hover:text-gray-900 cursor-pointer shrink-0" 
-                                        data-target="fabric-sec-panel-cf-<?= $cfIdx ?>">
-                                    <span>🧵 <?= htmlspecialchars($cfName) ?></span>
-                                </button>
-                            <?php endforeach; ?>
-
-                            <!-- View All (Side-by-Side in Same Row) -->
-                            <button type="button" 
-                                    onclick="selectFabricDescSection('fabric-sec-panel-all', this)" 
-                                    class="fabric-sec-tab-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 border border-gray-200 text-gray-500 bg-white hover:bg-gray-50 hover:text-gray-900 cursor-pointer shrink-0 ml-auto" 
-                                    data-target="fabric-sec-panel-all"
-                                    title="View all sections side by side in the same row">
-                                <span>⚡ All Sections</span>
+                                    aria-label="Toggle details"
+                                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center transition-colors">
+                                <svg id="allDetailsChevron" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+                                </svg>
                             </button>
                         </div>
-                        <?php endif; ?>
 
-                        <!-- Section Panels Content -->
-                        <div class="text-xs sm:text-sm text-gray-700 leading-relaxed w-full min-w-0 max-w-full overflow-hidden">
-                            <!-- 1. Primary Description Panel -->
-                            <div id="fabric-sec-panel-main" class="fabric-sec-panel block transition-all duration-200">
-                                <?php if (!empty($paragraphs)): ?>
-                                    <div class="text-gray-700 leading-relaxed bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm space-y-2.5 break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere; overflow: hidden; max-width: 100%;">
-                                        <?php if ($hasMultipleSections): ?>
-                                            <div class="flex items-center gap-2 pb-2.5 border-b border-gray-100">
-                                                <span class="w-2 h-2 rounded-full bg-[#F25996]"></span>
-                                                <h4 class="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-wide m-0">Description</h4>
-                                            </div>
-                                        <?php endif; ?>
-                                        <div class="space-y-2 pt-0.5">
+                        <!-- Accordion Content Container -->
+                        <div id="allDetailsContentArea" class="space-y-4 transition-all duration-200">
+                            <!-- Horizontal Chips Row in Same Row (Reference: Image 2) -->
+                            <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar hide-scrollbar" style="scrollbar-width: none; -ms-overflow-style: none;">
+                                <?php if ($hasMainDesc): ?>
+                                    <button type="button" 
+                                            onclick="switchAllDetailsTab('all-details-panel-main', this)" 
+                                            class="all-details-chip <?= $defaultActiveTab === 'all-details-panel-main' ? 'active bg-[#18181b] text-white border-[#18181b]' : 'bg-[#f4f4f5] text-gray-800 border-gray-200/90 hover:bg-[#e4e4e7]' ?> font-bold text-xs sm:text-sm px-4 py-2 rounded-xl border shadow-2xs transition-all shrink-0 cursor-pointer" 
+                                            data-target="all-details-panel-main">
+                                        Description
+                                    </button>
+                                <?php endif; ?>
+
+                                <?php foreach ($validCfItems as $cfIdx => $cf): 
+                                    $cfName = trim($cf['name'] ?? '');
+                                    if ($cfName === '') $cfName = 'Field ' . ($cfIdx + 1);
+                                    $cfTitle = ucwords(strtolower($cfName));
+                                    $isThisActive = ($defaultActiveTab === ('all-details-panel-cf-' . $cfIdx));
+                                ?>
+                                    <button type="button" 
+                                            onclick="switchAllDetailsTab('all-details-panel-cf-<?= $cfIdx ?>', this)" 
+                                            class="all-details-chip <?= $isThisActive ? 'active bg-[#18181b] text-white border-[#18181b]' : 'bg-[#f4f4f5] text-gray-800 border-gray-200/90 hover:bg-[#e4e4e7]' ?> font-bold text-xs sm:text-sm px-4 py-2 rounded-xl border shadow-2xs transition-all shrink-0 cursor-pointer" 
+                                            data-target="all-details-panel-cf-<?= $cfIdx ?>">
+                                        <?= htmlspecialchars($cfTitle) ?>
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <!-- Active Panel Content Box -->
+                            <div class="w-full min-w-0 max-w-full overflow-hidden">
+                                <?php if ($hasMainDesc): ?>
+                                    <div id="all-details-panel-main" class="all-details-panel <?= $defaultActiveTab === 'all-details-panel-main' ? 'block' : 'hidden' ?> transition-opacity duration-200">
+                                        <div class="text-gray-700 leading-relaxed bg-[#fafafa] p-4 sm:p-5 rounded-2xl border border-gray-200/70 text-xs sm:text-sm space-y-2.5 break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere; overflow: hidden; max-width: 100%;">
                                             <?php foreach ($paragraphs as $p): 
                                                 $p = trim($p);
                                                 if ($p !== ''):
@@ -207,28 +203,16 @@
                                             endforeach; ?>
                                         </div>
                                     </div>
-                                <?php else: ?>
-                                    <p class="text-xs text-gray-400 italic bg-white p-4 rounded-2xl border border-gray-100">No description provided for this fabric.</p>
                                 <?php endif; ?>
-                            </div>
 
-                            <!-- 2. Dynamic Custom Field Panels -->
-                            <?php if ($hasMultipleSections): ?>
                                 <?php foreach ($validCfItems as $cfIdx => $cf): 
-                                    $cfName = trim($cf['name'] ?? '');
-                                    if ($cfName === '') $cfName = 'Field ' . ($cfIdx + 1);
                                     $cfVal = trim($cf['value'] ?? '');
                                     $cfParagraphs = explode("\n", $cfVal);
+                                    $isThisActive = ($defaultActiveTab === ('all-details-panel-cf-' . $cfIdx));
                                 ?>
-                                    <div id="fabric-sec-panel-cf-<?= $cfIdx ?>" class="fabric-sec-panel hidden transition-all duration-200">
-                                        <div class="text-gray-700 leading-relaxed bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm space-y-2.5 break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere; overflow: hidden; max-width: 100%;">
-                                            <div class="flex items-center gap-2 pb-2.5 border-b border-gray-100">
-                                                <span class="w-2 h-2 rounded-full bg-[#F25996]"></span>
-                                                <h4 class="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-wide m-0">
-                                                    <?= htmlspecialchars($cfName) ?>
-                                                </h4>
-                                            </div>
-                                            <div class="space-y-2 pt-0.5">
+                                    <div id="all-details-panel-cf-<?= $cfIdx ?>" class="all-details-panel <?= $isThisActive ? 'block' : 'hidden' ?> transition-opacity duration-200">
+                                        <div class="text-gray-700 leading-relaxed bg-[#fafafa] p-4 sm:p-5 rounded-2xl border border-gray-200/70 text-xs sm:text-sm space-y-2.5 break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere; overflow: hidden; max-width: 100%;">
+                                            <?php if (!empty($cfParagraphs)): ?>
                                                 <?php foreach ($cfParagraphs as $cp): 
                                                     $cp = trim($cp);
                                                     if ($cp !== ''):
@@ -237,82 +221,55 @@
                                                 <?php 
                                                     endif;
                                                 endforeach; ?>
-                                            </div>
+                                            <?php else: ?>
+                                                <p class="text-xs text-gray-400 italic">No details available.</p>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
 
-                                <!-- 3. All Sections Side-by-Side in Same Row Panel -->
-                                <div id="fabric-sec-panel-all" class="fabric-sec-panel hidden transition-all duration-200">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 items-start">
-                                        <!-- Main Description -->
-                                        <?php if (!empty($paragraphs)): ?>
-                                            <div class="text-gray-700 leading-relaxed bg-white p-4 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm space-y-2 break-words overflow-hidden">
-                                                <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
-                                                    <span class="w-2 h-2 rounded-full bg-[#F25996]"></span>
-                                                    <h4 class="text-xs font-black text-gray-900 uppercase tracking-wide m-0">Description</h4>
-                                                </div>
-                                                <div class="space-y-1.5 pt-0.5">
-                                                    <?php foreach ($paragraphs as $p): 
-                                                        $p = trim($p);
-                                                        if ($p !== ''):
-                                                    ?>
-                                                        <p class="leading-relaxed break-words m-0" style="word-break: break-word; margin-bottom: 0.35rem;"><?= htmlspecialchars($p) ?></p>
-                                                    <?php endif; endforeach; ?>
-                                                </div>
-                                            </div>
-                                        <?php endif; ?>
-
-                                        <!-- Custom Fields -->
-                                        <?php foreach ($validCfItems as $cfIdx => $cf): 
-                                            $cfName = trim($cf['name'] ?? '');
-                                            if ($cfName === '') $cfName = 'Field ' . ($cfIdx + 1);
-                                            $cfVal = trim($cf['value'] ?? '');
-                                            $cfParagraphs = explode("\n", $cfVal);
-                                        ?>
-                                            <div class="text-gray-700 leading-relaxed bg-white p-4 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm space-y-2 break-words overflow-hidden">
-                                                <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
-                                                    <span class="w-2 h-2 rounded-full bg-[#F25996]"></span>
-                                                    <h4 class="text-xs font-black text-gray-900 uppercase tracking-wide m-0">
-                                                        <?= htmlspecialchars($cfName) ?>
-                                                    </h4>
-                                                </div>
-                                                <div class="space-y-1.5 pt-0.5">
-                                                    <?php foreach ($cfParagraphs as $cp): 
-                                                        $cp = trim($cp);
-                                                        if ($cp !== ''):
-                                                    ?>
-                                                        <p class="leading-relaxed break-words m-0" style="word-break: break-word; margin-bottom: 0.35rem;"><?= htmlspecialchars($cp) ?></p>
-                                                    <?php endif; endforeach; ?>
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
+                                <?php if (!$hasMainDesc && empty($validCfItems)): ?>
+                                    <p class="text-xs text-gray-400 italic bg-[#fafafa] p-4 rounded-2xl border border-gray-200/70">No details provided for this fabric.</p>
+                                <?php endif; ?>
+                            </div>
                         </div>
 
-                        <?php if ($hasMultipleSections): ?>
                         <script>
-                        function selectFabricDescSection(targetId, btn) {
-                            document.querySelectorAll('.fabric-sec-panel').forEach(function(p) {
-                                p.classList.add('hidden');
-                                p.classList.remove('block');
+                        function switchAllDetailsTab(targetId, btnElement) {
+                            document.querySelectorAll('.all-details-panel').forEach(function(panel) {
+                                panel.classList.add('hidden');
+                                panel.classList.remove('block');
                             });
-                            var target = document.getElementById(targetId);
-                            if (target) {
-                                target.classList.remove('hidden');
-                                target.classList.add('block');
+
+                            var activePanel = document.getElementById(targetId);
+                            if (activePanel) {
+                                activePanel.classList.remove('hidden');
+                                activePanel.classList.add('block');
                             }
-                            document.querySelectorAll('.fabric-sec-tab-btn').forEach(function(b) {
-                                b.className = 'fabric-sec-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 hover:text-gray-900 cursor-pointer shrink-0';
+
+                            document.querySelectorAll('.all-details-chip').forEach(function(chip) {
+                                chip.className = 'all-details-chip bg-[#f4f4f5] hover:bg-[#e4e4e7] text-gray-800 font-bold text-xs sm:text-sm px-4 py-2 rounded-xl border border-gray-200/90 transition-all shrink-0 cursor-pointer';
                             });
-                            if (btn) {
-                                btn.className = 'fabric-sec-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs bg-[#F25996] text-white cursor-pointer shrink-0 border border-[#F25996]';
+
+                            if (btnElement) {
+                                btnElement.className = 'all-details-chip active bg-[#18181b] text-white font-bold text-xs sm:text-sm px-4 py-2 rounded-xl border border-[#18181b] shadow-2xs transition-all shrink-0 cursor-pointer';
+                            }
+                        }
+
+                        function toggleAllDetailsAccordion() {
+                            var content = document.getElementById('allDetailsContentArea');
+                            var chevron = document.getElementById('allDetailsChevron');
+                            if (!content || !chevron) return;
+
+                            if (content.classList.contains('hidden')) {
+                                content.classList.remove('hidden');
+                                chevron.style.transform = 'rotate(0deg)';
+                            } else {
+                                content.classList.add('hidden');
+                                chevron.style.transform = 'rotate(180deg)';
                             }
                         }
                         </script>
-                        <?php endif; ?>
                     </div>
                     </div>
                 </div>
