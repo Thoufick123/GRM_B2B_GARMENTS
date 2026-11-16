@@ -105,7 +105,7 @@
             <div class="flex items-center justify-between mb-4 border-b border-gray-200 pb-3">
                 <div>
                     <h3 class="text-lg font-bold text-gray-900" id="picklist_title">Value Options / Picklist</h3>
-                    <p class="text-xs text-gray-500 mt-0.5" id="picklist_subtitle">Define options in your preferred order (e.g. S, M, L, XL, 2XL). Drag options to reorder.</p>
+                    <p class="text-xs text-gray-500 mt-0.5" id="picklist_subtitle">Define options using the input below.</p>
                 </div>
                 <span id="picklist_type_badge" class="px-2.5 py-1 text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-100">Standard Options</span>
             </div>
@@ -184,7 +184,7 @@
                         $colorHex = !empty($val['color_code']) ? $val['color_code'] : '';
                         ?>
                         <?php if($hasColor && $colorHex): ?>
-                            <div id="val_existing_<?= $index ?>" class="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-800 text-sm font-semibold px-3 py-1.5 rounded-full shadow-xs group hover:border-gray-300 transition-all cursor-grab" draggable="true" title="Drag to reorder">
+                            <div id="val_existing_<?= $index ?>" class="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-800 text-sm font-semibold px-3 py-1.5 rounded-full shadow-xs group hover:border-gray-300 transition-all">
                                 <span class="w-4 h-4 rounded-full border border-gray-300 shadow-xs shrink-0" style="background-color: <?= htmlspecialchars($colorHex) ?>"></span>
                                 <span><?= htmlspecialchars($val['value']) ?></span>
                                 <span class="text-xs text-gray-400 font-mono font-normal"><?= htmlspecialchars(strtoupper($colorHex)) ?></span>
@@ -195,7 +195,7 @@
                                 </button>
                             </div>
                         <?php else: ?>
-                            <div id="val_existing_<?= $index ?>" class="inline-flex items-center bg-gray-100 text-gray-800 text-sm font-medium px-3.5 py-1.5 rounded-full group transition-all hover:bg-gray-200 cursor-grab" draggable="true" title="Drag to reorder">
+                            <div id="val_existing_<?= $index ?>" class="inline-flex items-center bg-gray-100 text-gray-800 text-sm font-medium px-3.5 py-1.5 rounded-full group transition-all hover:bg-gray-200">
                                 <span><?= htmlspecialchars($val['value']) ?></span>
                                 <input type="hidden" name="values[]" value="<?= htmlspecialchars($val['value']) ?>">
                                 <input type="hidden" name="color_codes[]" value="<?= htmlspecialchars($colorHex) ?>">
@@ -241,49 +241,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let valueIdCounter = 100;
     let initialLoad = true;
 
-    // Drag & Drop Reordering for Values
-    let draggedEl = null;
-    function enableDragAndDrop(el) {
-        el.setAttribute('draggable', 'true');
-        el.classList.add('cursor-grab');
-        el.title = 'Drag to reorder';
-        
-        el.addEventListener('dragstart', function(e) {
-            draggedEl = this;
-            this.classList.add('opacity-40');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', '');
-        });
-        
-        el.addEventListener('dragend', function() {
-            this.classList.remove('opacity-40');
-            draggedEl = null;
-        });
-        
-        el.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-        });
-        
-        el.addEventListener('drop', function(e) {
-            e.preventDefault();
-            if (draggedEl && draggedEl !== this) {
-                const rect = this.getBoundingClientRect();
-                const relX = e.clientX - rect.left;
-                if (relX < rect.width / 2) {
-                    valuesContainer.insertBefore(draggedEl, this);
-                } else {
-                    valuesContainer.insertBefore(draggedEl, this.nextSibling);
-                }
-            }
-        });
-    }
-
-    // Initialize drag & drop on existing values
-    valuesContainer.querySelectorAll('#values_container > div').forEach(el => {
-        enableDragAndDrop(el);
-    });
-
     // Toggle Input Type View
     function updateInputTypeUI() {
         const isColor = inputTypeSelect.value === 'colorpicker';
@@ -291,14 +248,14 @@ document.addEventListener('DOMContentLoaded', function() {
             textPicklistSection.classList.add('hidden');
             colorPicklistSection.classList.remove('hidden');
             picklistTitle.textContent = 'Color Palette Options';
-            picklistSubtitle.textContent = 'Add color names and their corresponding hex swatches below in preferred order. Drag to reorder.';
+            picklistSubtitle.textContent = 'Add color names and their corresponding hex swatches below.';
             picklistTypeBadge.textContent = 'Color Picker Options';
             picklistTypeBadge.className = 'px-2.5 py-1 text-xs font-bold rounded-full bg-pink-50 text-[#F25996] border border-pink-200';
         } else {
             textPicklistSection.classList.remove('hidden');
             colorPicklistSection.classList.add('hidden');
             picklistTitle.textContent = 'Value Options / Picklist';
-            picklistSubtitle.textContent = 'Define options in your preferred order (e.g. S, M, L, XL, 2XL). Drag options to reorder.';
+            picklistSubtitle.textContent = 'Define options using the input below.';
             picklistTypeBadge.textContent = 'Standard Options';
             picklistTypeBadge.className = 'px-2.5 py-1 text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-100';
         }
@@ -436,7 +393,6 @@ document.addEventListener('DOMContentLoaded', function() {
             removeBtn.onclick = function() { wrapper.remove(); };
             wrapper.appendChild(removeBtn);
             
-            enableDragAndDrop(wrapper);
             valuesContainer.appendChild(wrapper);
         });
         
@@ -501,7 +457,6 @@ document.addEventListener('DOMContentLoaded', function() {
         removeBtn.onclick = function() { wrapper.remove(); };
         wrapper.appendChild(removeBtn);
 
-        enableDragAndDrop(wrapper);
         valuesContainer.appendChild(wrapper);
 
         colorNameInput.value = '';

@@ -170,10 +170,6 @@ class AttributeController extends Controller
                 $existingValsStmt->execute([$attributeId]);
                 $existingValList = $existingValsStmt->fetchAll(\PDO::FETCH_COLUMN);
 
-                $maxSortStmt = $db->prepare("SELECT COALESCE(MAX(sort_order), 0) FROM attribute_values WHERE attribute_id = ?");
-                $maxSortStmt->execute([$attributeId]);
-                $nextSortOrder = (int)$maxSortStmt->fetchColumn() + 1;
-
                 $attributeValueModel = new AttributeValue();
                 $idx = 0;
                 foreach ($values as $valKey => $val) {
@@ -185,8 +181,7 @@ class AttributeController extends Controller
                         $attributeValueModel->create([
                             'attribute_id' => $attributeId,
                             'value' => $val,
-                            'color_code' => !empty($colorCode) ? $colorCode : null,
-                            'sort_order' => $nextSortOrder++
+                            'color_code' => !empty($colorCode) ? $colorCode : null
                         ]);
                         $existingValList[] = strtolower($val);
                     }
@@ -249,7 +244,6 @@ class AttributeController extends Controller
 
             if (!empty($values)) {
                 $attributeValueModel = new AttributeValue();
-                $sortOrder = 1;
                 $idx = 0;
                 foreach ($values as $valKey => $val) {
                     $val = trim((string)$val);
@@ -259,8 +253,7 @@ class AttributeController extends Controller
                     $attributeValueModel->create([
                         'attribute_id' => $attributeId,
                         'value' => $val,
-                        'color_code' => !empty($colorCode) ? $colorCode : null,
-                        'sort_order' => $sortOrder++
+                        'color_code' => !empty($colorCode) ? $colorCode : null
                     ]);
                     $idx++;
                 }
@@ -364,21 +357,18 @@ class AttributeController extends Controller
                 $existingMap[$exist['value']] = $exist;
             }
 
-            $sortOrder = 1;
             foreach ($submittedItems as $item) {
                 if (isset($existingMap[$item['value']])) {
                     $existId = (int)$existingMap[$item['value']]['id'];
                     $attributeValueModel->update($existId, [
                         'value' => $item['value'],
-                        'color_code' => $item['color_code'],
-                        'sort_order' => $sortOrder++
+                        'color_code' => $item['color_code']
                     ]);
                 } else {
                     $attributeValueModel->create([
                         'attribute_id' => $id,
                         'value' => $item['value'],
-                        'color_code' => $item['color_code'],
-                        'sort_order' => $sortOrder++
+                        'color_code' => $item['color_code']
                     ]);
                 }
             }
@@ -475,16 +465,7 @@ class AttributeController extends Controller
 
         try {
             $attributeValueModel = new AttributeValue();
-            $db = \Core\Database::getInstance();
-            $maxSortStmt = $db->prepare("SELECT COALESCE(MAX(sort_order), 0) FROM attribute_values WHERE attribute_id = ?");
-            $maxSortStmt->execute([$attributeId]);
-            $nextSort = (int)$maxSortStmt->fetchColumn() + 1;
-
-            $attributeValueModel->create([
-                'attribute_id' => $attributeId,
-                'value' => $value,
-                'sort_order' => $nextSort
-            ]);
+            $attributeValueModel->create(['attribute_id' => $attributeId, 'value' => $value]);
             Session::setFlash('success', 'Attribute value added successfully.');
         } catch (\Exception $e) {
             Session::setFlash('error', 'Error adding value: ' . $e->getMessage());

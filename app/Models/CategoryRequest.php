@@ -407,8 +407,7 @@ class CategoryRequest extends Model
             ];
 
             if (!empty($values) && $attrId > 0) {
-                $stmtVal = $this->db->prepare("INSERT INTO attribute_values (attribute_id, value, color_code, sort_order) VALUES (?, ?, ?, ?)");
-                $valSort = 1;
+                $stmtVal = $this->db->prepare("INSERT INTO attribute_values (attribute_id, value, color_code) VALUES (?, ?, ?)");
                 foreach ($values as $val) {
                     $val = trim((string)$val);
                     if ($val === '') continue;
@@ -419,7 +418,7 @@ class CategoryRequest extends Model
                         $colorCode = $colorCodes[$lowerVal] ?? null;
                     }
 
-                    $stmtVal->execute([$attrId, $val, $colorCode, $valSort++]);
+                    $stmtVal->execute([$attrId, $val, $colorCode]);
                 }
             }
 
