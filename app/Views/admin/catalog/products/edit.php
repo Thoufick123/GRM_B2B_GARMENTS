@@ -609,7 +609,7 @@
                                     <input type="text" step="0.01" min="0" data-sync="variants[<?= $variant['id'] ?>][discount_price]" value="<?= htmlspecialchars($variant['discount_price'] ?? '') ?>" placeholder="e.g. 899.00" class="w-36 text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-600 focus:ring-brown focus:border-brown bg-white shadow-sm sync-input">
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <button type="button" onclick="if(confirm('Remove this variant? It will be deleted when you update the product.')){ this.closest('.variant-table-row').remove(); const card = document.getElementById('variant-card-<?= $variant['id'] ?>'); if(card) card.remove(); }" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete variant">
+                                    <button type="button" onclick="removeVariantRow('<?= $variant['id'] ?>', this)" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete variant">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </td>
@@ -640,7 +640,7 @@
                                 </div>
                                 <div class="flex items-center space-x-2">
                                     <span class="px-3 py-1 text-xs font-bold text-green-700 bg-green-100 rounded-full"><?= ucfirst(htmlspecialchars($variant['status'] ?? 'active')) ?></span>
-                                    <button type="button" onclick="if(confirm('Remove this variant? It will be deleted when you update the product.')){ this.closest('.variant-card-item').remove(); }" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete variant">
+                                    <button type="button" onclick="removeVariantRow('<?= $variant['id'] ?>', this)" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete variant">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </div>
@@ -658,6 +658,11 @@
                                 <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 variant-card-container">
                                     <div>
                                         <input type="hidden" name="variants[<?= $variant['id'] ?>][name]" value="<?= htmlspecialchars($variant['name'] ?? '') ?>">
+                                        <?php if (!empty($variant['attributes']) && is_array($variant['attributes'])): ?>
+                                            <?php foreach ($variant['attributes'] as $attrId => $attrValId): ?>
+                                                <input type="hidden" name="variants[<?= $variant['id'] ?>][attributes][<?= $attrId ?>]" value="<?= $attrValId ?>">
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
                                         <label class="block text-xs font-bold text-gray-500 mb-1">Base Price (Incl. GST) <span class="text-red-500">*</span></label>
                                         <input type="text" step="any" min="0.01" name="variants[<?= $variant['id'] ?>][base_price]" value="<?= htmlspecialchars($variant['base_price']) ?>" required oninput="calculateGst(this)" class="variant-base-price w-full border border-gray-200 rounded-lg focus:ring-brown focus:border-brown px-3 py-2 text-sm text-gray-700 shadow-sm">
                                     </div>
@@ -835,7 +840,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100" id="variant-size-rules-tbody">
                         <?php foreach ($variants as $vIdx => $variant): ?>
-                        <tr class="hover:bg-indigo-50/20 transition-colors <?= $vIdx === 0 ? 'bg-amber-50/20' : '' ?> variant-size-rule-row">
+                        <tr class="hover:bg-indigo-50/20 transition-colors <?= $vIdx === 0 ? 'bg-amber-50/20' : '' ?> variant-size-rule-row" id="variant-size-rule-row-<?= $variant['id'] ?>">
                             <td class="px-5 py-3.5">
                                 <div class="flex items-center gap-2">
                                     <span class="text-sm font-bold text-gray-900"><?= htmlspecialchars($variant['name'] ?? 'Variant #'.$variant['id']) ?></span>
@@ -848,12 +853,12 @@
                                 <span class="font-mono text-xs text-gray-500"><?= htmlspecialchars($variant['sku']) ?></span>
                             </td>
                             <td class="px-5 py-3.5">
-                                <span class="font-bold text-gray-800">₹<?= number_format((float)($variant['base_price'] ?? 0), 2) ?></span>
+                                <span class="font-bold text-gray-800 size-rule-price">₹<?= number_format((float)($variant['base_price'] ?? 0), 2) ?></span>
                             </td>
                             <td class="px-5 py-3.5">
                                 <div class="relative w-28">
                                     <input type="number"
-                                           name="variants[<?= $variant['id'] ?>][base_quantity]"
+                                           name="variant_size_rules[<?= $variant['id'] ?>][base_quantity]"
                                            min="1"
                                            required
                                            value="<?= isset($variant['base_quantity']) ? (int)$variant['base_quantity'] : 2 ?>"
@@ -866,7 +871,7 @@
                             <td class="px-5 py-3.5">
                                 <div class="relative w-28">
                                     <input type="number"
-                                           name="variants[<?= $variant['id'] ?>][max_quantity]"
+                                           name="variant_size_rules[<?= $variant['id'] ?>][max_quantity]"
                                            min="1"
                                            required
                                            value="<?= isset($variant['max_quantity']) ? (int)$variant['max_quantity'] : 4 ?>"
@@ -875,7 +880,7 @@
                                            data-variant-id="<?= $variant['id'] ?>">
                                     <span class="absolute right-2 top-2 text-[10px] text-rose-500 font-semibold pointer-events-none">Pcs</span>
                                 </div>
-                                <input type="hidden" name="variants[<?= $variant['id'] ?>][fabric_consumption]" value="<?= isset($variant['fabric_consumption']) ? number_format((float)$variant['fabric_consumption'], 2, '.', '') : '1.00' ?>">
+                                <input type="hidden" name="variant_size_rules[<?= $variant['id'] ?>][fabric_consumption]" value="<?= isset($variant['fabric_consumption']) ? number_format((float)$variant['fabric_consumption'], 2, '.', '') : '1.00' ?>">
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -1498,8 +1503,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let tableHtml = '';
         let cardsHtml = '<div class="space-y-6">';
+        let sizeRulesHtml = '';
         
         const existingVariants = <?= json_encode($variants ?? []) ?>;
+        const matchedVariantIds = new Set();
         
         combinations.forEach((combo, index) => {
             const titleText = combo.map(c => c.text).join(' - ');
@@ -1509,18 +1516,53 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Try to match with an existing variant by exact attributes first
             let v = existingVariants.find(ev => {
-                if (!ev.attributes) return false;
+                if (matchedVariantIds.has(ev.id)) return false;
+                if (!ev.attributes || typeof ev.attributes !== 'object' || Array.isArray(ev.attributes)) return false;
+                if (Object.keys(ev.attributes).length === 0) return false;
                 return combo.every(c => String(ev.attributes[c.attrId]) === String(c.id));
             });
             
-            // Fallback to SKU matching
+            // Fallback to exact name matching (case-insensitive, trimmed)
             if (!v) {
-                v = existingVariants.find(ev => ev.sku === sku);
+                v = existingVariants.find(ev => {
+                    if (matchedVariantIds.has(ev.id)) return false;
+                    if (!ev.name) return false;
+                    return ev.name.trim().toLowerCase() === titleText.trim().toLowerCase();
+                });
             }
 
-            // NOTE: No index-based fallback for v — that would assign wrong variant data/images.
-            // For unmatched (new) variants, use null so fields default to empty/zero,
-            // NOT existingVariants[0] which would bleed L/Orange data into L/Purple, etc.
+            // Fallback to exact SKU matching
+            if (!v) {
+                v = existingVariants.find(ev => {
+                    if (matchedVariantIds.has(ev.id)) return false;
+                    return ev.sku && ev.sku.trim().toLowerCase() === sku.trim().toLowerCase();
+                });
+            }
+
+            // Fallback to SKU containing suffix or name
+            if (!v) {
+                const cleanSuffix = skuSuffix.toLowerCase();
+                const cleanTitle = titleText.trim().toLowerCase();
+                v = existingVariants.find(ev => {
+                    if (matchedVariantIds.has(ev.id)) return false;
+                    if (!ev.sku) return false;
+                    const cleanSku = ev.sku.toLowerCase();
+                    return cleanSku.includes('-' + cleanSuffix + '-') || cleanSku.endsWith('-' + cleanSuffix) || cleanSku.includes('-' + cleanTitle + '-') || cleanSku.endsWith('-' + cleanTitle);
+                });
+            }
+
+            // Fallback by index if total count matches and position is not matched yet
+            if (!v && existingVariants.length === combinations.length) {
+                const candidate = existingVariants[index];
+                if (candidate && !matchedVariantIds.has(candidate.id)) {
+                    v = candidate;
+                }
+            }
+
+            if (v && v.id) {
+                matchedVariantIds.add(v.id);
+            }
+
             const templateV = v || null;
 
             const productBasePrice = document.querySelector('input[name="wholesale_price"]')?.value || 0;
@@ -1546,6 +1588,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const inputPrefix = v && v.id ? `variants[${v.id}]` : `new_variants[${index}]`;
             const variantId = v && v.id ? v.id : 'new_' + index;
+            const ruleInputKey = v && v.id ? v.id : 'new_' + index;
+            const vBaseQty = (v && v.base_quantity !== null && v.base_quantity !== undefined && v.base_quantity !== '') ? v.base_quantity : 2;
+            const vMaxQty = (v && v.max_quantity !== null && v.max_quantity !== undefined && v.max_quantity !== '') ? v.max_quantity : 4;
+            const vFabricConsumption = (v && v.fabric_consumption !== null && v.fabric_consumption !== undefined && v.fabric_consumption !== '') ? v.fabric_consumption : '1.00';
             
             let imgHtml = '';
             // Only show images when v is a confirmed exact match (attributes or SKU).
@@ -1569,7 +1615,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 imgHtml += `</div>`;
             }
             
-            
             // Table Row
             tableHtml += `
             <tr class="hover:bg-gray-50/50 transition-colors">
@@ -1590,7 +1635,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="text" step="0.01" min="0" data-sync="${inputPrefix}[discount_price]" value="${escapeHtml(discountPrice)}" placeholder="e.g. 899.00" class="w-36 text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-600 focus:ring-brown focus:border-brown bg-white shadow-sm sync-input">
                 </td>
                 <td class="px-6 py-4 text-right">
-                    <button type="button" onclick="this.closest('tr').remove(); document.getElementById('variant-card-${variantId}').remove();" class="text-red-500 hover:text-red-700">
+                    <button type="button" onclick="removeVariantRow('${variantId}', this)" class="text-red-500 hover:text-red-700">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                 </td>
@@ -1609,7 +1654,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="flex items-center space-x-4">
                         <span class="px-3 py-1 text-xs font-bold ${isNew ? 'text-blue-700 bg-blue-100' : 'text-green-700 bg-green-100'} rounded-full">${isNew ? 'Will be Created' : 'Active'}</span>
-                        <button type="button" onclick="this.closest('.bg-white').remove();" class="text-gray-400 hover:text-red-500 transition-colors" title="Remove this variant">
+                        <button type="button" onclick="removeVariantRow('${variantId}', this)" class="text-gray-400 hover:text-red-500 transition-colors" title="Remove this variant">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
@@ -1621,7 +1666,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${combo.map(c => `<input type="hidden" name="${inputPrefix}[attributes][${c.attrId}]" value="${c.id}">`).join('')}
                     <!-- Form Fields -->
                     <div class="flex-1 grid grid-cols-2 gap-x-4 gap-y-4 variant-card-container" style="min-width:0">
-                        <div>                        <label class="block text-xs font-bold text-gray-500 mb-1">Base Price (Incl. GST) <span class="text-red-500">*</span></label><input type="number" step="any" min="0.01" name="${inputPrefix}[base_price]" value="${escapeHtml(basePrice)}" required oninput="calculateGst(this)" class="variant-base-price w-full border border-gray-200 rounded-lg focus:ring-brown focus:border-brown px-3 py-2 text-sm text-gray-700 shadow-sm"></div>
+                        <div>                        <label class="block text-xs font-bold text-gray-500 mb-1">Base Price (Incl. GST) <span class="text-red-500">*</span></label><input type="number" step="any" min="0.01" name="${inputPrefix}[base_price]" value="${escapeHtml(basePrice)}" required oninput="calculateGst(this)" class="variant-base-price w-full border border-gray-200 rounded-lg focus:ring-brown focus:border-brown px-3 py-2 text-sm text-gray-700 shadow-sm" data-variant-id="${variantId}"></div>
                         <div><label class="block text-xs font-bold text-gray-500 mb-1">Discount Price (Incl. GST)</label><input type="number" step="0.01" name="${inputPrefix}[discount_price]" value="${escapeHtml(discountPrice)}" oninput="calculateGst(this)" class="variant-discount-price w-full border border-gray-200 rounded-lg focus:ring-brown focus:border-brown px-3 py-2 text-sm text-gray-700 shadow-sm" placeholder="e.g. 99.99"></div>
                         <div><label class="block text-xs font-bold text-gray-500 mb-1">SGST (%)</label><input type="number" step="0.01" name="${inputPrefix}[sgst]" value="${escapeHtml(vSgst)}" readonly class="variant-sgst w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 cursor-not-allowed text-gray-600 shadow-sm"></div>
                         <div><label class="block text-xs font-bold text-gray-500 mb-1">CGST (%)</label><input type="number" step="0.01" name="${inputPrefix}[cgst]" value="${escapeHtml(vCgst)}" readonly class="variant-cgst w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 cursor-not-allowed text-gray-600 shadow-sm"></div>
@@ -1639,21 +1684,21 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-[11px] font-bold text-amber-900 mb-1">Base Qty (Pcs) <span class="text-red-500">*</span></label>
-                                    <input type="number" min="1" name="${inputPrefix}[base_quantity]" value="${escapeHtml(v && v.base_quantity ? v.base_quantity : 2)}" required placeholder="e.g. 2" class="w-full border border-amber-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 px-3 py-1.5 text-sm bg-white font-bold text-gray-800">
+                                    <input type="number" min="1" name="${inputPrefix}[base_quantity]" value="${escapeHtml(vBaseQty)}" required placeholder="e.g. 2" class="variant-base-qty-input w-full border border-amber-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 px-3 py-1.5 text-sm bg-white font-bold text-gray-800" data-variant-id="${variantId}">
                                     <span class="text-[10px] text-gray-500">Base pieces per set</span>
                                 </div>
                                 <div>
                                     <label class="block text-[11px] font-bold text-amber-900 mb-1">Max Allowed (Pcs) <span class="text-red-500">*</span></label>
-                                    <input type="number" min="1" name="${inputPrefix}[max_quantity]" value="${escapeHtml(v && v.max_quantity ? v.max_quantity : 4)}" required placeholder="e.g. 4" class="w-full border border-amber-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 px-3 py-1.5 text-sm bg-white font-bold text-gray-800">
+                                    <input type="number" min="1" name="${inputPrefix}[max_quantity]" value="${escapeHtml(vMaxQty)}" required placeholder="e.g. 4" class="variant-max-qty-input w-full border border-amber-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 px-3 py-1.5 text-sm bg-white font-bold text-gray-800" data-variant-id="${variantId}">
                                     <span class="text-[10px] text-gray-500">Max limit per multiplier</span>
                                 </div>
                             </div>
                         </div>
-                        <input type="hidden" name="${inputPrefix}[fabric_consumption]" value="${escapeHtml(v && v.fabric_consumption ? v.fabric_consumption : 1.00)}">
+                        <input type="hidden" name="${inputPrefix}[fabric_consumption]" value="${escapeHtml(vFabricConsumption)}">
                         ` : `
-                        <input type="hidden" name="${inputPrefix}[base_quantity]" value="${escapeHtml(v && v.base_quantity ? v.base_quantity : 2)}">
-                        <input type="hidden" name="${inputPrefix}[max_quantity]" value="${escapeHtml(v && v.max_quantity ? v.max_quantity : 4)}">
-                        <input type="hidden" name="${inputPrefix}[fabric_consumption]" value="${escapeHtml(v && v.fabric_consumption ? v.fabric_consumption : 1.00)}">
+                        <input type="hidden" name="${inputPrefix}[base_quantity]" value="${escapeHtml(vBaseQty)}">
+                        <input type="hidden" name="${inputPrefix}[max_quantity]" value="${escapeHtml(vMaxQty)}">
+                        <input type="hidden" name="${inputPrefix}[fabric_consumption]" value="${escapeHtml(vFabricConsumption)}">
                         `}
 
                         ${!<?= !empty($isCustomize) ? 'true' : 'false' ?> ? `
@@ -1677,12 +1722,61 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
             </div>`;
+
+            // Size Rules Row for Section 2
+            sizeRulesHtml += `
+            <tr class="hover:bg-indigo-50/20 transition-colors ${index === 0 ? 'bg-amber-50/20' : ''} variant-size-rule-row" id="variant-size-rule-row-${variantId}">
+                <td class="px-5 py-3.5">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-gray-900">${escapeHtml(titleText)}</span>
+                        ${index === 0 ? '<span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Primary</span>' : ''}
+                    </div>
+                </td>
+                <td class="px-5 py-3.5">
+                    <span class="font-mono text-xs text-gray-500">${escapeHtml(actualSku)}</span>
+                </td>
+                <td class="px-5 py-3.5">
+                    <span class="font-bold text-gray-800 size-rule-price">₹${parseFloat(basePrice || 0).toFixed(2)}</span>
+                </td>
+                <td class="px-5 py-3.5">
+                    <div class="relative w-28">
+                        <input type="number"
+                               name="variant_size_rules[${ruleInputKey}][base_quantity]"
+                               min="1"
+                               required
+                               value="${escapeHtml(vBaseQty)}"
+                               placeholder="e.g. 2"
+                               class="variant-base-qty-input w-full px-3 py-1.5 text-sm bg-white border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-500 font-bold text-gray-800"
+                               data-variant-id="${variantId}">
+                        <span class="absolute right-2 top-2 text-[10px] text-amber-500 font-semibold pointer-events-none">Pcs</span>
+                    </div>
+                </td>
+                <td class="px-5 py-3.5">
+                    <div class="relative w-28">
+                        <input type="number"
+                               name="variant_size_rules[${ruleInputKey}][max_quantity]"
+                               min="1"
+                               required
+                               value="${escapeHtml(vMaxQty)}"
+                               placeholder="e.g. 4"
+                               class="variant-max-qty-input w-full px-3 py-1.5 text-sm bg-white border border-rose-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-400/20 focus:border-rose-500 font-bold text-gray-800"
+                               data-variant-id="${variantId}">
+                        <span class="absolute right-2 top-2 text-[10px] text-rose-500 font-semibold pointer-events-none">Pcs</span>
+                    </div>
+                    <input type="hidden" name="variant_size_rules[${ruleInputKey}][fabric_consumption]" value="${escapeHtml(vFabricConsumption)}">
+                </td>
+            </tr>`;
         });
         
         cardsHtml += '</div>';
         
         tableBody.innerHTML = tableHtml;
         cardsView.innerHTML = cardsHtml;
+
+        const sizeRulesTbody = document.getElementById('variant-size-rules-tbody');
+        if (sizeRulesTbody && sizeRulesHtml) {
+            sizeRulesTbody.innerHTML = sizeRulesHtml;
+        }
         
         bindSyncEvents();
         
@@ -1691,6 +1785,17 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleNoAttributes();
         }
     }
+
+    window.removeVariantRow = function(variantId, btn) {
+        if (confirm('Remove this variant? It will be deleted when you update the product.')) {
+            const tr = btn.closest('tr');
+            if (tr) tr.remove();
+            const card = document.getElementById('variant-card-' + variantId);
+            if (card) card.remove();
+            const sizeRow = document.getElementById('variant-size-rule-row-' + variantId);
+            if (sizeRow) sizeRow.remove();
+        }
+    };
 
     function bindSyncEvents() {
         // Sync inputs between table and cards
@@ -1719,6 +1824,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 const name = this.getAttribute('name');
                 const target = document.querySelector(`.sync-input[data-sync="${name}"]`);
                 if (target) target.value = this.value;
+            });
+        });
+
+        // Two-way sync for variant size rules (base qty & max qty) between cards and size rules table
+        document.querySelectorAll('.variant-base-qty-input').forEach(input => {
+            input.addEventListener('input', function() {
+                const vid = this.getAttribute('data-variant-id');
+                if (!vid) return;
+                document.querySelectorAll(`.variant-base-qty-input[data-variant-id="${vid}"]`).forEach(other => {
+                    if (other !== this) other.value = this.value;
+                });
+            });
+        });
+        document.querySelectorAll('.variant-max-qty-input').forEach(input => {
+            input.addEventListener('input', function() {
+                const vid = this.getAttribute('data-variant-id');
+                if (!vid) return;
+                document.querySelectorAll(`.variant-max-qty-input[data-variant-id="${vid}"]`).forEach(other => {
+                    if (other !== this) other.value = this.value;
+                });
             });
         });
     }
@@ -1781,6 +1906,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (totalAmountEl) {
             totalAmountEl.value = totalAmount > 0 ? totalAmount.toFixed(2) : '';
+        }
+
+        // Also update size rules table price preview if present
+        const vid = inputEl.getAttribute('data-variant-id') || (inputEl.closest('[id^="variant-card-"]') ? inputEl.closest('[id^="variant-card-"]').id.replace('variant-card-', '') : '');
+        if (vid) {
+            const rulePriceEl = document.querySelector(`#variant-size-rule-row-${vid} .size-rule-price`);
+            if (rulePriceEl) {
+                rulePriceEl.textContent = '₹' + basePrice.toFixed(2);
+            }
         }
     };
 
@@ -1882,6 +2016,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (target.classList.contains('variant-base-price')) {
                         calculateGst(target);
                     }
+                }
+            });
+
+            // Push size rules sync values between table and cards before submission
+            document.querySelectorAll('#variant-size-rules-tbody .variant-base-qty-input').forEach(input => {
+                const vid = input.getAttribute('data-variant-id');
+                if (vid) {
+                    const cardInput = document.querySelector(`#variant-cards-view .variant-base-qty-input[data-variant-id="${vid}"]`);
+                    if (cardInput && input.value) cardInput.value = input.value;
+                }
+            });
+            document.querySelectorAll('#variant-size-rules-tbody .variant-max-qty-input').forEach(input => {
+                const vid = input.getAttribute('data-variant-id');
+                if (vid) {
+                    const cardInput = document.querySelector(`#variant-cards-view .variant-max-qty-input[data-variant-id="${vid}"]`);
+                    if (cardInput && input.value) cardInput.value = input.value;
                 }
             });
 

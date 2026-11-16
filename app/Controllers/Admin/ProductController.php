@@ -675,9 +675,88 @@ class ProductController extends Controller
             }
         }
 
-        $postedVariants = $_POST['variants'] ?? [];
-        $newVariants = $_POST['new_variants'] ?? [];
-        $allVariantsList = array_merge(is_array($postedVariants) ? $postedVariants : [], is_array($newVariants) ? $newVariants : []);
+        $postedVariants = is_array($_POST['variants'] ?? null) ? $_POST['variants'] : [];
+        $newVariants = is_array($_POST['new_variants'] ?? null) ? $_POST['new_variants'] : [];
+        $variantSizeRules = is_array($_POST['variant_size_rules'] ?? null) ? $_POST['variant_size_rules'] : [];
+
+        // 1. Merge variant_size_rules into posted variants or new variants if present
+        if (!empty($variantSizeRules)) {
+            foreach ($variantSizeRules as $vKey => $rules) {
+                if (isset($postedVariants[$vKey])) {
+                    if (isset($rules['base_quantity']) && $rules['base_quantity'] !== '') $postedVariants[$vKey]['base_quantity'] = (int)$rules['base_quantity'];
+                    if (isset($rules['max_quantity']) && $rules['max_quantity'] !== '') $postedVariants[$vKey]['max_quantity'] = (int)$rules['max_quantity'];
+                    if (isset($rules['fabric_consumption']) && $rules['fabric_consumption'] !== '') $postedVariants[$vKey]['fabric_consumption'] = (float)$rules['fabric_consumption'];
+                } elseif (isset($newVariants[$vKey])) {
+                    if (isset($rules['base_quantity']) && $rules['base_quantity'] !== '') $newVariants[$vKey]['base_quantity'] = (int)$rules['base_quantity'];
+                    if (isset($rules['max_quantity']) && $rules['max_quantity'] !== '') $newVariants[$vKey]['max_quantity'] = (int)$rules['max_quantity'];
+                    if (isset($rules['fabric_consumption']) && $rules['fabric_consumption'] !== '') $newVariants[$vKey]['fabric_consumption'] = (float)$rules['fabric_consumption'];
+                }
+            }
+        }
+
+        // 2. Separate valid variants from headless entries in $postedVariants
+        $validPostedVariants = [];
+        $headlessRules = [];
+        foreach ($postedVariants as $vId => $vData) {
+            $hasPrice = isset($vData['base_price']) && $vData['base_price'] !== '';
+            $hasSku = !empty($vData['sku']);
+            if ($hasPrice || $hasSku) {
+                $validPostedVariants[$vId] = $vData;
+            } else {
+                $headlessRules[$vId] = $vData;
+            }
+        }
+
+        // Merge any headless rules into valid variants if matching ID
+        foreach ($headlessRules as $hId => $hData) {
+            if (isset($validPostedVariants[$hId])) {
+                if (isset($hData['base_quantity']) && $hData['base_quantity'] !== '') $validPostedVariants[$hId]['base_quantity'] = (int)$hData['base_quantity'];
+                if (isset($hData['max_quantity']) && $hData['max_quantity'] !== '') $validPostedVariants[$hId]['max_quantity'] = (int)$hData['max_quantity'];
+                if (isset($hData['fabric_consumption']) && $hData['fabric_consumption'] !== '') $validPostedVariants[$hId]['fabric_consumption'] = (float)$hData['fabric_consumption'];
+            }
+        }
+
+        // 3. Fallback: If new_variants are posted, check if any match existing DB variants for this product
+        if ($id > 0 && !empty($newVariants)) {
+            $variantModel = new ProductVariant();
+            $existingDbVariants = $variantModel->getByProductId($id);
+            if (!empty($existingDbVariants)) {
+                foreach ($newVariants as $k => $nV) {
+                    $nVName = strtolower(trim($nV['name'] ?? ''));
+                    $nVSku = strtolower(trim($nV['sku'] ?? ''));
+                    foreach ($existingDbVariants as $ev) {
+                        $evId = (int)$ev['id'];
+                        if (isset($validPostedVariants[$evId])) continue; // already claimed
+                        $evName = strtolower(trim($ev['name'] ?? ''));
+                        $evSku = strtolower(trim($ev['sku'] ?? ''));
+                        
+                        $isMatch = false;
+                        if (!empty($evSku) && !empty($nVSku) && $evSku === $nVSku) {
+                            $isMatch = true;
+                        } elseif (!empty($evName) && !empty($nVName) && $evName === $nVName) {
+                            $isMatch = true;
+                        } elseif (!empty($evSku) && !empty($nVName) && (strpos($evSku, '-' . $nVName . '-') !== false || strpos($evSku, $nVName) !== false)) {
+                            $isMatch = true;
+                        }
+                        
+                        if ($isMatch) {
+                            if (isset($headlessRules[$evId])) {
+                                if (isset($headlessRules[$evId]['base_quantity'])) $nV['base_quantity'] = $headlessRules[$evId]['base_quantity'];
+                                if (isset($headlessRules[$evId]['max_quantity'])) $nV['max_quantity'] = $headlessRules[$evId]['max_quantity'];
+                                if (isset($headlessRules[$evId]['fabric_consumption'])) $nV['fabric_consumption'] = $headlessRules[$evId]['fabric_consumption'];
+                            }
+                            $validPostedVariants[$evId] = $nV;
+                            unset($newVariants[$k]);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        $_POST['variants'] = $validPostedVariants;
+        $_POST['new_variants'] = $newVariants;
+        $allVariantsList = array_merge(array_values($_POST['variants']), array_values($_POST['new_variants']));
 
         if (empty($allVariantsList)) {
             Session::setFlash('error', 'Please configure at least one variant with price' . (!$isCustomize ? ', weight,' : '') . ' and stock.');
