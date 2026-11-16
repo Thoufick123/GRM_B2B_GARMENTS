@@ -37,6 +37,9 @@ class FabricCustomization
                        ) as fabric_base_price,
                        (SELECT MIN(CASE WHEN pv.discount_price > 0 THEN pv.discount_price ELSE NULL END) FROM product_variants pv WHERE pv.product_id = p.id) as fabric_discount_price,
                        p.stock_quantity as fabric_stock,
+                       p.description as fabric_description,
+                       p.custom_fields as fabric_custom_fields,
+                       p.custom_fields as custom_fields,
                        c.name as category_name,
                        sc.name as subcategory_name,
                        (SELECT COUNT(*) FROM fabric_customization_sizes fcs WHERE fcs.customization_id = fc.id AND fcs.enabled = 1) as enabled_sizes_count,
@@ -109,6 +112,8 @@ class FabricCustomization
                    (SELECT MIN(CASE WHEN pv.discount_price > 0 THEN pv.discount_price ELSE NULL END) FROM product_variants pv WHERE pv.product_id = p.id) as fabric_discount_price,
                    p.stock_quantity as fabric_stock,
                    p.description as fabric_description,
+                   p.custom_fields as fabric_custom_fields,
+                   p.custom_fields as custom_fields,
                    c.name as category_name,
                    sc.name as subcategory_name
             FROM fabric_customizations fc
@@ -133,7 +138,7 @@ class FabricCustomization
      */
     public function getByFabricId($fabricId)
     {
-        $cacheKey = "fabric_customization_fid_v3_" . (int)$fabricId;
+        $cacheKey = "fabric_customization_fid_v4_" . (int)$fabricId;
         if (class_exists('\Core\Cache')) {
             $cached = \Core\Cache::get($cacheKey);
             if ($cached !== null) {
@@ -163,6 +168,8 @@ class FabricCustomization
                    p.retail_price as fabric_retail_price,
                    p.stock_quantity as fabric_stock,
                    p.description as fabric_description,
+                   p.custom_fields as fabric_custom_fields,
+                   p.custom_fields as custom_fields,
                    p.weight as fabric_weight,
                    p.weight_unit as fabric_weight_unit,
                    c.name as category_name,
@@ -236,6 +243,8 @@ class FabricCustomization
                        p.retail_price as fabric_retail_price,
                        p.stock_quantity as fabric_stock,
                        p.description as fabric_description,
+                       p.custom_fields as fabric_custom_fields,
+                       p.custom_fields as custom_fields,
                        c.name as category_name,
                        c.slug as category_slug,
                        sc.name as subcategory_name,
@@ -711,6 +720,8 @@ class FabricCustomization
             }
             if (class_exists('\Core\Cache')) {
                 \Core\Cache::delete('fabric_customization_fid_' . (int)$id);
+                \Core\Cache::delete('fabric_customization_fid_v3_' . (int)$id);
+                \Core\Cache::delete('fabric_customization_fid_v4_' . (int)$id);
                 \Core\Cache::delete('customizable_fabrics_default_v2');
             }
             return true;

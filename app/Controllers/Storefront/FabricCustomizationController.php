@@ -101,6 +101,25 @@ class FabricCustomizationController extends Controller
         // Fetch user addresses if logged in
         $userAddresses = [];
         $db = Database::getInstance();
+
+        // Decode custom description fields (added via + Add Field in admin dashboard)
+        $customFieldsList = [];
+        $rawCf = $customization['fabric_custom_fields'] ?? $customization['custom_fields'] ?? null;
+        if (empty($rawCf) && !empty($customization['fabric_id'])) {
+            try {
+                $pStmt = $db->prepare("SELECT custom_fields FROM products WHERE id = ?");
+                $pStmt->execute([(int)$customization['fabric_id']]);
+                $pRow = $pStmt->fetch(PDO::FETCH_ASSOC);
+                $rawCf = $pRow['custom_fields'] ?? null;
+            } catch (\Throwable $e) {}
+        }
+
+        if (is_string($rawCf)) {
+            $customFieldsList = json_decode($rawCf, true) ?: [];
+        } elseif (is_array($rawCf)) {
+            $customFieldsList = $rawCf;
+        }
+        $customization['custom_fields_list'] = $customFieldsList;
         $stmt = $db->prepare("SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, id DESC");
         $stmt->execute([$userId]);
         $userAddresses = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -218,7 +237,8 @@ class FabricCustomizationController extends Controller
             'savedSizes'           => $savedSizes,
             'savedSets'            => $savedSets,
             'savedQty'             => $savedQty,
-            'savedPkg'             => $savedPkg
+            'savedPkg'             => $savedPkg,
+            'customFieldsList'     => $customFieldsList
         ]);
     }
 

@@ -610,6 +610,8 @@ class ProductController extends Controller
             \Core\Cache::delete('home_active_products');
             \Core\Cache::delete('customizable_fabrics_default_v2');
             \Core\Cache::delete('fabric_customization_fid_' . (int)$productId);
+            \Core\Cache::delete('fabric_customization_fid_v3_' . (int)$productId);
+            \Core\Cache::delete('fabric_customization_fid_v4_' . (int)$productId);
             Session::setFlash('success', $isVendor ? 'Product submitted successfully! It is now pending administrator review.' : ($isCustomize ? 'Fabric created successfully.' : 'Product created successfully.'));
         } catch (\Exception $e) {
             if (isset($db)) {
@@ -1049,6 +1051,8 @@ class ProductController extends Controller
             \Core\Cache::deleteByPrefix('rel_prods_diff_');
             \Core\Cache::delete('customizable_fabrics_default_v2');
             \Core\Cache::delete('fabric_customization_fid_' . (int)$id);
+            \Core\Cache::delete('fabric_customization_fid_v3_' . (int)$id);
+            \Core\Cache::delete('fabric_customization_fid_v4_' . (int)$id);
             Session::setFlash('success', $isCustomize ? 'Fabric updated successfully.' : 'Product updated successfully.');
         } catch (\Exception $e) {
             if (isset($db)) {
@@ -1111,6 +1115,8 @@ class ProductController extends Controller
                 $productModel->delete($id);
                 \Core\Cache::delete('customizable_fabrics_default_v2');
                 \Core\Cache::delete('fabric_customization_fid_' . (int)$id);
+                \Core\Cache::delete('fabric_customization_fid_v3_' . (int)$id);
+                \Core\Cache::delete('fabric_customization_fid_v4_' . (int)$id);
                 
                 if ($this->isJsonRequest()) {
                     $this->json(['success' => true, 'message' => ($isCustomize ? 'Fabric' : 'Product') . ' deleted successfully.']);

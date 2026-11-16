@@ -114,7 +114,7 @@
 
                     </div>
 
-                    <!-- Fabric Description & Details Card (Admin Added Description) -->
+                    <!-- Fabric Description & Details Card (Admin Added Description & Custom Fields) -->
                     <div class="bg-gradient-to-br from-pink-50/30 via-white to-gray-50/50 rounded-3xl p-5 sm:p-6 border border-gray-200/90 shadow-2xs space-y-4 w-full min-w-0 max-w-full overflow-hidden">
                         <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                             <h3 class="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
@@ -125,11 +125,21 @@
                             </span>
                         </div>
 
-                        <!-- Admin Added Description -->
-                        <div class="text-xs sm:text-sm text-gray-700 leading-relaxed w-full min-w-0 max-w-full overflow-hidden">
+                        <!-- Admin Added Description & Dynamic Custom Fields -->
+                        <div class="text-xs sm:text-sm text-gray-700 leading-relaxed w-full min-w-0 max-w-full overflow-hidden space-y-3.5">
                             <?php 
                             $rawDesc = trim($customization['fabric_description'] ?? '');
-                            if (!empty($rawDesc)): 
+                            $rawCustomFields = $customFieldsList ?? $customization['custom_fields_list'] ?? $customization['fabric_custom_fields'] ?? $customization['custom_fields'] ?? [];
+                            if (is_string($rawCustomFields)) {
+                                $cfItems = json_decode($rawCustomFields, true) ?: [];
+                            } elseif (is_array($rawCustomFields)) {
+                                $cfItems = $rawCustomFields;
+                            } else {
+                                $cfItems = [];
+                            }
+                            ?>
+
+                            <?php if (!empty($rawDesc)): 
                                 $paragraphs = explode("\n", $rawDesc);
                             ?>
                                 <div class="text-gray-700 leading-relaxed bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm space-y-2.5 break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere; overflow: hidden; max-width: 100%;">
@@ -142,8 +152,41 @@
                                         endif;
                                     endforeach; ?>
                                 </div>
-                            <?php else: ?>
+                            <?php elseif (empty($cfItems)): ?>
                                 <p class="text-xs text-gray-400 italic bg-white p-4 rounded-2xl border border-gray-100">No description provided for this fabric.</p>
+                            <?php endif; ?>
+
+                            <!-- Additional Custom Description Fields (Added via Admin + Add Field) -->
+                            <?php if (!empty($cfItems)): ?>
+                                <?php foreach ($cfItems as $cf): 
+                                    $cfName = trim($cf['name'] ?? '');
+                                    $cfVal = trim($cf['value'] ?? '');
+                                    if ($cfName === '' && $cfVal === '') continue;
+                                    $cfParagraphs = explode("\n", $cfVal);
+                                ?>
+                                    <div class="text-gray-700 leading-relaxed bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-2xs text-xs sm:text-sm space-y-2.5 break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere; overflow: hidden; max-width: 100%;">
+                                        <?php if (!empty($cfName)): ?>
+                                            <div class="flex items-center gap-2 pb-2.5 border-b border-gray-100">
+                                                <span class="w-2 h-2 rounded-full bg-[#F25996]"></span>
+                                                <h4 class="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-wide m-0">
+                                                    <?= htmlspecialchars($cfName) ?>
+                                                </h4>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($cfVal)): ?>
+                                            <div class="space-y-2 pt-0.5">
+                                                <?php foreach ($cfParagraphs as $cp): 
+                                                    $cp = trim($cp);
+                                                    if ($cp !== ''):
+                                                ?>
+                                                    <p class="leading-relaxed break-words m-0" style="word-break: break-word; overflow-wrap: anywhere; margin-bottom: 0.5rem;"><?= htmlspecialchars($cp) ?></p>
+                                                <?php 
+                                                    endif;
+                                                endforeach; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
                             <?php endif; ?>
                         </div>
                     </div>

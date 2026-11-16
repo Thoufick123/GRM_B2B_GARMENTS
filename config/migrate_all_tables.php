@@ -555,6 +555,7 @@ try {
             `razorpay_order_id` VARCHAR(100) NULL,
             `razorpay_payment_id` VARCHAR(100) NULL,
             `payment_status` ENUM('pending', 'paid', 'failed') NOT NULL DEFAULT 'pending',
+            `is_stock_reduced` TINYINT(1) NOT NULL DEFAULT 0,
             `shipping_address` TEXT NOT NULL,
             `shipping_fee` DECIMAL(10, 2) DEFAULT 0.00,
             `weight_fee` DECIMAL(10, 2) DEFAULT 0.00,
