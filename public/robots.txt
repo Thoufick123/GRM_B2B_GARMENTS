@@ -48,4 +48,4 @@ Disallow: /logout
 Disallow: /clear-cache
 
 # Search Engine Sitemaps
-Sitemap: /sitemap.xml
+Sitemap: https://grmgarments.com/sitemap.xml

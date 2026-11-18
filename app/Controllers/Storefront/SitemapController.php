@@ -29,7 +29,9 @@ class SitemapController extends Controller
             }
         }
 
-        $baseUrl = rtrim(BASE_URL, '/');
+        $baseUrl = defined('BASE_URL') && !empty(BASE_URL) && strpos(BASE_URL, 'localhost') === false 
+            ? rtrim(BASE_URL, '/') 
+            : 'https://grmgarments.com';
         $now = date('c');
 
         $db = Database::getInstance();
@@ -265,7 +267,9 @@ class SitemapController extends Controller
     public function robots()
     {
         header('Content-Type: text/plain; charset=utf-8');
-        $baseUrl = rtrim(BASE_URL, '/');
+        $baseUrl = defined('BASE_URL') && !empty(BASE_URL) && strpos(BASE_URL, 'localhost') === false 
+            ? rtrim(BASE_URL, '/') 
+            : 'https://grmgarments.com';
 
         echo "# robots.txt for " . APP_NAME . "\n";
         echo "User-agent: *\n\n";
