@@ -105,6 +105,9 @@ if (!str_starts_with($ogPageImage, 'http://') && !str_starts_with($ogPageImage, 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
+    <!-- Google Search Console Verification -->
+    <meta name="google-site-verification" content="google74f165e30887dab5">
+
     <!-- Primary SEO Meta Tags -->
     <title><?= $seoTitle ?></title>
     <meta name="description" content="<?= $cleanMetaDesc ?>">

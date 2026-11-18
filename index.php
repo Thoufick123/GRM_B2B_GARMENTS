@@ -119,6 +119,7 @@ $router = new Core\Router();
 // SEO & Search Engine Indexing Routes
 $router->get('/sitemap.xml', 'App\Controllers\Storefront\SitemapController@index');
 $router->get('/robots.txt', 'App\Controllers\Storefront\SitemapController@robots');
+$router->get('/google74f165e30887dab5.html', 'App\Controllers\Storefront\SitemapController@googleVerification');
 
 // Home Route
 $router->get('/', 'App\Controllers\Storefront\HomeController@index');

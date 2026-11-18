@@ -324,4 +324,14 @@ class SitemapController extends Controller
         echo "Sitemap: " . $baseUrl . "/sitemap.xml\n";
         exit;
     }
+
+    /**
+     * Google Search Console HTML File Verification
+     */
+    public function googleVerification()
+    {
+        header('Content-Type: text/html; charset=utf-8');
+        echo "google-site-verification: google74f165e30887dab5.html";
+        exit;
+    }
 }
