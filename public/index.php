@@ -132,6 +132,10 @@ Core\Session::init();
 $router = new Core\Router();
 
 // Define routes (can be moved to a separate routes.php file later if it gets too large)
+// SEO & Search Engine Indexing Routes
+$router->get('/sitemap.xml', 'App\Controllers\Storefront\SitemapController@index');
+$router->get('/robots.txt', 'App\Controllers\Storefront\SitemapController@robots');
+
 // Home Route
 $router->get('/', 'App\Controllers\Storefront\HomeController@index');
 $router->get('/clear-cache', 'App\Controllers\Storefront\HomeController@clearCache');

@@ -50,11 +50,13 @@ class FabricCustomizationController extends Controller
         $garmentTypes = array_unique(array_filter(array_column($fabrics, 'garment_type')));
 
         $this->render('storefront/customize_listing', [
-            'title'        => 'Custom Wholesale Fabric & Stitching Workshop',
-            'fabrics'      => $fabrics,
-            'categories'   => $categories,
-            'garmentTypes' => $garmentTypes,
-            'filters'      => $filters
+            'title'           => 'Custom Wholesale Fabric & Stitching Workshop - Bulk Garment Manufacturing',
+            'metaDescription' => 'Design and customize bulk garments directly from wholesale fabrics. Custom stitching, color dye selection, measurement breakdown, and factory pricing.',
+            'metaKeywords'    => 'custom fabric stitching, wholesale apparel customization, bulk garment stitching workshop, customized t-shirt manufacturing, custom apparel India',
+            'fabrics'         => $fabrics,
+            'categories'      => $categories,
+            'garmentTypes'    => $garmentTypes,
+            'filters'         => $filters
         ]);
     }
 
@@ -140,7 +142,7 @@ class FabricCustomizationController extends Controller
         $relatedProducts = [];
         try {
             $catId = !empty($customization['category_id']) ? (int)$customization['category_id'] : 0;
-            $currentSubCatId = !empty($customization['sub_category_id']) ? (int)$customization['sub_category_id'] : (!empty($fabric['sub_category_id']) ? (int)$fabric['sub_category_id'] : 0);
+            $currentSubCatId = !empty($customization['sub_category_id']) ? (int)$customization['sub_category_id'] : 0;
             $currentFabricId = !empty($customization['fabric_id']) ? (int)$customization['fabric_id'] : 0;
 
             // Only fetch active customizable products (is_customizable = 1) from different subcategories / categories

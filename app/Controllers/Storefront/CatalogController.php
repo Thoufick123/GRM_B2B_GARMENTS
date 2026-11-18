@@ -128,8 +128,15 @@ class CatalogController extends Controller
             }
         }
 
+        // Rich SEO meta data for catalog
+        $catalogSeoTitle = $selectedCategoryName . ' - Wholesale Garments Catalog & Bulk Orders';
+        $catalogMetaDesc = 'Browse wholesale prices and bulk lots for ' . $selectedCategoryName . '. Direct factory rates, low MOQ, verified manufacturers, and quick dispatch across India.';
+        $catalogKeywords = 'wholesale ' . strtolower($selectedCategoryName) . ', bulk ' . strtolower($selectedCategoryName) . ', garments wholesale India, apparel bulk lots, factory supply';
+
         $this->render('storefront/catalog', [
-            'title' => $selectedCategoryName,
+            'title' => $catalogSeoTitle,
+            'metaDescription' => $catalogMetaDesc,
+            'metaKeywords' => $catalogKeywords,
             'products' => $products,
             'categories' => $categories,
             'subCategories' => $subCategories,
@@ -446,8 +453,58 @@ class CatalogController extends Controller
             $wishlistIds = $wishlistModel->getProductIds(Session::get('user_id'));
         }
 
+        // Product SEO Metadata & Open Graph
+        $productSeoTitle = $product['name'] . ' - Wholesale Garments B2B';
+        $productMetaDesc = !empty($product['description']) 
+            ? mb_strimwidth(strip_tags($product['description']), 0, 160, '...') 
+            : ('Buy ' . $product['name'] . ' at factory wholesale rates. Premium quality garments, low MOQ, verified suppliers on ' . APP_NAME . '.');
+        $productKeywords = $product['name'] . ', wholesale ' . $product['name'] . ', ' . ($category['name'] ?? 'garments') . ' bulk, apparel manufacturer India';
+        $productCanonical = rtrim(BASE_URL, '/') . '/product?id=' . (int)$product['id'];
+        $productImage = !empty($product['primary_image']) ? (function_exists('get_image_url') ? get_image_url($product['primary_image']) : $product['primary_image']) : null;
+
+        // Structured Data: Schema.org/Product JSON-LD
+        $productSchema = [
+            '@type' => 'Product',
+            '@id' => $productCanonical . '#product',
+            'name' => $product['name'],
+            'image' => $productImage ? [$productImage] : [],
+            'description' => strip_tags($product['description'] ?? $product['name']),
+            'sku' => $product['base_sku'] ?? ('GRM-' . $product['id']),
+            'brand' => [
+                '@type' => 'Brand',
+                'name' => APP_NAME
+            ],
+            'offers' => [
+                '@type' => 'Offer',
+                'url' => $productCanonical,
+                'priceCurrency' => 'INR',
+                'price' => !empty($product['wholesale_price']) ? (float)$product['wholesale_price'] : 0,
+                'priceValidUntil' => date('Y-12-31', strtotime('+1 year')),
+                'availability' => ($product['stock_quantity'] > 0 || !empty($variants)) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                'itemCondition' => 'https://schema.org/NewCondition'
+            ]
+        ];
+
+        if (!empty($product['num_reviews']) && $product['num_reviews'] > 0) {
+            $productSchema['aggregateRating'] = [
+                '@type' => 'AggregateRating',
+                'ratingValue' => (float)$product['average_rating'],
+                'reviewCount' => (int)$product['num_reviews'],
+                'bestRating' => '5',
+                'worstRating' => '1'
+            ];
+        }
+
         $this->render('storefront/product_details', [
-            'title' => $product['name'],
+            'title' => $productSeoTitle,
+            'metaDescription' => $productMetaDesc,
+            'metaKeywords' => $productKeywords,
+            'canonicalUrl' => $productCanonical,
+            'ogType' => 'product',
+            'ogTitle' => $productSeoTitle,
+            'ogDescription' => $productMetaDesc,
+            'ogImage' => $productImage,
+            'jsonLdCustom' => $productSchema,
             'product' => $product,
             'category' => $category,
             'subCategory' => $subCategory,

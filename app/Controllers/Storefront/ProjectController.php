@@ -25,8 +25,10 @@ class ProjectController extends Controller
         }
 
         $this->render('storefront/projects/index', [
-            'title'    => 'Our Projects - GRM B2B Showcase & Portfolio',
-            'projects' => $projects
+            'title'           => 'Our Projects - Garment Manufacturing Showcase & Portfolio',
+            'metaDescription' => 'Explore GRM B2B garment manufacturing portfolio, export orders, and custom apparel production case studies across domestic and international markets.',
+            'metaKeywords'    => 'garment manufacturing portfolio, apparel export showcase, bulk apparel production cases, Tirupur garment factory projects',
+            'projects'        => $projects
         ]);
     }
 }

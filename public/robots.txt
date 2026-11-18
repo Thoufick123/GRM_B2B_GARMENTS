@@ -1,0 +1,51 @@
+# robots.txt for GRM B2B Wholesale Garments
+User-agent: *
+
+# Allow Storefront & Public Content
+Allow: /
+Allow: /catalog
+Allow: /category
+Allow: /product
+Allow: /customize
+Allow: /fabrics/customize/
+Allow: /project
+Allow: /projects
+Allow: /size-chart
+Allow: /about
+Allow: /about-us
+Allow: /terms
+Allow: /terms-and-conditions
+Allow: /privacy-policy
+Allow: /css/
+Allow: /js/
+Allow: /uploads/
+
+# Disallow Admin & Vendor Management Portals
+Disallow: /admin/
+Disallow: /vendor/
+Disallow: /vendor-dashboard
+
+# Disallow Buyer Private Account & Order History
+Disallow: /dashboard/
+
+# Disallow Cart, Checkout & Payment Transactions
+Disallow: /cart
+Disallow: /cart/
+Disallow: /checkout
+Disallow: /checkout/
+Disallow: /order-success
+Disallow: /wishlist
+
+# Disallow Internal APIs & Authentication Processing
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+Disallow: /vendor-register
+Disallow: /forgot-password
+Disallow: /verify-otp
+Disallow: /reset-password
+Disallow: /logout
+Disallow: /clear-cache
+
+# Search Engine Sitemaps
+Sitemap: /sitemap.xml

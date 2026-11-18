@@ -41,20 +41,141 @@ if ($hasDynamicNavbar) {
     $navData = json_decode($globalNavbar['content_data'], true) ?? [];
     $faviconUrl = $navData['global_settings']['favicon'] ?? '';
 }
+// ─── Dynamic SEO Optimization ───────────────────────────────────────────────
+$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$isPrivateSection = (
+    str_starts_with($requestPath, '/dashboard') ||
+    str_starts_with($requestPath, '/cart') ||
+    str_starts_with($requestPath, '/checkout') ||
+    str_starts_with($requestPath, '/order-success') ||
+    str_starts_with($requestPath, '/wishlist') ||
+    str_starts_with($requestPath, '/login') ||
+    str_starts_with($requestPath, '/register') ||
+    str_starts_with($requestPath, '/vendor-register') ||
+    str_starts_with($requestPath, '/forgot-password') ||
+    str_starts_with($requestPath, '/verify-otp') ||
+    str_starts_with($requestPath, '/reset-password') ||
+    str_starts_with($requestPath, '/order-modification')
+);
+
+// Canonical URL Resolution
+if (!empty($canonical)) {
+    $canonicalUrl = $canonical;
+} elseif (!empty($canonicalUrl)) {
+    // Already set by controller
+} elseif (!empty($_GET['id']) && $requestPath === '/product') {
+    $canonicalUrl = rtrim(BASE_URL, '/') . '/product?id=' . (int)$_GET['id'];
+} elseif (!empty($_GET['category_id']) && $requestPath === '/catalog') {
+    $canonicalUrl = rtrim(BASE_URL, '/') . '/catalog?category_id=' . (int)$_GET['category_id'];
+    if (!empty($_GET['sub_category_id'])) {
+        $canonicalUrl .= '&sub_category_id=' . (int)$_GET['sub_category_id'];
+    }
+} else {
+    $canonicalUrl = rtrim(BASE_URL, '/') . $requestPath;
+}
+
+// Meta Title
+$seoTitle = (!empty($title)) ? htmlspecialchars($title) . ' - ' . APP_NAME : APP_NAME . ' | Wholesale Garments & B2B Fashion Hub';
+
+// Meta Description (150-160 chars)
+$defaultDescription = 'GRM B2B - India\'s premier wholesale garments marketplace. Source high-quality bulk apparel, t-shirts, shirts, denim, ethnic wear, and custom fabric stitching directly from verified manufacturers at factory wholesale rates.';
+$rawMetaDesc = !empty($metaDescription) ? $metaDescription : (!empty($description) ? $description : $defaultDescription);
+$cleanMetaDesc = htmlspecialchars(mb_strimwidth(strip_tags($rawMetaDesc), 0, 160, '...'), ENT_QUOTES, 'UTF-8');
+
+// Meta Keywords
+$defaultKeywords = 'wholesale garments, B2B clothing marketplace, bulk apparel manufacturer India, wholesale t-shirts, bulk cotton shirts, custom fabric stitching, Tirupur garment suppliers, Surat wholesale textiles';
+$rawMetaKeywords = !empty($metaKeywords) ? $metaKeywords : (!empty($keywords) ? $keywords : $defaultKeywords);
+$cleanMetaKeywords = htmlspecialchars(strip_tags($rawMetaKeywords), ENT_QUOTES, 'UTF-8');
+
+// Robots Directive
+$seoRobots = !empty($metaRobots) ? $metaRobots : ($isPrivateSection ? 'noindex, nofollow, noarchive' : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
+
+// Open Graph & Social Sharing
+$ogPageType = !empty($ogType) ? $ogType : 'website';
+$ogPageTitle = !empty($ogTitle) ? htmlspecialchars($ogTitle, ENT_QUOTES, 'UTF-8') : $seoTitle;
+$ogPageDesc = !empty($ogDescription) ? htmlspecialchars(mb_strimwidth(strip_tags($ogDescription), 0, 200, '...'), ENT_QUOTES, 'UTF-8') : $cleanMetaDesc;
+$ogPageImage = !empty($ogImage) ? $ogImage : (!empty($faviconUrl) ? $faviconUrl : BASE_URL . '/favicon.svg');
+if (!str_starts_with($ogPageImage, 'http://') && !str_starts_with($ogPageImage, 'https://')) {
+    $ogPageImage = rtrim(BASE_URL, '/') . '/' . ltrim($ogPageImage, '/');
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="overflow-x-hidden">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= (!empty($title)) ? htmlspecialchars($title) . ' - ' . APP_NAME : APP_NAME ?></title>
+    
+    <!-- Primary SEO Meta Tags -->
+    <title><?= $seoTitle ?></title>
+    <meta name="description" content="<?= $cleanMetaDesc ?>">
+    <meta name="keywords" content="<?= $cleanMetaKeywords ?>">
+    <meta name="robots" content="<?= $seoRobots ?>">
+    <link rel="canonical" href="<?= htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8') ?>">
+    
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="<?= $ogPageType ?>">
+    <meta property="og:site_name" content="<?= APP_NAME ?>">
+    <meta property="og:title" content="<?= $ogPageTitle ?>">
+    <meta property="og:description" content="<?= $ogPageDesc ?>">
+    <meta property="og:url" content="<?= htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8') ?>">
+    <meta property="og:image" content="<?= htmlspecialchars($ogPageImage, ENT_QUOTES, 'UTF-8') ?>">
+    <meta property="og:locale" content="en_IN">
+    
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= $ogPageTitle ?>">
+    <meta name="twitter:description" content="<?= $ogPageDesc ?>">
+    <meta name="twitter:image" content="<?= htmlspecialchars($ogPageImage, ENT_QUOTES, 'UTF-8') ?>">
+
+    <!-- PWA & Mobile Web Capabilities -->
+    <meta name="theme-color" content="#F25996">
+    <meta name="application-name" content="<?= APP_NAME ?>">
+    <meta name="apple-mobile-web-app-title" content="<?= APP_NAME ?>">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
     <?php if (!empty($faviconUrl)): ?>
     <link rel="icon" href="<?= htmlspecialchars($faviconUrl) ?>">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($faviconUrl) ?>">
     <?php else: ?>
     <link rel="icon" type="image/svg+xml" href="<?= BASE_URL ?>/favicon.svg">
     <link rel="alternate icon" href="<?= BASE_URL ?>/favicon.ico">
+    <link rel="apple-touch-icon" href="<?= BASE_URL ?>/favicon.svg">
     <?php endif; ?>
+
+    <!-- JSON-LD Structured Data: Organization & WebSite -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Organization",
+                "@id": "<?= rtrim(BASE_URL, '/') ?>/#organization",
+                "name": "<?= addslashes(APP_NAME) ?>",
+                "url": "<?= rtrim(BASE_URL, '/') ?>",
+                "logo": "<?= !empty($faviconUrl) ? htmlspecialchars($faviconUrl, ENT_QUOTES, 'UTF-8') : rtrim(BASE_URL, '/') . '/favicon.svg' ?>",
+                "description": "<?= addslashes($defaultDescription) ?>"
+            },
+            {
+                "@type": "WebSite",
+                "@id": "<?= rtrim(BASE_URL, '/') ?>/#website",
+                "url": "<?= rtrim(BASE_URL, '/') ?>",
+                "name": "<?= addslashes(APP_NAME) ?>",
+                "publisher": {
+                    "@id": "<?= rtrim(BASE_URL, '/') ?>/#organization"
+                },
+                "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": "<?= rtrim(BASE_URL, '/') ?>/catalog?q={search_term_string}",
+                    "query-input": "required name=search_term_string"
+                }
+            }
+            <?php if (!empty($jsonLdCustom)): ?>
+            ,<?= is_array($jsonLdCustom) ? json_encode($jsonLdCustom, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : $jsonLdCustom ?>
+            <?php endif; ?>
+        ]
+    }
+    </script>
 
     <!-- Google Fonts (Optimized Weights & display=swap) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -113,7 +113,9 @@ class HomeController extends Controller
         }
 
         $this->render('storefront/home', [
-            'title' => 'Wholesale Fashion Hub',
+            'title' => 'Wholesale Fashion Hub & B2B Apparel Marketplace',
+            'metaDescription' => 'Explore India\'s top B2B wholesale garments marketplace. Source premium bulk apparel, t-shirts, shirts, denim, and custom stitched clothing directly from verified manufacturers at factory rates.',
+            'metaKeywords' => 'wholesale garments India, B2B clothing marketplace, bulk apparel manufacturer, wholesale t-shirts, cotton shirts bulk, Tirupur garment suppliers, Surat wholesale textiles',
             'products' => $products,
             'categories' => $categories,
             'wishlistIds' => $wishlistIds,
@@ -143,7 +145,8 @@ class HomeController extends Controller
         }
 
         $this->render('storefront/about', [
-            'title' => 'About Us - GRM B2B Wholesale',
+            'title' => 'About Us - Wholesale Garments Manufacturer & Hub',
+            'metaDescription' => 'Discover GRM B2B - powering wholesale fashion procurement across India. Direct manufacturer partnerships, strict quality checks, and seamless bulk ordering.',
             'aboutUs' => $aboutUsComponent
         ]);
     }
@@ -151,14 +154,16 @@ class HomeController extends Controller
     public function terms()
     {
         $this->render('storefront/terms', [
-            'title' => 'Terms & Conditions'
+            'title' => 'Terms & Conditions - B2B Wholesale Trading Policies',
+            'metaDescription' => 'Review the official wholesale terms and conditions for buyers and suppliers on the GRM B2B marketplace, including minimum order quantities, payments, and shipping policies.'
         ]);
     }
 
     public function privacyPolicy()
     {
         $this->render('storefront/privacy_policy', [
-            'title' => 'GRM B2B Wholesale Privacy Policy'
+            'title' => 'Privacy Policy - Buyer & Vendor Data Protection',
+            'metaDescription' => 'Learn how GRM B2B safeguards your business registration data, GST details, payment records, and user credentials with enterprise encryption.'
         ]);
     }
 
@@ -176,7 +181,8 @@ class HomeController extends Controller
         unset($chart);
 
         $this->render('storefront/size_chart', [
-            'title' => 'Garment Size & Measurement Charts',
+            'title' => 'Garment Size & Measurement Charts - B2B Wholesale Fit Guide',
+            'metaDescription' => 'Comprehensive garment sizing guidelines and measurement charts in inches for men, women, and kids bulk fashion apparel manufacturing.',
             'charts' => $charts,
             'categories' => $categories
         ]);

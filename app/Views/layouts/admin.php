@@ -74,6 +74,7 @@ if ($currentUserRole === 'super_admin') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive">
     <title><?= isset($title) ? htmlspecialchars($title) . ' - Admin | ' . APP_NAME : 'Admin | ' . APP_NAME ?></title>
     
     <?php if (!empty($faviconUrl)): ?>
