@@ -41,12 +41,26 @@ class Database
         ];
 
         // If remote Cloud Database (TiDB / AWS RDS) explicitly requires SSL and is not localhost
-        $isLocalHost = in_array(strtolower(trim((string)($config['host'] ?? ''))), ['localhost', '127.0.0.1', '::1']);
-        if (!empty($config['ssl']) && !$isLocalHost) {
+        $hostLower = strtolower(trim((string)($config['host'] ?? '')));
+        $isLocalHost = in_array($hostLower, ['localhost', '127.0.0.1', '::1']);
+        $isTiDB = str_contains($hostLower, 'tidbcloud.com') || str_contains($hostLower, 'pingcap');
+        $needsSSL = (!empty($config['ssl']) || $isTiDB) && !$isLocalHost;
+
+        if ($needsSSL) {
             $options[\PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-            $caPath = dirname(__DIR__) . '/cacert.pem';
-            if (file_exists($caPath)) {
-                $options[\PDO::MYSQL_ATTR_SSL_CA] = $caPath;
+            
+            // Locate cacert.pem across multiple possible standard paths
+            $candidatePaths = [
+                defined('BASE_PATH') ? BASE_PATH . '/cacert.pem' : '',
+                dirname(__DIR__) . '/cacert.pem',
+                __DIR__ . '/../cacert.pem',
+                'C:/xampp/htdocs/GRM b2b/GRM_B2B_GARMENTS/cacert.pem'
+            ];
+            foreach ($candidatePaths as $p) {
+                if (!empty($p) && file_exists($p)) {
+                    $options[\PDO::MYSQL_ATTR_SSL_CA] = realpath($p) ?: $p;
+                    break;
+                }
             }
         }
 
@@ -60,19 +74,8 @@ class Database
             } catch (\Throwable $e) {
                 $lastException = $e;
 
-                // Self-healing fallback: If SSL was configured but the MySQL server doesn't support it (e.g. Hostinger local MySQL)
-                if (isset($options[\PDO::MYSQL_ATTR_SSL_CA]) || isset($options[\PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT])) {
-                    try {
-                        unset($options[\PDO::MYSQL_ATTR_SSL_CA], $options[\PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT]);
-                        self::$instance = @new \PDO($dsn, $config['user'], $config['pass'], $options);
-                        return self::$instance;
-                    } catch (\Throwable $fallbackEx) {
-                        $lastException = $fallbackEx;
-                    }
-                }
-
                 if ($attempt < $maxRetries) {
-                    usleep(200000); // Wait 200ms before retry
+                    usleep(300000); // Wait 300ms before retry
                     continue;
                 }
                 throw new \Exception("Database connection failed: " . $lastException->getMessage());

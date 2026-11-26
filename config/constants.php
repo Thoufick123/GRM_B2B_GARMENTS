@@ -79,6 +79,15 @@ define('RAZORPAY_KEY_ID', $envVars['RAZORPAY_KEY_ID'] ?? 'rzp_test_YourKeyIdHere
 define('RAZORPAY_KEY_SECRET', $envVars['RAZORPAY_KEY_SECRET'] ?? 'YourKeySecretHere');
 define('RAZORPAY_CURRENCY', $envVars['RAZORPAY_CURRENCY'] ?? 'INR');
 
+// SMSQuicker Configuration (Active SMS & WhatsApp Gateway)
+define('SMSQUICKER_API_URL', $envVars['SMSQUICKER_API_URL'] ?? 'https://www.smsquicker.com/api/send/sms');
+define('SMSQUICKER_API_KEY', $envVars['SMSQUICKER_API_KEY'] ?? '');
+define('SMSQUICKER_MODE', $envVars['SMSQUICKER_MODE'] ?? 'devices');
+define('SMSQUICKER_DEVICE_ID', $envVars['SMSQUICKER_DEVICE_ID'] ?? '');
+define('SMSQUICKER_SIM_SLOT', $envVars['SMSQUICKER_SIM_SLOT'] ?? '1');
+define('SMSQUICKER_SENDER_ID', $envVars['SMSQUICKER_SENDER_ID'] ?? '');
+define('SMSQUICKER_WHATSAPP_ACCOUNT', $envVars['SMSQUICKER_WHATSAPP_ACCOUNT'] ?? '');
+
 
 // ─── Image Helpers ───────────────────────────────────────────────────────────
 

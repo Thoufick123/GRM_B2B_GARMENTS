@@ -32,5 +32,5 @@ return [
     'user'    => $envVars['DB_USER'] ?? 'root', 
     'pass'    => $envVars['DB_PASS'] ?? '',     
     'charset' => $envVars['DB_CHARSET'] ?? 'utf8mb4',
-    'ssl'     => filter_var($envVars['DB_SSL'] ?? false, FILTER_VALIDATE_BOOLEAN)
+    'ssl'     => filter_var($envVars['DB_SSL'] ?? (str_contains($envVars['DB_HOST'] ?? '', 'tidbcloud.com') ? true : false), FILTER_VALIDATE_BOOLEAN)
 ];

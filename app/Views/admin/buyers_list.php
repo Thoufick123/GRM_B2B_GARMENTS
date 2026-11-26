@@ -106,12 +106,16 @@
                             <td class="px-6 py-4">
                                 <div class="font-medium text-gray-900"><?= htmlspecialchars($buyer['business_name'] ?? 'N/A') ?></div>
                                 <div class="flex items-center space-x-2 mt-1">
-                                    <?php if($buyer['gst_number']): ?>
+                                    <?php if(!empty($buyer['gst_number'])): ?>
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800 border border-green-200">
                                             GST: <?= htmlspecialchars($buyer['gst_number']) ?>
                                         </span>
                                     <?php endif; ?>
-                                    <?php if($buyer['pan_number']): ?>
+                                    <?php if(!empty($buyer['instagram_link'])): ?>
+                                        <a href="<?= htmlspecialchars($buyer['instagram_link']) ?>" target="_blank" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-pink-50 text-[#F25996] border border-pink-200 hover:bg-pink-100">
+                                            Instagram
+                                        </a>
+                                    <?php elseif(!empty($buyer['pan_number'])): ?>
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
                                             PAN: <?= htmlspecialchars($buyer['pan_number']) ?>
                                         </span>
@@ -164,6 +168,13 @@
                                         </button>
                                     <?php endif; ?>
                                 </form>
+                                <?php endif; ?>
+                                <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('all_buyers', 'delete')): ?>
+                                <button type="button"
+                                    onclick="promptDeleteBuyer(<?= $buyer['id'] ?>, '<?= addslashes(htmlspecialchars($buyer['business_name'] ?? $buyer['name'] ?? 'Buyer', ENT_QUOTES)) ?>')"
+                                    class="inline-flex items-center justify-center p-1.5 text-red-500 hover:text-red-700 transition-colors cursor-pointer" title="Delete Buyer">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -250,5 +261,65 @@ function exportBuyersCSV() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+}
+
+function promptDeleteBuyer(userId, businessName) {
+    Swal.fire({
+        title: 'Delete Buyer Account?',
+        html: `Are you sure you want to permanently delete buyer <strong class="text-gray-900">${businessName}</strong>?<br><span class="text-xs text-red-500 font-medium mt-1 block">This action is permanent and will remove this buyer's profile, requests, addresses, and history.</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, permanently delete',
+        cancelButtonText: 'Cancel',
+        customClass: { popup: 'rounded-2xl shadow-xl border border-gray-100' }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Deleting...',
+                text: 'Please wait while the buyer record is removed.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            fetch('<?= BASE_URL ?>/admin/buyers/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ user_id: userId, redirect_to: '<?= BASE_URL ?>/admin/buyers' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: data.message || 'Buyer deleted successfully.',
+                        confirmButtonColor: '#F25996'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Failed',
+                        text: data.message || 'Failed to delete buyer.',
+                        confirmButtonColor: '#F25996'
+                    });
+                }
+            })
+            .catch(err => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An unexpected network error occurred.',
+                    confirmButtonColor: '#F25996'
+                });
+            });
+        }
+    });
 }
 </script>

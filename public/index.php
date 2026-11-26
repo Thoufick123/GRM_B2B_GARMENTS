@@ -176,6 +176,7 @@ $router->post('/login', 'App\Controllers\Storefront\AuthController@login');
 // Forgot Password Routes
 $router->get('/forgot-password', 'App\Controllers\Storefront\ForgotPasswordController@showEmailForm');
 $router->post('/forgot-password', 'App\Controllers\Storefront\ForgotPasswordController@sendOtp');
+$router->post('/forgot-password/check-customer', 'App\Controllers\Storefront\ForgotPasswordController@checkCustomer');
 $router->get('/verify-otp', 'App\Controllers\Storefront\ForgotPasswordController@showOtpForm');
 $router->post('/verify-otp', 'App\Controllers\Storefront\ForgotPasswordController@verifyOtp');
 $router->get('/reset-password', 'App\Controllers\Storefront\ForgotPasswordController@showResetForm');
@@ -323,6 +324,7 @@ $router->get('/admin/buyers/pending', 'App\Controllers\Admin\BuyerController@pen
 $router->get('/admin/buyers/view', 'App\Controllers\Admin\BuyerController@view');
 $router->post('/admin/buyers/approve', 'App\Controllers\Admin\BuyerController@approve');
 $router->post('/admin/buyers/reject', 'App\Controllers\Admin\BuyerController@reject');
+$router->post('/admin/buyers/delete', 'App\Controllers\Admin\BuyerController@delete');
 $router->post('/admin/buyers/toggle-block', 'App\Controllers\Admin\BuyerController@toggleBlock');
 $router->get('/admin/buyers/verify', 'App\Controllers\Admin\BuyerController@ajaxVerify');
 
@@ -547,6 +549,7 @@ $router->get('/admin/orders/courier-services', 'App\Controllers\Admin\OrderContr
 $router->post('/admin/orders/courier-services/add', 'App\Controllers\Admin\OrderController@addCourierService');
 $router->post('/admin/orders/courier-services/delete', 'App\Controllers\Admin\OrderController@deleteCourierService');
 $router->post('/admin/orders/delete-modification', 'App\Controllers\Admin\OrderController@deleteModification');
+$router->post('/admin/orders/delete', 'App\Controllers\Admin\OrderController@delete');
 
 // Admin Packing Slip Config & 100mm Thermal Slip Printing
 $router->get('/admin/orders/packing-slip-config', 'App\Controllers\Admin\PackingSlipConfigController@index');

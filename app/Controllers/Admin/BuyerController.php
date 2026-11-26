@@ -216,6 +216,62 @@ class BuyerController extends Controller
         $this->redirect('/admin/buyers');
     }
 
+    public function delete()
+    {
+        $canDelete = (\Core\Session::get('user_role') === 'super_admin') 
+            || $this->hasPermission('all_buyers', 'delete') 
+            || $this->hasPermission('pending_buyers', 'delete');
+            
+        if (!$canDelete) {
+            $this->requirePermission('all_buyers', 'delete');
+            return;
+        }
+
+        $isJson = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+               || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+               || (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false);
+
+        $input = [];
+        if (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+            $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        }
+
+        $userId = (int)($_POST['user_id'] ?? $input['user_id'] ?? $_GET['id'] ?? 0);
+        $redirectUrl = $_POST['redirect_to'] ?? $input['redirect_to'] ?? (BASE_URL . '/admin/buyers/pending');
+
+        if (!$userId) {
+            if ($isJson) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Invalid buyer ID.']);
+                exit;
+            }
+            Session::setFlash('error', 'Invalid buyer ID.');
+            $this->redirect($redirectUrl);
+            return;
+        }
+
+        try {
+            $userModel = new User();
+            $userModel->deleteBuyer($userId);
+
+            if ($isJson) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => 'Buyer record permanently deleted.']);
+                exit;
+            }
+            Session::setFlash('success', 'Buyer record permanently deleted.');
+            $this->redirect($redirectUrl);
+        } catch (\Exception $e) {
+            if ($isJson) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Failed to delete buyer: ' . $e->getMessage()]);
+                exit;
+            }
+            Session::setFlash('error', 'Failed to delete buyer: ' . $e->getMessage());
+            $this->redirect($redirectUrl);
+        }
+    }
+
     public function ajaxVerify()
     {
         header('Content-Type: application/json');

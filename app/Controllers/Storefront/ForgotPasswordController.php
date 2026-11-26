@@ -18,41 +18,241 @@ class ForgotPasswordController extends Controller
         $this->render('storefront/forgot_password', ['title' => 'Forgot Password']);
     }
 
+    public function checkCustomer()
+    {
+        header('Content-Type: application/json');
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+        $channel = trim($input['channel'] ?? 'whatsapp');
+        $identifier = trim($input['identifier'] ?? $input['phone'] ?? $input['email'] ?? '');
+
+        if (empty($identifier)) {
+            echo json_encode(['exists' => false, 'message' => 'Please enter a value to check.']);
+            exit;
+        }
+
+        $userModel = new User();
+        $user = null;
+
+        if ($channel === 'whatsapp') {
+            $clean = preg_replace('/[^0-9]/', '', $identifier);
+            $last10 = substr($clean, -10);
+
+            if (strlen($last10) !== 10) {
+                echo json_encode(['exists' => false, 'message' => 'Please enter a valid 10-digit mobile number.']);
+                exit;
+            }
+
+            $user = $userModel->findCustomerByPhone($last10);
+            if (!$user) {
+                $user = $userModel->findByPhone($last10) ?: $userModel->findByPhone('91' . $last10);
+            }
+
+            if ($user) {
+                $name = $user['name'] ?? 'Customer';
+                echo json_encode([
+                    'exists' => true,
+                    'name' => htmlspecialchars($name),
+                    'message' => "Registered customer account found ({$name})."
+                ]);
+                exit;
+            } else {
+                echo json_encode([
+                    'exists' => false,
+                    'message' => "Mobile number (+91 {$last10}) is not registered with any customer account."
+                ]);
+                exit;
+            }
+        } else {
+            // Email check
+            if (!filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+                echo json_encode(['exists' => false, 'message' => 'Please enter a valid email address.']);
+                exit;
+            }
+
+            $user = $userModel->findCustomerByEmail($identifier) ?: $userModel->findByEmail($identifier);
+            if ($user) {
+                $name = $user['name'] ?? 'Customer';
+                echo json_encode([
+                    'exists' => true,
+                    'name' => htmlspecialchars($name),
+                    'message' => "Registered customer account found ({$name})."
+                ]);
+                exit;
+            } else {
+                echo json_encode([
+                    'exists' => false,
+                    'message' => "Email address ({$identifier}) is not registered with any customer account."
+                ]);
+                exit;
+            }
+        }
+    }
+
     public function sendOtp()
     {
+        $isJson = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+               || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+               || (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false);
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/forgot-password');
         }
 
         if (!\Core\RateLimiter::attempt('forgot_password_otp', 5, 60)) {
+            if ($isJson) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Too many requests. Please wait a minute and try again.']);
+                exit;
+            }
             Session::setFlash('error', 'Too many requests. Please wait a minute and try again.');
             $this->redirect('/forgot-password');
+            return;
         }
 
-        $email = trim($_POST['email'] ?? '');
-        if (empty($email)) {
-            Session::setFlash('error', 'Please enter your email address.');
-            $this->redirect('/forgot-password');
+        $input = [];
+        if (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+            $input = json_decode(file_get_contents('php://input'), true) ?? [];
         }
 
+        $channel   = trim($_POST['channel'] ?? $input['channel'] ?? 'whatsapp');
         $userModel = new User();
-        $user = $userModel->findByEmail($email);
+        $user      = null;
+        $email     = '';
 
-        if (!$user) {
-            Session::setFlash('error', 'This email address is not registered in our system.');
-            $this->redirect('/forgot-password');
+        if ($channel === 'whatsapp') {
+            $phoneInput = trim($_POST['phone'] ?? $input['phone'] ?? $_POST['email'] ?? '');
+            $cleanPhone = preg_replace('/[^0-9]/', '', $phoneInput);
+            
+            // Normalize Indian 10-digit number
+            if (strlen($cleanPhone) === 12 && str_starts_with($cleanPhone, '91')) {
+                $lookupPhone = substr($cleanPhone, 2);
+            } elseif (strlen($cleanPhone) === 11 && str_starts_with($cleanPhone, '0')) {
+                $lookupPhone = substr($cleanPhone, 1);
+            } else {
+                $lookupPhone = substr($cleanPhone, -10);
+            }
+
+            if (empty($lookupPhone) || strlen($lookupPhone) !== 10) {
+                $err = 'Please enter a valid 10-digit mobile number.';
+                if ($isJson) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => $err]);
+                    exit;
+                }
+                Session::setFlash('error', $err);
+                $this->redirect('/forgot-password');
+                return;
+            }
+
+            // Strictly find registered customer
+            $user = $userModel->findCustomerByPhone($lookupPhone);
+            if (!$user) {
+                $user = $userModel->findByPhone($lookupPhone) ?: $userModel->findByPhone('91' . $lookupPhone);
+            }
+
+            // STRICT VALIDATION: If not registered customer, DO NOT SEND OTP!
+            if (!$user) {
+                $err = 'No registered customer account found with mobile number +91 ' . htmlspecialchars($lookupPhone) . '. Only registered customer numbers can receive OTP.';
+                if ($isJson) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => $err]);
+                    exit;
+                }
+                Session::setFlash('error', $err);
+                $this->redirect('/forgot-password');
+                return;
+            }
+
+            if (($user['status'] ?? '') === 'blocked') {
+                $err = 'Your customer account is currently suspended. Please contact support.';
+                if ($isJson) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => $err]);
+                    exit;
+                }
+                Session::setFlash('error', $err);
+                $this->redirect('/forgot-password');
+                return;
+            }
+
+            $email = $user['email'];
+        } else {
+            // Email Channel
+            $email = trim($_POST['email'] ?? $input['email'] ?? '');
+            if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $err = 'Please enter a valid registered email address.';
+                if ($isJson) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => $err]);
+                    exit;
+                }
+                Session::setFlash('error', $err);
+                $this->redirect('/forgot-password');
+                return;
+            }
+
+            // Strictly find registered customer
+            $user = $userModel->findCustomerByEmail($email) ?: $userModel->findByEmail($email);
+
+            // STRICT VALIDATION: If not registered customer, DO NOT SEND OTP!
+            if (!$user) {
+                $err = 'No registered customer account found with email ' . htmlspecialchars($email) . '. Only registered customer emails can receive OTP.';
+                if ($isJson) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => $err]);
+                    exit;
+                }
+                Session::setFlash('error', $err);
+                $this->redirect('/forgot-password');
+                return;
+            }
+
+            if (($user['status'] ?? '') === 'blocked') {
+                $err = 'Your customer account is currently suspended. Please contact support.';
+                if ($isJson) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => $err]);
+                    exit;
+                }
+                Session::setFlash('error', $err);
+                $this->redirect('/forgot-password');
+                return;
+            }
         }
 
         // Generate 6-digit OTP
         $otp = sprintf("%06d", mt_rand(100000, 999999));
 
         $db = Database::getInstance();
-        
         // Delete any existing OTPs for this email to prevent spam
         $db->prepare("DELETE FROM password_resets WHERE email = ?")->execute([$email]);
-
         // Insert new OTP
         $db->prepare("INSERT INTO password_resets (email, otp, created_at) VALUES (?, ?, NOW())")->execute([$email, $otp]);
+
+        $appName = defined('APP_NAME') ? APP_NAME : 'GRM B2B';
+
+        if ($channel === 'whatsapp') {
+            $userPhone = $user['phone'] ?? $lookupPhone;
+            try {
+                $smsService = new \App\Services\SmsQuickerService();
+                $smsService->sendWhatsApp($userPhone, "Your {$appName} password reset code is {$otp}. Valid for 60 seconds.");
+            } catch (\Throwable $e) {
+                error_log("[Reset OTP WhatsApp Error] " . $e->getMessage());
+            }
+
+            Session::set('reset_email', $email);
+            Session::set('reset_channel', 'whatsapp');
+            Session::set('reset_phone', $userPhone);
+            Session::setFlash('success', "OTP has been sent to your WhatsApp number (+91 {$userPhone})!");
+            if ($isJson) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'redirect' => BASE_URL . '/verify-otp']);
+                exit;
+            }
+            $this->redirect('/verify-otp');
+            return;
+        }
 
         // Send Email via PHPMailer
         try {
@@ -67,11 +267,11 @@ class ForgotPasswordController extends Controller
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = SMTP_PORT;
 
-            $mail->setFrom(SMTP_FROM, APP_NAME);
-            $mail->addAddress($email, $user['name']);
+            $mail->setFrom(SMTP_FROM, $appName);
+            $mail->addAddress($email, $user['name'] ?? 'User');
 
             $mail->isHTML(true);
-            $mail->Subject = 'Password Reset OTP - ' . APP_NAME;
+            $mail->Subject = 'Password Reset OTP - ' . $appName;
             $mail->Body    = "
                 <div style='font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; max-width: 540px; margin: 0 auto; padding: 28px; background: #ffffff; border: 1px solid #FDBFDD; border-radius: 16px; box-shadow: 0 4px 12px rgba(242, 89, 150, 0.08);'>
                     <div style='text-align: center; margin-bottom: 20px;'>
@@ -86,17 +286,23 @@ class ForgotPasswordController extends Controller
                     <p style='color: #F25996; font-size: 13px; font-weight: bold; text-align: center; margin: 12px 0 0;'>This OTP will expire in 60 seconds.</p>
                     <p style='color: #6b7280; font-size: 12px; text-align: center; margin: 6px 0 0;'>If you did not request this, please ignore this email.</p>
                     <hr style='border: none; border-top: 1px solid #f3f4f6; margin: 24px 0;' />
-                    <p style='color: #9ca3af; font-size: 11px; text-align: center; margin: 0;'>&copy; " . date('Y') . " GRM B2B. All rights reserved.</p>
+                    <p style='color: #9ca3af; font-size: 11px; text-align: center; margin: 0;'>&copy; " . date('Y') . " {$appName}. All rights reserved.</p>
                 </div>
             ";
 
             $mail->send();
-        } catch (Exception $e) {
-            // Log error in real app
+        } catch (\Throwable $e) {
+            error_log("[Reset OTP Email Error] " . $e->getMessage());
         }
 
         Session::set('reset_email', $email);
-        Session::setFlash('success', 'OTP has been sent to your email.');
+        Session::set('reset_channel', 'email');
+        Session::setFlash('success', "OTP has been sent to your email address ({$email})!");
+        if ($isJson) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'redirect' => BASE_URL . '/verify-otp']);
+            exit;
+        }
         $this->redirect('/verify-otp');
     }
 
@@ -219,12 +425,6 @@ class ForgotPasswordController extends Controller
             $this->redirect('/forgot-password');
         }
 
-        // Check if new password is the same as the old password
-        if (password_verify($newPassword, $user['password_hash'])) {
-            Session::setFlash('error', 'Your new password cannot be the same as your old password. Please choose a different one.');
-            $this->redirect('/reset-password');
-        }
-
         // Hash and update
         $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
         
@@ -238,7 +438,7 @@ class ForgotPasswordController extends Controller
         Session::remove('reset_email');
         Session::remove('reset_verified');
 
-        Session::setFlash('success', 'Your password has been successfully reset! You can now login.');
+        Session::setFlash('success', "Your password for account ({$email}) has been successfully reset! You can now login with this email or mobile number.");
         $this->redirect('/login');
     }
 }

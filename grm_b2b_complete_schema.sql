@@ -557,7 +557,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
                 'pending',
                 'placed',
                 'packed',
-                'shipped',
+                'shipped',  
                 'out_for_delivery',
                 'delivered',
                 'cancelled',

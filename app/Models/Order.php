@@ -1320,4 +1320,77 @@ public function countAllOrders($statusFilter = 'all'): int
             'orders' => $orders
         ];
     }
+
+    /**
+     * Delete an order and its associated items, modifications, and refunds.
+     * Restores inventory if stock was deducted and order was not cancelled.
+     */
+    public function deleteOrder(int $orderId): bool
+    {
+        $inTx = $this->db->inTransaction();
+        if (!$inTx) {
+            $this->db->beginTransaction();
+        }
+
+        try {
+            $stmt = $this->db->prepare("SELECT id, order_number, is_stock_reduced, status FROM orders WHERE id = ? FOR UPDATE");
+            $stmt->execute([$orderId]);
+            $order = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$order) {
+                if (!$inTx) $this->db->rollBack();
+                return false;
+            }
+
+            // Restore inventory stock if stock was previously deducted and not yet restored
+            if (!empty($order['is_stock_reduced']) && $order['status'] !== 'cancelled') {
+                $this->restoreStockForOrderId($orderId);
+            }
+
+            // 1. Delete refund requests referencing this order (foreign key ON DELETE RESTRICT)
+            $this->db->prepare("DELETE FROM refund_requests WHERE order_id = ?")->execute([$orderId]);
+
+            // 2. Delete order modification items & order modifications
+            $this->db->prepare("DELETE omi FROM order_modification_items omi JOIN order_modifications om ON omi.modification_id = om.id WHERE om.order_id = ?")->execute([$orderId]);
+            $this->db->prepare("DELETE FROM order_modifications WHERE order_id = ?")->execute([$orderId]);
+
+            // 3. Delete order items
+            $this->db->prepare("DELETE FROM order_items WHERE order_id = ?")->execute([$orderId]);
+
+            // 4. Delete the order record
+            $this->db->prepare("DELETE FROM orders WHERE id = ?")->execute([$orderId]);
+
+            if (!$inTx) {
+                $this->db->commit();
+            }
+
+            // Invalidate dashboard caches
+            if (class_exists('\Core\Cache')) {
+                \Core\Cache::delete('admin_dashboard_stats_30');
+                \Core\Cache::delete('admin_dashboard_stats_7');
+                \Core\Cache::delete('admin_dashboard_stats_all');
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            if (!$inTx && $this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Delete order by either integer ID or string order_number
+     */
+    public function deleteOrderByNumberOrId($idOrNumber): bool
+    {
+        $stmt = $this->db->prepare("SELECT id FROM orders WHERE id = ? OR order_number = ? LIMIT 1");
+        $stmt->execute([$idOrNumber, (string)$idOrNumber]);
+        $order = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$order) {
+            return false;
+        }
+        return $this->deleteOrder((int)$order['id']);
+    }
 }

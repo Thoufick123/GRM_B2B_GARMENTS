@@ -21,6 +21,13 @@
             <span>Modify Bill</span>
         </a>
         <?php endif; ?>
+        <?php if (empty($isVendor) && (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('all_orders', 'delete'))): ?>
+        <button type="button" onclick="confirmDeleteCurrentOrder('<?= $order['id'] ?>', '<?= htmlspecialchars($order['order_number']) ?>')"
+           class="inline-flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 text-sm font-semibold rounded-lg shadow-sm transition-all whitespace-nowrap cursor-pointer">
+            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            <span>Delete Order</span>
+        </button>
+        <?php endif; ?>
         <?php 
             $backUrl = BASE_URL . '/admin/orders';
             $backLabel = 'Back to Orders';
@@ -1701,4 +1708,64 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 })();
+
+function confirmDeleteCurrentOrder(orderId, orderNumber) {
+    Swal.fire({
+        title: 'Delete Order #' + orderNumber + '?',
+        html: `Are you sure you want to permanently delete Order <strong class="text-gray-900">#${orderNumber}</strong>?<br><span class="text-xs text-red-500 font-medium mt-1 block">This will permanently delete the order, restore deducted inventory stock, and remove all associated history. This action cannot be undone.</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, delete order',
+        cancelButtonText: 'Cancel',
+        customClass: { popup: 'rounded-2xl shadow-xl border border-gray-100' }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Deleting Order...',
+                text: 'Please wait...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            fetch('<?= BASE_URL ?>/admin/orders/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ order_id: orderId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: data.message || 'Order deleted successfully.',
+                        confirmButtonColor: '#F25996'
+                    }).then(() => {
+                        window.location.href = '<?= BASE_URL ?>/admin/orders';
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Failed',
+                        text: data.message || 'Failed to delete order.',
+                        confirmButtonColor: '#F25996'
+                    });
+                }
+            })
+            .catch(err => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An unexpected network error occurred.',
+                    confirmButtonColor: '#F25996'
+                });
+            });
+        }
+    });
+}
 </script>

@@ -130,7 +130,7 @@
     <div class="sm:mx-auto sm:w-full sm:max-w-3xl z-10 relative flex flex-col h-full mb-8">
         
         <!-- Custom Progress Stepper -->
-        <div class="flex justify-between items-start mb-6 relative px-8 shrink-0">
+        <div class="flex justify-between items-start mb-6 relative px-8 shrink-0 max-w-md mx-auto w-full">
             <!-- Connecting Line -->
             <div class="absolute top-5 left-16 right-16 h-[2px] bg-gray-200 -z-10">
                 <div id="progress-line" class="h-full transition-all duration-500 w-0" style="background-color: #F25996;"></div>
@@ -150,17 +150,8 @@
                 <div id="step-2-icon" class="w-10 h-10 rounded-full bg-gray-100 border-2 border-gray-200 text-gray-400 flex items-center justify-center mb-2 transition-colors duration-300">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                 </div>
-                <span id="step-2-text" class="text-xs font-bold text-gray-500">Business</span>
-                <span class="text-[10px] text-gray-400 font-medium hidden sm:block mt-0.5">Business details</span>
-            </div>
-
-            <!-- Step 3 -->
-            <div class="flex flex-col items-center relative bg-[#fdfdfd] px-2">
-                <div id="step-3-icon" class="w-10 h-10 rounded-full bg-gray-100 border-2 border-gray-200 text-gray-400 flex items-center justify-center mb-2 transition-colors duration-300">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                </div>
-                <span id="step-3-text" class="text-xs font-bold text-gray-500">Verification</span>
-                <span class="text-[10px] text-gray-400 font-medium hidden sm:block mt-0.5">Verify your identity</span>
+                <span id="step-2-text" class="text-xs font-bold text-gray-500">Business Details</span>
+                <span class="text-[10px] text-gray-400 font-medium hidden sm:block mt-0.5">Business & verification</span>
             </div>
         </div>
 
@@ -419,7 +410,7 @@
                                 <div>
                                     <label for="gst_number" class="flex items-center text-xs font-bold text-gray-700 mb-2">
                                         <svg class="w-4 h-4 mr-1.5" style="color: #F25996;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                        GST Number
+                                        GST Number <span class="text-red-500 ml-1">*</span>
                                     </label>
                                     <input id="gst_number" name="gst_number" type="text" minlength="15" maxlength="15" pattern="^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$" title="Please enter a valid 15-character GST number containing both letters and numbers (e.g. 33AAAAA0000A1Z5)" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" autocomplete="off" class="form-input px-4 py-3 border border-gray-200 rounded-xl w-full focus:ring-[#F25996] focus:border-[#F25996] text-sm bg-white uppercase font-medium text-gray-900" placeholder="e.g. 33AAAAA0000A1Z5" required>
                                     <div id="gst_number-error" class="hidden mt-1.5 ml-1 text-xs text-red-500 flex items-center font-medium">
@@ -428,21 +419,21 @@
                                     </div>
                                 </div>
 
-                                <!-- GST Document Upload -->
+                                <!-- GST Document Upload (Optional) -->
                                 <div class="mt-3">
                                     <label class="flex items-center text-xs font-bold text-gray-700 mb-2">
                                         <svg class="w-4 h-4 mr-1.5" style="color:#F25996;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                                        GST Document <span class="text-red-500 ml-1">*</span>
+                                        GST Document <span class="text-xs text-gray-400 font-normal ml-1">(Optional)</span>
                                         <span class="ml-1 text-gray-400 font-normal">(PDF / JPG / PNG · Max 3MB)</span>
                                     </label>
                                     <label id="gst_doc_label" for="gst_document" class="flex items-center gap-3 px-4 py-3 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#F25996] hover:bg-pink-50/40 transition-all group">
                                         <svg class="w-5 h-5 text-gray-400 group-hover:text-[#F25996] flex-shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                        <span id="gst_doc_name" class="text-sm text-gray-400 group-hover:text-gray-600 truncate">Click to upload GST certificate / registration document</span>
+                                        <span id="gst_doc_name" class="text-sm text-gray-400 group-hover:text-gray-600 truncate">Click to upload GST certificate / registration document (Optional)</span>
                                     </label>
                                     <input id="gst_document" name="gst_document" type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" onchange="handleDocUpload(this, 'gst_doc_name', 'gst_doc_label', 'gst_document-error', 'gst_document-error-text')">
                                     <div id="gst_document-error" class="hidden mt-1.5 ml-1 text-xs text-red-500 flex items-center font-medium">
                                         <svg class="w-3.5 h-3.5 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        <span id="gst_document-error-text">Please upload your GST document.</span>
+                                        <span id="gst_document-error-text">Please upload a valid GST document (PDF / JPG / PNG under 3MB).</span>
                                     </div>
                                 </div>
                             </div>
@@ -485,107 +476,48 @@
                                         <span id="other_gst_reason-error-text">Please provide a reason (minimum 5 characters).</span>
                                     </div>
                                 </div>
-                                <div>
-                                    <label for="pan_number" class="flex items-center text-xs font-bold text-gray-700 mb-2">
-                                        <svg class="w-4 h-4 mr-1.5" style="color: #F25996;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
-                                        PAN Number (For Non-GST Verification) <span class="text-red-500 ml-1">*</span>
+                                <div class="mt-3">
+                                    <label for="instagram_link" class="flex items-center text-xs font-bold text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="url(#instagramGradient)"><defs><linearGradient id="instagramGradient" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433" /><stop offset="25%" stop-color="#e6683c" /><stop offset="50%" stop-color="#dc2743" /><stop offset="75%" stop-color="#cc2366" /><stop offset="100%" stop-color="#bc1888" /></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                                        Instagram Profile Link (For Non-GST Verification) <span class="text-red-500 ml-1">*</span>
                                     </label>
                                     <div class="relative">
-                                        <input id="pan_number" name="pan_number" type="text" maxlength="10" pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}" title="Please enter a valid PAN format (e.g. ABCDE1234F)" autocomplete="off" class="form-input px-4 py-3 border border-gray-200 rounded-xl w-full focus:ring-[#F25996] focus:border-[#F25996] text-sm bg-white uppercase font-medium text-gray-900" placeholder="10-DIGIT PAN NUMBER">
+                                        <input id="instagram_link" name="instagram_link" type="url" pattern="^https?:\/\/(www\.)?instagram\.com\/.*$" title="Please provide a valid Instagram link. Facebook links are not accepted." placeholder="https://www.instagram.com/yourshop" autocomplete="off" class="form-input px-4 py-3 border border-gray-200 rounded-xl w-full focus:ring-[#F25996] focus:border-[#F25996] text-sm bg-white font-medium text-gray-900">
                                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
                                         </div>
                                     </div>
-                                    <div id="pan_number-error" class="hidden mt-1.5 ml-1 text-xs text-red-500 flex items-center font-medium">
+                                    <p class="text-xs text-gray-500 mt-1.5 ml-1 font-medium">Share your business or shop Instagram profile link for verification</p>
+                                    <div id="instagram-error" class="hidden mt-1.5 ml-1 text-xs text-red-500 flex items-center font-medium">
                                         <svg class="w-3.5 h-3.5 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        <span id="pan_number-error-text">Please enter a valid 10-character PAN number.</span>
-                                    </div>
-                                </div>
-
-                                <!-- PAN Document Upload -->
-                                <div class="mt-3">
-                                    <label class="flex items-center text-xs font-bold text-gray-700 mb-2">
-                                        <svg class="w-4 h-4 mr-1.5" style="color:#F25996;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                                        PAN Card Document <span class="text-red-500 ml-1">*</span>
-                                        <span class="ml-1 text-gray-400 font-normal">(PDF / JPG / PNG · Max 3MB)</span>
-                                    </label>
-                                    <label id="pan_doc_label" for="pan_document" class="flex items-center gap-3 px-4 py-3 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#F25996] hover:bg-pink-50/40 transition-all group">
-                                        <svg class="w-5 h-5 text-gray-400 group-hover:text-[#F25996] flex-shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                        <span id="pan_doc_name" class="text-sm text-gray-400 group-hover:text-gray-600 truncate">Click to upload PAN card document</span>
-                                    </label>
-                                    <input id="pan_document" name="pan_document" type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" onchange="handleDocUpload(this, 'pan_doc_name', 'pan_doc_label', 'pan_document-error', 'pan_document-error-text')">
-                                    <div id="pan_document-error" class="hidden mt-1.5 ml-1 text-xs text-red-500 flex items-center font-medium">
-                                        <svg class="w-3.5 h-3.5 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        <span id="pan_document-error-text">Please upload your PAN card document.</span>
+                                        <span id="instagram-error-text">Please provide a valid Instagram profile link (e.g. https://www.instagram.com/yourshop).</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Footer Action Bar -->
-                    <div class="p-4 sm:px-8 border-t flex flex-col sm:flex-row items-center justify-between rounded-b-2xl shrink-0" style="background-color: rgba(253, 191, 221, 0.25); border-color: #FDBFDD;">
-                        <button type="button" onclick="prevStep(2)" class="w-full sm:w-auto font-bold py-3 px-8 rounded-xl flex items-center justify-center transition-all shadow-sm text-sm border-2 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 mb-4 sm:mb-0">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Back
-                        </button>
-                        <div class="w-full sm:w-auto flex flex-col items-center sm:items-end">
-                            <button type="button" onclick="nextStep(2)" class="w-full sm:w-auto text-white font-bold py-3 px-8 rounded-xl flex items-center justify-center transition-all shadow-lg text-sm mb-2" style="background: #F25996;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-                                Next Step <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                            </button>
-                            <div class="flex items-center text-xs font-medium text-gray-500">
-                                <svg class="w-3.5 h-3.5 mr-1" style="color: #F25996;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                                Your information is secure with us
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                        <hr class="border-gray-100 my-6">
 
-                <!-- STEP 3: Verification -->
-                <div id="step-3" class="step-content hidden flex flex-col h-auto">
-                    <div class="p-6 md:p-8 pb-4">
-                        
-                        <!-- Header -->
-                        <div class="flex items-start justify-between mb-8">
-                            <div class="flex items-center">
-                                <div class="font-bold text-xl rounded-2xl w-14 h-14 flex items-center justify-center mr-4 shadow-sm border" style="background-color: #FDBFDD; color: #F25996; border-color: #FDBFDD;">03</div>
-                                <div>
-                                    <h3 class="text-lg sm:text-2xl font-bold text-gray-900 font-display mb-1">Shop Verification</h3>
-                                    <p class="text-sm text-gray-500 font-medium">Help us verify your business</p>
-                                </div>
-                            </div>
-                            <div class="w-16 h-16 rounded-full flex items-center justify-center shadow-sm border relative" style="background-color: #FDBFDD; color: #F25996; border-color: #FDBFDD;">
-                                <!-- Sparkles -->
-                                <svg class="absolute -top-1 -right-1 w-4 h-4" style="color: #F25996;" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0l2 8 8 2-8 2-2 8-2-8-8-2 8-2z"/></svg>
-                                <svg class="absolute bottom-1 -left-2 w-3 h-3" style="color: #F25996;" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0l2 8 8 2-8 2-2 8-2-8-8-2 8-2z"/></svg>
-                                <!-- Store Icon -->
-                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V10C19 8.89543 18.1046 8 17 8H7C5.89543 8 5 8.89543 5 10V21M3 21H21M9 21V16H15V21M6 8L7.5 4H16.5L18 8M6 8H18"></path></svg>
-                                <!-- Verified Shield Overlap -->
-                                <div class="absolute -bottom-1 -right-1 rounded-full p-1 border-2 border-white" style="background-color: #F25996;">
-                                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Upload Section -->
-                        <div class="mb-6">
+                        <!-- Upload Shop Photos Section (Optional) -->
+                        <div class="mb-4">
                             <div class="flex items-center justify-between mb-1">
                                 <label class="flex items-center text-sm font-bold text-gray-700">
                                     <svg class="w-4 h-4 mr-2" style="color: #F25996;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                    Upload Shop Photos <span class="text-red-500 ml-1">*</span>
+                                    Upload Shop Photos <span class="text-xs text-gray-400 font-normal ml-1">(Optional)</span>
                                 </label>
                                 <span id="shop_photos_counter_badge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-pink-100 text-[#F25996] border border-pink-200">
                                     0 / 4 Uploaded
                                 </span>
                             </div>
-                            <p class="text-xs sm:text-sm text-gray-500 font-medium mb-3 ml-6">Please upload 2 to 4 photos (inside & outside views, display, and stock areas).</p>
+                            <p class="text-xs sm:text-sm text-gray-500 font-medium mb-3 ml-6">You can upload up to 4 shop photos (inside & outside views, display, and stock areas). Optional.</p>
                             
                             <div id="dropzone_container" class="border-2 border-dashed border-gray-300 rounded-2xl p-6 md:p-8 text-center bg-gray-50/50 hover:bg-[#FDBFDD]/20 transition-colors relative group">
-                                <input id="shop_photos" name="shop_photos[]" type="file" multiple accept="image/jpeg, image/png, image/webp" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileName(this)" onclick="this.value=null;">
+                                <input id="shop_photos" name="shop_photos[]" type="file" multiple accept="image/jpeg, image/png, image/webp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileName(this)" onclick="this.value=null;">
                                 
                                 <div id="upload_icon" class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300" style="background-color: rgba(253, 191, 221, 0.5);">
                                     <svg class="w-6 h-6" style="color: #F25996;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                                 </div>
-                                <h4 id="upload_text" class="text-gray-900 font-bold mb-1 text-base">Click or drag & drop to upload (Max 4 Photos)</h4>
+                                <h4 id="upload_text" class="text-gray-900 font-bold mb-1 text-base">Click or drag & drop to upload (Max 4 Photos - Optional)</h4>
                                 <p id="upload_subtext" class="text-xs text-gray-500 font-medium mb-5">JPG, PNG or WEBP (Max size 5MB each)</p>
 
                                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 relative z-0">
@@ -609,46 +541,28 @@
                             </div>
                             <div id="shop_photos-error" class="hidden mt-2 ml-1 text-xs text-red-500 flex items-center font-medium">
                                 <svg class="w-3.5 h-3.5 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                <span id="shop_photos-error-text">Please upload at least 2 photos (inside and outside views).</span>
+                                <span id="shop_photos-error-text">Please upload valid images (max 4 photos).</span>
                             </div>
                             
                             <!-- Dynamic 4-Slot Image Previews Container with Remove Actions -->
                             <div id="image_previews" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 empty:hidden"></div>
                         </div>
-
-                        <hr class="border-gray-100 mb-6">
-
-                        <!-- Instagram Link -->
-                        <div class="mb-2">
-                            <label class="flex items-center text-sm font-bold text-gray-700 mb-1">
-                                <!-- Instagram colorful icon -->
-                                <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="url(#instagramGradient)"><defs><linearGradient id="instagramGradient" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433" /><stop offset="25%" stop-color="#e6683c" /><stop offset="50%" stop-color="#dc2743" /><stop offset="75%" stop-color="#cc2366" /><stop offset="100%" stop-color="#bc1888" /></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-                                Instagram Shop Link <span class="text-red-500 ml-1">*</span>
-                            </label>
-                            <p class="text-sm text-gray-500 font-medium mb-3 ml-7">Share your Instagram shop profile link</p>
-                            
-                            <div class="relative ml-7">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-                                </div>
-                                <input id="instagram_link" name="instagram_link" type="url" required pattern="^https?:\/\/(www\.)?instagram\.com\/.*$" title="Please provide a valid Instagram link. Facebook links are not accepted." placeholder="https://www.instagram.com/yourshop" autocomplete="off" class="form-input pl-11 pr-4 py-3 border border-gray-200 rounded-xl w-full focus:ring-[#F25996] focus:border-[#F25996] text-sm bg-white font-medium text-gray-900">
-                            </div>
-                            <div id="instagram-error" class="hidden mt-1.5 ml-7 text-xs text-red-500 flex items-center font-medium">
-                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                <span id="instagram-error-text">Please provide a valid Instagram link. Facebook links are not accepted.</span>
-                            </div>
-                        </div>
-
                     </div>
 
                     <!-- Footer Action Bar -->
                     <div class="p-4 sm:px-8 border-t flex flex-col sm:flex-row items-center justify-between rounded-b-2xl shrink-0" style="background-color: rgba(253, 191, 221, 0.25); border-color: #FDBFDD;">
-                        <button type="button" onclick="prevStep(3)" class="w-full sm:w-auto font-bold py-3 px-8 rounded-xl flex items-center justify-center transition-all shadow-sm text-sm border-2 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 mb-4 sm:mb-0">
+                        <button type="button" onclick="prevStep(2)" class="w-full sm:w-auto font-bold py-3 px-8 rounded-xl flex items-center justify-center transition-all shadow-sm text-sm border-2 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 mb-4 sm:mb-0">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Back
                         </button>
-                        <button type="button" onclick="submitFinalForm()" class="w-full sm:w-auto text-white font-bold py-3 px-8 rounded-xl flex items-center justify-center transition-all shadow-lg text-sm" style="background: #F25996;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-                            Submit <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                        </button>
+                        <div class="w-full sm:w-auto flex flex-col items-center sm:items-end">
+                            <button type="button" onclick="submitFinalForm()" class="w-full sm:w-auto text-white font-bold py-3 px-8 rounded-xl flex items-center justify-center transition-all shadow-lg text-sm mb-2" style="background: #F25996;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                                Submit <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                            </button>
+                            <div class="flex items-center text-xs font-medium text-gray-500">
+                                <svg class="w-3.5 h-3.5 mr-1" style="color: #F25996;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                Your information is secure with us
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -986,31 +900,9 @@ function validateSingleField(fieldId) {
         return true;
     }
 
-    if (fieldId === 'pan_number') {
-        const hasGst = document.getElementById('has_gst').checked;
-        if (!hasGst) {
-            const val = document.getElementById('pan_number').value.trim().toUpperCase();
-            if (!val) {
-                setFieldError('pan_number', 'PAN number is required for Non-GST verification.');
-                return false;
-            }
-            if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(val)) {
-                setFieldError('pan_number', 'Please enter a valid 10-character PAN (e.g. ABCDE1234F).');
-                return false;
-            }
-            if (_dbDuplicateErrors['pan_number']) {
-                setFieldError('pan_number', _dbDuplicateErrors['pan_number']);
-                return false;
-            }
-            clearFieldError('pan_number');
-            return true;
-        }
-        return true;
-    }
-
     if (fieldId === 'shop_photos') {
-        if (selectedFiles.length < 2) {
-            setFieldError('shop_photos', 'Please upload at least 2 shop photos (inside and outside views).');
+        if (selectedFiles.length > 4) {
+            setFieldError('shop_photos', 'You can upload a maximum of 4 shop photos.');
             return false;
         }
         clearFieldError('shop_photos');
@@ -1018,22 +910,30 @@ function validateSingleField(fieldId) {
     }
 
     if (fieldId === 'instagram_link' || fieldId === 'instagram') {
-        const val = document.getElementById('instagram_link').value.trim();
-        if (!val) {
-            setFieldError('instagram', 'Instagram shop profile link is required.');
-            return false;
+        const hasGst = document.getElementById('has_gst').checked;
+        if (!hasGst) {
+            const el = document.getElementById('instagram_link');
+            if (!el) return true;
+            const val = el.value.trim();
+            if (!val) {
+                setFieldError('instagram', 'Instagram profile link is required for Non-GST verification.');
+                return false;
+            }
+            const instaRegex = /^https?:\/\/(www\.)?instagram\.com\/[A-Za-z0-9_.\-\/]+(\?.*)?$/i;
+            if (!instaRegex.test(val)) {
+                setFieldError('instagram', 'Please enter a valid Instagram profile link (e.g. https://www.instagram.com/yourshop).');
+                return false;
+            }
+            if (_dbDuplicateErrors['instagram']) {
+                setFieldError('instagram', _dbDuplicateErrors['instagram']);
+                return false;
+            }
+            clearFieldError('instagram');
+            return true;
+        } else {
+            clearFieldError('instagram');
+            return true;
         }
-        const instaRegex = /^https?:\/\/(www\.)?instagram\.com\/[A-Za-z0-9_.\-\/]+(\?.*)?$/i;
-        if (!instaRegex.test(val)) {
-            setFieldError('instagram', 'Please enter a valid Instagram profile link (e.g. https://www.instagram.com/yourshop).');
-            return false;
-        }
-        if (_dbDuplicateErrors['instagram']) {
-            setFieldError('instagram', _dbDuplicateErrors['instagram']);
-            return false;
-        }
-        clearFieldError('instagram');
-        return true;
     }
 
     return true;
@@ -1090,7 +990,6 @@ const _dbDuplicateErrors = {
     phone: null,
     business: null,
     gst_number: null,
-    pan_number: null,
     instagram: null
 };
 
@@ -1113,10 +1012,6 @@ async function checkFieldDbDuplicate(fieldId) {
         const val = document.getElementById('gst_number').value.trim().toUpperCase();
         if (!val || val.length !== 15) return;
         payload = { gst_number: val };
-    } else if (fieldId === 'pan_number') {
-        const val = document.getElementById('pan_number').value.trim().toUpperCase();
-        if (!val || val.length !== 10) return;
-        payload = { pan_number: val };
     } else if (fieldId === 'instagram_link' || fieldId === 'instagram') {
         const val = document.getElementById('instagram_link').value.trim();
         const instaRegex = /^https?:\/\/(www\.)?instagram\.com\/[A-Za-z0-9_.\-\/]+(\?.*)?$/i;
@@ -1173,7 +1068,7 @@ function _liveValidate(id, fieldIdForValidate) {
 
         const isValid = validateSingleField(fieldIdForValidate || id);
 
-        if (isValid && ['email', 'phone', 'business_name', 'gst_number', 'pan_number', 'instagram_link'].includes(id)) {
+        if (isValid && ['email', 'phone', 'business_name', 'gst_number', 'instagram_link'].includes(id)) {
             clearTimeout(_asyncCheckTimers[id]);
             _asyncCheckTimers[id] = setTimeout(() => {
                 checkFieldDbDuplicate(id);
@@ -1191,7 +1086,6 @@ function _liveValidate(id, fieldIdForValidate) {
     { id: 'pincode',          validate: 'pincode' },
     { id: 'gst_number',       validate: 'gst_number' },
     { id: 'other_gst_reason', validate: 'other_gst_reason' },
-    { id: 'pan_number',       validate: 'pan_number' },
     { id: 'other_state_name', validate: 'other_state_name' },
     { id: 'district_text',    validate: 'district' },
     { id: 'instagram_link',   validate: 'instagram' },
@@ -1203,7 +1097,7 @@ function _liveValidate(id, fieldIdForValidate) {
 });
 
 // Immediate validation and DB duplicate check on blur
-['email', 'phone', 'business_name', 'gst_number', 'pan_number', 'instagram_link'].forEach(id => {
+['email', 'phone', 'business_name', 'gst_number', 'instagram_link'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('blur', () => {
@@ -1301,11 +1195,11 @@ function renderPreviews() {
     previewContainer.innerHTML = '';
     
     if (badgeCounter) {
-        badgeCounter.textContent = `${selectedFiles.length} / 4 Uploaded`;
-        if (selectedFiles.length >= 2 && selectedFiles.length <= 4) {
-            badgeCounter.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200';
-        } else if (selectedFiles.length > 4) {
+        badgeCounter.textContent = `${selectedFiles.length} / 4 Uploaded (Optional)`;
+        if (selectedFiles.length > 4) {
             badgeCounter.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200';
+        } else if (selectedFiles.length > 0) {
+            badgeCounter.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200';
         } else {
             badgeCounter.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-pink-100 text-[#F25996] border border-pink-200';
         }
@@ -1346,11 +1240,11 @@ function updateDropzoneUI() {
     if (selectedFiles.length > 0) {
         textElement.textContent = `${selectedFiles.length} of 4 photo(s) selected`;
         textElement.style.color = '#F25996';
-        subtextElement.textContent = selectedFiles.length >= 2 ? "Ready to upload (Click or drag to add more)" : "Please add at least 1 more photo";
+        subtextElement.textContent = "Click or drag to add/change photos (Optional)";
         iconElement.innerHTML = '<svg class="w-6 h-6" style="color: #F25996;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
         iconElement.style.backgroundColor = 'rgba(253, 191, 221, 0.5)';
     } else {
-        textElement.textContent = "Click or drag & drop to upload (Max 4 Photos)";
+        textElement.textContent = "Click or drag & drop to upload (Optional, Max 4 Photos)";
         textElement.style.color = '';
         subtextElement.textContent = "JPG, PNG or WEBP (Max size 5MB each)";
         iconElement.innerHTML = '<svg class="w-6 h-6" style="color: #F25996;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>';
@@ -1391,23 +1285,23 @@ function toggleGstFields() {
     const gstSection = document.getElementById('gst_section');
     const nonGstSection = document.getElementById('non_gst_section');
     const gstInput = document.getElementById('gst_number');
-    const panInput = document.getElementById('pan_number');
+    const instaInput = document.getElementById('instagram_link');
     const noGstReason = document.getElementById('no_gst_reason');
 
     if (hasGst) {
         gstSection.classList.remove('hidden');
         nonGstSection.classList.add('hidden');
         gstInput.required = true;
-        panInput.required = false;
+        if (instaInput) instaInput.required = false;
         if (noGstReason) noGstReason.required = false;
         clearFieldError('no_gst_reason');
         clearFieldError('other_gst_reason');
-        clearFieldError('pan_number');
+        clearFieldError('instagram');
     } else {
         gstSection.classList.add('hidden');
         nonGstSection.classList.remove('hidden');
         gstInput.required = false;
-        panInput.required = true;
+        if (instaInput) instaInput.required = true;
         if (noGstReason) noGstReason.required = true;
         clearFieldError('gst_number');
     }
@@ -1505,22 +1399,15 @@ function validateStep(step) {
         } else {
             fields.push('no_gst_reason');
             if (reasonVal === 'Other') fields.push('other_gst_reason');
-            fields.push('pan_number');
+            fields.push('instagram_link');
         }
+
+        fields.push('shop_photos');
 
         fields.forEach(f => {
             const valid = validateSingleField(f);
             if (!valid && !firstInvalidField) {
-                firstInvalidField = document.getElementById(f) || (f === 'district' ? (stateVal === 'Tamil Nadu' ? document.getElementById('district_select') : document.getElementById('district_text')) : null);
-            }
-            if (!valid) isValid = false;
-        });
-    } else if (step === 3) {
-        const fields = ['shop_photos', 'instagram_link'];
-        fields.forEach(f => {
-            const valid = validateSingleField(f);
-            if (!valid && !firstInvalidField) {
-                firstInvalidField = f === 'shop_photos' ? document.getElementById('dropzone_container') : document.getElementById(f);
+                firstInvalidField = f === 'shop_photos' ? document.getElementById('dropzone_container') : (document.getElementById(f) || (f === 'district' ? (stateVal === 'Tamil Nadu' ? document.getElementById('district_select') : document.getElementById('district_text')) : null));
             }
             if (!valid) isValid = false;
         });
@@ -1570,72 +1457,6 @@ async function nextStep(currentStep) {
         }
     }
     
-    if (currentStep === 2) {
-        const businessName = document.getElementById('business_name').value.trim();
-        const hasGst = document.getElementById('has_gst').checked;
-
-        // Validate document uploads
-        if (hasGst) {
-            const gstDoc = document.getElementById('gst_document');
-            if (!gstDoc || !gstDoc.files || !gstDoc.files[0]) {
-                const errDiv  = document.getElementById('gst_document-error');
-                const errSpan = document.getElementById('gst_document-error-text');
-                if (errDiv) { errDiv.classList.remove('hidden'); errSpan.textContent = 'Please upload your GST document.'; }
-                gstDoc && gstDoc.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
-        } else {
-            const panDoc = document.getElementById('pan_document');
-            if (!panDoc || !panDoc.files || !panDoc.files[0]) {
-                const errDiv  = document.getElementById('pan_document-error');
-                const errSpan = document.getElementById('pan_document-error-text');
-                if (errDiv) { errDiv.classList.remove('hidden'); errSpan.textContent = 'Please upload your PAN card document.'; }
-                panDoc && panDoc.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
-        }
-
-        const checkPayload = { business_name: businessName };
-        if (hasGst) {
-            const gstVal = document.getElementById('gst_number').value.trim().toUpperCase();
-            if (gstVal) checkPayload.gst_number = gstVal;
-        } else {
-            const panVal = document.getElementById('pan_number').value.trim().toUpperCase();
-            if (panVal) checkPayload.pan_number = panVal;
-        }
-
-        try {
-            const response = await fetch('<?= BASE_URL ?>/api/check-user-exists', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(checkPayload)
-            });
-
-            const data = await response.json();
-            
-            if (data.exists) {
-                const targetField = data.field === 'business' ? 'business' : data.field;
-                _dbDuplicateErrors[targetField] = data.message;
-                setFieldError(targetField, data.message);
-                const targetEl = document.getElementById(targetField === 'business' ? 'business_name' : targetField);
-                if (targetEl) {
-                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    if (targetEl.focus) targetEl.focus();
-                }
-                return; // Stop here, do not advance
-            } else {
-                _dbDuplicateErrors['business'] = null;
-                _dbDuplicateErrors['gst_number'] = null;
-                _dbDuplicateErrors['pan_number'] = null;
-                clearFieldError('business');
-                clearFieldError('gst_number');
-                clearFieldError('pan_number');
-            }
-        } catch (error) {
-            console.error("Error checking step 2 duplicates:", error);
-        }
-    }
-    
     goToStep(currentStep + 1, true);
 }
 
@@ -1646,7 +1467,7 @@ function prevStep(currentStep) {
     let currentStepIndex = 1;
 
     function goToStep(step, scroll = true) {
-        if (step < 1 || step > 3) step = 1;
+        if (step < 1 || step > 2) step = 1;
         currentStepIndex = step;
 
         // Hide all steps, show target step
@@ -1671,29 +1492,38 @@ function prevStep(currentStep) {
 
     function updateProgress(step) {
         const line = document.getElementById('progress-line');
-        if (step === 1) line.style.width = '0%';
-        if (step === 2) line.style.width = '50%';
-        if (step === 3) line.style.width = '100%';
+        if (line) {
+            if (step === 1) line.style.width = '0%';
+            if (step === 2) line.style.width = '100%';
+        }
 
         // Reset all icons to inactive state first
-        for(let i=1; i<=3; i++) {
+        for(let i=1; i<=2; i++) {
             const icon = document.getElementById('step-' + i + '-icon');
             const text = document.getElementById('step-' + i + '-text');
-            icon.className = 'w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors duration-300 bg-gray-100 border-2 border-gray-200 text-gray-400';
-            icon.style.backgroundColor = '';
-            icon.style.color = '';
-            text.className = 'text-xs font-bold text-gray-500';
-            text.style.color = '';
+            if (icon) {
+                icon.className = 'w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors duration-300 bg-gray-100 border-2 border-gray-200 text-gray-400';
+                icon.style.backgroundColor = '';
+                icon.style.color = '';
+            }
+            if (text) {
+                text.className = 'text-xs font-bold text-gray-500';
+                text.style.color = '';
+            }
         }
 
         // Apply active/completed state based on step
         for(let i=1; i<=step; i++) {
             const icon = document.getElementById('step-' + i + '-icon');
             const text = document.getElementById('step-' + i + '-text');
-            icon.className = 'w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors duration-300 text-white shadow-md border-0';
-            icon.style.backgroundColor = '#F25996';
-            text.className = 'text-xs font-bold';
-            text.style.color = '#F25996';
+            if (icon) {
+                icon.className = 'w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors duration-300 text-white shadow-md border-0';
+                icon.style.backgroundColor = '#F25996';
+            }
+            if (text) {
+                text.className = 'text-xs font-bold';
+                text.style.color = '#F25996';
+            }
         }
     }
     
@@ -1710,33 +1540,48 @@ function prevStep(currentStep) {
             goToStep(2, true);
             return;
         }
-        if (!validateStep(3)) {
-            goToStep(3, true);
-            return;
+
+        const businessName = document.getElementById('business_name').value.trim();
+        const hasGst = document.getElementById('has_gst').checked;
+
+        const checkPayload = { business_name: businessName };
+        if (hasGst) {
+            const gstVal = document.getElementById('gst_number').value.trim().toUpperCase();
+            if (gstVal) checkPayload.gst_number = gstVal;
+        } else {
+            const instaVal = document.getElementById('instagram_link').value.trim();
+            if (instaVal) checkPayload.instagram_link = instaVal;
         }
 
-        const instaVal = document.getElementById('instagram_link').value.trim();
-        if (instaVal) {
-            try {
-                const response = await fetch('<?= BASE_URL ?>/api/check-user-exists', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ instagram_link: instaVal })
-                });
-                const data = await response.json();
-                if (data.exists) {
-                    _dbDuplicateErrors['instagram'] = data.message;
-                    setFieldError('instagram', data.message);
-                    const instaEl = document.getElementById('instagram_link');
-                    if (instaEl) {
-                        instaEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        if (instaEl.focus) instaEl.focus();
-                    }
-                    return;
+        try {
+            const response = await fetch('<?= BASE_URL ?>/api/check-user-exists', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(checkPayload)
+            });
+
+            const data = await response.json();
+            
+            if (data.exists) {
+                const targetField = data.field === 'business' ? 'business' : data.field;
+                _dbDuplicateErrors[targetField] = data.message;
+                setFieldError(targetField, data.message);
+                const targetEl = document.getElementById(targetField === 'business' ? 'business_name' : (targetField === 'instagram' ? 'instagram_link' : targetField));
+                if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    if (targetEl.focus) targetEl.focus();
                 }
-            } catch(err) {
-                console.error("Error checking instagram duplicate:", err);
+                return; // Stop here, do not submit
+            } else {
+                _dbDuplicateErrors['business'] = null;
+                _dbDuplicateErrors['gst_number'] = null;
+                _dbDuplicateErrors['instagram'] = null;
+                clearFieldError('business');
+                clearFieldError('gst_number');
+                clearFieldError('instagram');
             }
+        } catch (error) {
+            console.error("Error checking step 2 duplicates:", error);
         }
 
         try {
@@ -1756,8 +1601,6 @@ function prevStep(currentStep) {
                 if (currentStepIndex === 1) {
                     nextStep(1);
                 } else if (currentStepIndex === 2) {
-                    nextStep(2);
-                } else if (currentStepIndex === 3) {
                     submitFinalForm();
                 }
                 return false;
@@ -1768,8 +1611,7 @@ function prevStep(currentStep) {
             if (!_isSubmitting) {
                 e.preventDefault();
                 if (currentStepIndex === 1) nextStep(1);
-                else if (currentStepIndex === 2) nextStep(2);
-                else if (currentStepIndex === 3) submitFinalForm();
+                else if (currentStepIndex === 2) submitFinalForm();
                 return false;
             }
         });
@@ -1798,9 +1640,7 @@ function prevStep(currentStep) {
         
         // Reset file upload label texts
         const gstLabel = document.getElementById('gst_doc_name');
-        if (gstLabel) gstLabel.textContent = 'Click to upload GST certificate / registration document';
-        const panLabel = document.getElementById('pan_doc_name');
-        if (panLabel) panLabel.textContent = 'Click to upload PAN card document';
+        if (gstLabel) gstLabel.textContent = 'Click to upload GST certificate / registration document (Optional)';
         const uploadText = document.getElementById('upload_text');
         if (uploadText) uploadText.textContent = 'Click or drag & drop to upload';
 

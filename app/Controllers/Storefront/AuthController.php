@@ -49,7 +49,7 @@ class AuthController extends Controller
 
     public function login()
     {
-        $loginInput = trim($_POST['email'] ?? '');
+        $loginInput = trim($_POST['email'] ?? $_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
         $redirect = trim($_POST['redirect'] ?? $_GET['redirect'] ?? Session::get('return_to') ?? '');
         $redirectParam = !empty($redirect) ? '?redirect=' . urlencode($redirect) : '';
@@ -61,14 +61,8 @@ class AuthController extends Controller
         }
 
         $userModel = new User();
-        // Check by lowercased email, exact email, or phone number
-        $user = $userModel->findByEmail(strtolower($loginInput));
-        if (!$user) {
-            $user = $userModel->findByEmail($loginInput);
-        }
-        if (!$user) {
-            $user = $userModel->findByPhone($loginInput);
-        }
+        // Lookup user by Username, Mobile number, Email, or Unique Buyer/Vendor ID
+        $user = $userModel->findForLogin($loginInput, $password);
 
         if ($user && password_verify($password, $user['password_hash'])) {
             if ($user['status'] === 'blocked' || $user['status'] === 'inactive' || $user['status'] === 'deactivated') {
@@ -218,7 +212,7 @@ class AuthController extends Controller
             $this->redirect($targetUrl);
             return;
         } else {
-            Session::setFlash('error', 'Invalid email/phone or password. Please try again.');
+            Session::setFlash('error', 'Invalid username, mobile number, email or password. Please try again.');
             $this->redirect('/login' . $redirectParam);
             return;
         }
@@ -284,8 +278,8 @@ class AuthController extends Controller
         $instagramLink = trim($_POST['instagram_link'] ?? '');
         
         // 2. Validation
-        if (empty($name) || empty($email) || empty($phone) || empty($password) || empty($businessName) || empty($shopLocationRaw) || empty($state) || empty($district) || empty($pincode) || empty($instagramLink)) {
-            Session::setFlash('error', 'All core fields including full address and Instagram link are required.');
+        if (empty($name) || empty($email) || empty($phone) || empty($password) || empty($businessName) || empty($shopLocationRaw) || empty($state) || empty($district) || empty($pincode)) {
+            Session::setFlash('error', 'All core fields including full address are required.');
             $this->redirect('/register');
         }
 
@@ -328,12 +322,12 @@ class AuthController extends Controller
         }
 
         if (!$hasGst) {
-            if (empty($panNumber)) {
-                Session::setFlash('error', 'PAN Number is required for Non-GST verification.');
+            if (empty($instagramLink)) {
+                Session::setFlash('error', 'Instagram profile link is required for Non-GST verification.');
                 $this->redirect('/register');
             }
-            if (!preg_match('/^[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}$/', $panNumber)) {
-                Session::setFlash('error', 'Please enter a valid PAN format (e.g., ABCDE1234F).');
+            if (!preg_match('/^https?:\/\/(www\.)?instagram\.com\/[A-Za-z0-9_.\-\/]+(\?.*)?$/i', $instagramLink)) {
+                Session::setFlash('error', 'Please enter a valid Instagram profile link (e.g. https://www.instagram.com/yourshop).');
                 $this->redirect('/register');
             }
             if (empty($noGstReason)) {
@@ -349,15 +343,16 @@ class AuthController extends Controller
             }
         }
 
-        // Validate photos (at least 2 required, maximum 4 allowed)
-        if (!isset($_FILES['shop_photos']) || count($_FILES['shop_photos']['name']) < 2 || $_FILES['shop_photos']['error'][0] === UPLOAD_ERR_NO_FILE) {
-            Session::setFlash('error', 'Please upload at least 2 shop photos for verification.');
-            $this->redirect('/register');
-        }
-
-        if (count($_FILES['shop_photos']['name']) > 4) {
-            Session::setFlash('error', 'You can upload a maximum of 4 shop photos.');
-            $this->redirect('/register');
+        // Validate photos (optional, maximum 4 allowed)
+        if (isset($_FILES['shop_photos']['name']) && is_array($_FILES['shop_photos']['name'])) {
+            $validPhotosCount = 0;
+            foreach ($_FILES['shop_photos']['error'] as $err) {
+                if ($err === UPLOAD_ERR_OK) $validPhotosCount++;
+            }
+            if ($validPhotosCount > 4) {
+                Session::setFlash('error', 'You can upload a maximum of 4 shop photos.');
+                $this->redirect('/register');
+            }
         }
 
         // Check uniqueness — but allow re-registration for rejected accounts
@@ -390,27 +385,28 @@ class AuthController extends Controller
         $uploader = new CloudinaryUploader();
         $uploadedCount = 0;
 
-        foreach ($_FILES['shop_photos']['tmp_name'] as $key => $tmpName) {
-            if ($uploadedCount >= 4) break; // Enforce maximum 4 shop photos
-            if ($_FILES['shop_photos']['error'][$key] === UPLOAD_ERR_OK) {
-                $ext = strtolower(pathinfo($_FILES['shop_photos']['name'][$key], PATHINFO_EXTENSION));
-                if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) continue;
+        if (isset($_FILES['shop_photos']['tmp_name']) && is_array($_FILES['shop_photos']['tmp_name'])) {
+            foreach ($_FILES['shop_photos']['tmp_name'] as $key => $tmpName) {
+                if ($uploadedCount >= 4) break; // Enforce maximum 4 shop photos
+                if ($_FILES['shop_photos']['error'][$key] === UPLOAD_ERR_OK) {
+                    $ext = strtolower(pathinfo($_FILES['shop_photos']['name'][$key], PATHINFO_EXTENSION));
+                    if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) continue;
 
-                $cloudinaryResponse = $uploader->uploadMedia($tmpName);
-                
-                if ($cloudinaryResponse && isset($cloudinaryResponse['secure_url'])) {
-                    $tempFiles[] = [
-                        'path' => $cloudinaryResponse['secure_url'],
-                        'type' => 'image/webp'
-                    ];
-                    $uploadedCount++;
+                    $cloudinaryResponse = $uploader->uploadMedia($tmpName);
+                    
+                    if ($cloudinaryResponse && isset($cloudinaryResponse['secure_url'])) {
+                        $tempFiles[] = [
+                            'path' => $cloudinaryResponse['secure_url'],
+                            'type' => 'image/webp'
+                        ];
+                        $uploadedCount++;
+                    }
                 }
             }
         }
 
-        // Handle GST / PAN document upload (max 3MB)
+        // Handle GST document upload (max 3MB)
         $gstDocUrl  = null;
-        $panDocUrl  = null;
         $allowedDocExts = ['pdf', 'jpg', 'jpeg', 'png'];
         $maxDocBytes    = 3 * 1024 * 1024; // 3MB
 
@@ -431,23 +427,6 @@ class AuthController extends Controller
             }
         }
 
-        if (!$hasGst && isset($_FILES['pan_document']) && $_FILES['pan_document']['error'] === UPLOAD_ERR_OK) {
-            $docSize = $_FILES['pan_document']['size'];
-            $docExt  = strtolower(pathinfo($_FILES['pan_document']['name'], PATHINFO_EXTENSION));
-            if ($docSize > $maxDocBytes) {
-                Session::setFlash('error', 'PAN document must be under 3MB.');
-                $this->redirect('/register');
-            }
-            if (!in_array($docExt, $allowedDocExts)) {
-                Session::setFlash('error', 'PAN document must be a PDF, JPG, or PNG file.');
-                $this->redirect('/register');
-            }
-            $cloudinaryResponse = $uploader->uploadMedia($_FILES['pan_document']['tmp_name']);
-            if ($cloudinaryResponse && isset($cloudinaryResponse['secure_url'])) {
-                $panDocUrl = $cloudinaryResponse['secure_url'];
-            }
-        }
-
         // Generate OTP
         $otp = sprintf("%06d", mt_rand(1, 999999));
         
@@ -464,18 +443,25 @@ class AuthController extends Controller
             'shop_state' => $state,
             'shop_postal_code' => $pincode,
             'has_gst'       => $hasGst,
-            'gst_number'    => $gstNumber,
-            'gst_doc_url'   => $gstDocUrl,
-            'pan_number'    => $panNumber,
-            'pan_doc_url'   => $panDocUrl,
-            'no_gst_reason' => $noGstReason,
-            'instagram_link'=> $instagramLink,
+            'gst_number'    => $hasGst ? $gstNumber : null,
+            'gst_doc_url'   => $hasGst ? $gstDocUrl : null,
+            'pan_number'    => null,
+            'pan_doc_url'   => null,
+            'no_gst_reason' => !$hasGst ? $noGstReason : null,
+            'instagram_link'=> $instagramLink ?: null,
             'temp_files'    => $tempFiles
         ]);
         Session::set('registration_otp', $otp);
         Session::set('otp_generated_at', time());
 
-        // Send OTP via EmailService
+        // Send OTP via SMSQuicker & EmailService
+        try {
+            $smsService = new \App\Services\SmsQuickerService();
+            $smsService->sendRegisterOtp($phone, $otp, $name);
+        } catch (\Throwable $e) {
+            error_log("[Register OTP SMS Error] " . $e->getMessage());
+        }
+
         try {
             $emailService = new \App\Services\EmailService();
             $emailService->sendOtpEmail($email, $otp, $name);
@@ -483,7 +469,7 @@ class AuthController extends Controller
             error_log("[Register OTP Email Error] " . $e->getMessage());
         }
 
-        Session::setFlash('success', "OTP has been sent to your email address!");
+        Session::setFlash('success', "OTP has been sent to your mobile number ({$phone}) via WhatsApp / SMS!");
         $this->redirect('/register/verify');
     }
 
@@ -670,8 +656,18 @@ class AuthController extends Controller
 
         $name = $regData['name'] ?? 'User';
         $email = $regData['email'] ?? '';
+        $phone = $regData['phone'] ?? '';
 
-        // Send new OTP via EmailService
+        // Send new OTP via SMSQuicker & EmailService
+        try {
+            if (!empty($phone)) {
+                $smsService = new \App\Services\SmsQuickerService();
+                $smsService->sendResendOtp($phone, $newOtp, $name);
+            }
+        } catch (\Throwable $e) {
+            error_log("[Resend OTP SMS Error] " . $e->getMessage());
+        }
+
         try {
             $emailService = new \App\Services\EmailService();
             $emailService->sendOtpEmail($email, $newOtp, $name);
@@ -681,7 +677,7 @@ class AuthController extends Controller
 
         Session::set('otp_resend_count', $resendCount + 1);
         Session::set('otp_last_resend_time', time());
-        Session::setFlash('success', "A new OTP has been sent to your email!");
+        Session::setFlash('success', "A new OTP has been sent to your mobile number via WhatsApp / SMS!");
         $this->redirect('/register/verify');
     }
 

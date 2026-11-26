@@ -49,7 +49,7 @@
                     <thead>
                         <tr class="bg-white border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold">
                             <th class="px-6 py-4">Business Details</th>
-                            <th class="px-6 py-4">Verification Type</th>
+                            <th class="px-6 py-4">Shop Photos</th>
                             <th class="px-6 py-4">Contact</th>
                             <th class="px-6 py-4">Date</th>
                             <th class="px-6 py-4 text-right">Actions</th>
@@ -65,6 +65,11 @@
                                         <?php if ($buyer['gst_flag']): ?>
                                             <span class="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 rounded mr-2">GST</span>
                                             <?= htmlspecialchars($buyer['gst_number']) ?>
+                                        <?php elseif (!empty($buyer['instagram_link'])): ?>
+                                            <a href="<?= htmlspecialchars($buyer['instagram_link']) ?>" target="_blank" class="inline-flex items-center px-2 py-0.5 bg-pink-50 text-[#F25996] hover:bg-pink-100 rounded text-xs font-semibold mr-2 transition-colors">
+                                                <svg class="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                                                Instagram Profile
+                                            </a>
                                         <?php else: ?>
                                             <span class="inline-block px-2 py-0.5 bg-yellow-50 text-yellow-700 rounded mr-2">PAN</span>
                                             <?= htmlspecialchars($buyer['pan_number'] ?? 'N/A') ?>
@@ -73,8 +78,10 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center space-x-2">
-                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        <span class="text-sm text-gray-600">Shop Photos Attached</span>
+                                        <svg class="w-5 h-5 <?= !empty($buyer['photo_count']) ? 'text-[#F25996]' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        <span class="text-sm <?= !empty($buyer['photo_count']) ? 'font-medium text-gray-800' : 'text-gray-500 italic' ?>">
+                                            <?= !empty($buyer['photo_count']) ? htmlspecialchars($buyer['photo_count']) . ' Photo(s)' : 'No Photos (Optional)' ?>
+                                        </span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
@@ -99,6 +106,13 @@
                                         onclick="promptReject(<?= $buyer['id'] ?>, '<?= addslashes(htmlspecialchars($buyer['business_name'], ENT_QUOTES)) ?>')"
                                         class="text-red-600 hover:text-red-800 text-sm font-medium ml-1">
                                         Reject
+                                    </button>
+                                    <?php endif; ?>
+                                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('pending_buyers', 'delete')): ?>
+                                    <button type="button"
+                                        onclick="promptDeleteBuyer(<?= $buyer['id'] ?>, '<?= addslashes(htmlspecialchars($buyer['business_name'], ENT_QUOTES)) ?>', 'pending')"
+                                        class="text-red-500 hover:text-red-700 p-1.5 transition-colors inline-block align-middle cursor-pointer" title="Delete Buyer Request">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
                                     <?php endif; ?>
                                 </td>
@@ -178,6 +192,11 @@ function pendingPageUrl(int $page): string {
                                         <?php if ($buyer['gst_flag']): ?>
                                             <span class="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 rounded mr-2">GST</span>
                                             <?= htmlspecialchars($buyer['gst_number']) ?>
+                                        <?php elseif (!empty($buyer['instagram_link'])): ?>
+                                            <a href="<?= htmlspecialchars($buyer['instagram_link']) ?>" target="_blank" class="inline-flex items-center px-2 py-0.5 bg-pink-50 text-[#F25996] hover:bg-pink-100 rounded text-xs font-semibold mr-2 transition-colors">
+                                                <svg class="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                                                Instagram Profile
+                                            </a>
                                         <?php else: ?>
                                             <span class="inline-block px-2 py-0.5 bg-yellow-50 text-yellow-700 rounded mr-2">PAN</span>
                                             <?= htmlspecialchars($buyer['pan_number'] ?? 'N/A') ?>
@@ -200,6 +219,13 @@ function pendingPageUrl(int $page): string {
                                     <a href="<?= BASE_URL ?>/admin/buyers/view?id=<?= $buyer['id'] ?>&from=rejected" class="p-1.5 text-emerald-600 hover:text-emerald-800 transition-colors inline-block align-middle" title="View Details">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     </a>
+                                    <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('pending_buyers', 'delete') || $this->hasPermission('all_buyers', 'delete')): ?>
+                                    <button type="button"
+                                        onclick="promptDeleteBuyer(<?= $buyer['id'] ?>, '<?= addslashes(htmlspecialchars($buyer['business_name'], ENT_QUOTES)) ?>', 'rejected')"
+                                        class="p-1.5 text-red-500 hover:text-red-700 transition-colors inline-block align-middle cursor-pointer" title="Delete Rejected Registration">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -343,5 +369,65 @@ function switchTab(tabId) {
         switchTab('rejected');
     }
 })();
+
+function promptDeleteBuyer(userId, businessName, tab) {
+    Swal.fire({
+        title: 'Delete Buyer Registration?',
+        html: `Are you sure you want to permanently delete registration for <strong class="text-gray-900">${businessName}</strong>?<br><span class="text-xs text-red-500 font-medium mt-1 block">This action cannot be undone. All related requests, profiles and documents will be permanently removed.</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, permanently delete',
+        cancelButtonText: 'Cancel',
+        customClass: { popup: 'rounded-2xl shadow-xl border border-gray-100' }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Deleting...',
+                text: 'Please wait while the buyer record is removed.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            fetch('<?= BASE_URL ?>/admin/buyers/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ user_id: userId, redirect_to: '<?= BASE_URL ?>/admin/buyers/pending?tab=' + tab })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: data.message || 'Buyer deleted successfully.',
+                        confirmButtonColor: '#F25996'
+                    }).then(() => {
+                        window.location.href = '<?= BASE_URL ?>/admin/buyers/pending' + (tab === 'rejected' ? '?tab=rejected' : '');
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Failed',
+                        text: data.message || 'Failed to delete buyer.',
+                        confirmButtonColor: '#F25996'
+                    });
+                }
+            })
+            .catch(err => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An unexpected network error occurred.',
+                    confirmButtonColor: '#F25996'
+                });
+            });
+        }
+    });
+}
 </script>
 </div>

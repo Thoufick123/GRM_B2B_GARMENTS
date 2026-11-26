@@ -3,7 +3,16 @@
         <div>
             <h2 class="mt-2 text-center text-3xl font-extrabold text-gray-900 font-display">Enter OTP</h2>
             <p class="mt-2 text-center text-sm text-gray-500">
-                We've sent a 6-digit OTP to your email. Please enter it below to verify your account.
+                <?php 
+                $channel = \Core\Session::get('reset_channel');
+                if ($channel === 'whatsapp'): 
+                ?>
+                    We've sent a 6-digit OTP directly to your <strong>WhatsApp</strong>. Please enter it below to proceed.
+                <?php elseif ($channel === 'email'): ?>
+                    We've sent a 6-digit OTP to your <strong>Email</strong> inbox. Please enter it below to proceed.
+                <?php else: ?>
+                    We've sent a 6-digit OTP to your registered mobile number (WhatsApp / SMS). Please enter it below to proceed.
+                <?php endif; ?>
             </p>
         </div>
         

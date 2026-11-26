@@ -22,9 +22,9 @@
                 <?php endif; ?>
                 
                 <div>
-                    <label for="email" class="form-label text-sm font-semibold text-gray-700">Email address or Mobile number</label>
+                    <label for="email" class="form-label text-sm font-semibold text-gray-700">Username, Mobile number or Email</label>
                     <div class="mt-1">
-                        <input id="email" name="email" type="text" placeholder="Enter email or 10-digit mobile" required class="form-input px-3 py-2.5 border border-gray-200 rounded-lg w-full focus:ring-2 focus:ring-[#f25996] focus:border-[#f25996] outline-none bg-white">
+                        <input id="email" name="email" type="text" placeholder="Enter username, mobile or email" autocomplete="username" autocapitalize="none" autocorrect="off" required class="form-input px-3 py-2.5 border border-gray-200 rounded-lg w-full focus:ring-2 focus:ring-[#f25996] focus:border-[#f25996] outline-none bg-white">
                     </div>
                 </div>
 

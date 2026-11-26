@@ -1254,4 +1254,81 @@ class OrderController extends Controller
             'message' => "Packing video deleted successfully."
         ]);
     }
+
+    public function delete()
+    {
+        $canDelete = (\Core\Session::get('user_role') === 'super_admin') 
+            || $this->hasPermission('all_orders', 'delete');
+            
+        if (!$canDelete) {
+            $this->requirePermission('all_orders', 'delete');
+            return;
+        }
+
+        $isJson = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+               || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+               || (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false);
+
+        $input = [];
+        if (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+            $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        }
+
+        $orderId = $_POST['order_id'] ?? $input['order_id'] ?? $_GET['id'] ?? null;
+        $orderIds = $_POST['order_ids'] ?? $input['order_ids'] ?? null;
+
+        if (empty($orderId) && empty($orderIds)) {
+            if ($isJson) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'No order specified for deletion.']);
+                exit;
+            }
+            Session::setFlash('error', 'No order specified for deletion.');
+            $this->redirect(BASE_URL . '/admin/orders');
+            return;
+        }
+
+        $targetIds = [];
+        if (!empty($orderIds)) {
+            $targetIds = is_array($orderIds) ? $orderIds : explode(',', (string)$orderIds);
+        } else {
+            $targetIds = [$orderId];
+        }
+
+        $orderModel = new Order();
+        $deletedCount = 0;
+        $errors = [];
+
+        foreach ($targetIds as $idOrNum) {
+            $idOrNum = trim((string)$idOrNum);
+            if (empty($idOrNum)) continue;
+            try {
+                if ($orderModel->deleteOrderByNumberOrId($idOrNum)) {
+                    $deletedCount++;
+                }
+            } catch (\Exception $e) {
+                $errors[] = "Order #{$idOrNum}: " . $e->getMessage();
+            }
+        }
+
+        if ($deletedCount > 0) {
+            $msg = $deletedCount === 1 ? 'Order permanently deleted successfully.' : "{$deletedCount} orders permanently deleted.";
+            if ($isJson) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => $msg, 'deleted_count' => $deletedCount]);
+                exit;
+            }
+            Session::setFlash('success', $msg);
+        } else {
+            $errMsg = !empty($errors) ? implode('; ', $errors) : 'Failed to delete order(s). Order may not exist.';
+            if ($isJson) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $errMsg]);
+                exit;
+            }
+            Session::setFlash('error', $errMsg);
+        }
+
+        $this->redirect(BASE_URL . '/admin/orders');
+    }
 }

@@ -94,6 +94,14 @@
             <span>Print</span>
         </button>
 
+        <?php if (empty($isVendor) && (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('all_orders', 'delete'))): ?>
+        <!-- Bulk Delete Button (Visible when orders checked) -->
+        <button type="button" id="btnBulkDeleteOrders" onclick="confirmBulkDeleteOrders()" class="hidden h-11 px-5 rounded-full font-bold text-sm bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-95" title="Permanently delete selected orders">
+            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            <span>Delete Selected</span>
+        </button>
+        <?php endif; ?>
+
         <?php if (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('packing_slip_config', 'view')): ?>
         <!-- Configuration Settings Circular Button (White with Border and Cog Icon) -->
         <a href="<?= BASE_URL ?>/admin/orders/packing-slip-config" class="w-11 h-11 rounded-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 hover:text-gray-900 flex items-center justify-center transition-colors shadow-xs shrink-0" title="Packing Slip Configuration & Section Ordering">
@@ -366,6 +374,11 @@
                                 <a href="<?= BASE_URL ?>/admin/orders/packing-slip?order_id=<?= $order['id'] ?>&auto_print=1" target="_blank" class="inline-flex items-center justify-center p-1 text-gray-700 hover:text-black transition-colors" title="Print Slip">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                                 </a>
+                                <?php if (empty($isVendor) && (\Core\Session::get('user_role') === 'super_admin' || $this->hasPermission('all_orders', 'delete'))): ?>
+                                <button type="button" onclick="confirmDeleteOrder('<?= $order['id'] ?>', '<?= htmlspecialchars($order['order_number']) ?>')" class="inline-flex items-center justify-center p-1 text-red-500 hover:text-red-700 transition-colors cursor-pointer" title="Delete Order">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>
@@ -1437,13 +1450,155 @@ function toggleSelectAllOrders(master) {
 function updateSelectedOrdersCount() {
     const selected = document.querySelectorAll('.order-row-cb:checked');
     const badge = document.getElementById('selectedOrdersCountBadge');
-    if (!badge) return;
-    if (selected.length > 0) {
-        badge.textContent = `${selected.length} selected`;
-        badge.classList.remove('hidden');
-    } else {
-        badge.classList.add('hidden');
+    const bulkDeleteBtn = document.getElementById('btnBulkDeleteOrders');
+    if (badge) {
+        if (selected.length > 0) {
+            badge.textContent = `${selected.length} selected`;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
     }
+    if (bulkDeleteBtn) {
+        if (selected.length > 0) {
+            bulkDeleteBtn.classList.remove('hidden');
+            const span = bulkDeleteBtn.querySelector('span');
+            if (span) span.textContent = `Delete Selected (${selected.length})`;
+        } else {
+            bulkDeleteBtn.classList.add('hidden');
+        }
+    }
+}
+
+function confirmDeleteOrder(orderId, orderNumber) {
+    Swal.fire({
+        title: 'Delete Order #' + orderNumber + '?',
+        html: `Are you sure you want to permanently delete Order <strong class="text-gray-900">#${orderNumber}</strong>?<br><span class="text-xs text-red-500 font-medium mt-1 block">This will permanently remove the order, items, and refund records, and restore deducted inventory stock. This action cannot be undone.</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, delete order',
+        cancelButtonText: 'Cancel',
+        customClass: { popup: 'rounded-2xl shadow-xl border border-gray-100' }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Deleting Order...',
+                text: 'Please wait while the order is being removed.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            fetch('<?= BASE_URL ?>/admin/orders/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ order_id: orderId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: data.message || 'Order deleted successfully.',
+                        confirmButtonColor: '#F25996'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Failed',
+                        text: data.message || 'Failed to delete order.',
+                        confirmButtonColor: '#F25996'
+                    });
+                }
+            })
+            .catch(err => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An unexpected network error occurred.',
+                    confirmButtonColor: '#F25996'
+                });
+            });
+        }
+    });
+}
+
+function confirmBulkDeleteOrders() {
+    const selected = Array.from(document.querySelectorAll('.order-row-cb:checked')).map(cb => cb.value);
+    if (selected.length === 0) {
+        Swal.fire({
+            icon: 'info',
+            title: 'No Orders Selected',
+            text: 'Please select one or more orders to delete.',
+            confirmButtonColor: '#F25996'
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: `Delete ${selected.length} Selected Orders?`,
+        html: `Are you sure you want to permanently delete all <strong class="text-gray-900">${selected.length}</strong> selected orders?<br><span class="text-xs text-red-500 font-medium mt-1 block">All items, modifications, and records for these orders will be permanently erased.</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: `Yes, delete ${selected.length} orders`,
+        cancelButtonText: 'Cancel',
+        customClass: { popup: 'rounded-2xl shadow-xl border border-gray-100' }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Deleting Orders...',
+                text: 'Please wait...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            fetch('<?= BASE_URL ?>/admin/orders/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ order_ids: selected })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: data.message || `${selected.length} orders deleted successfully.`,
+                        confirmButtonColor: '#F25996'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Failed',
+                        text: data.message || 'Failed to delete selected orders.',
+                        confirmButtonColor: '#F25996'
+                    });
+                }
+            })
+            .catch(err => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An unexpected network error occurred.',
+                    confirmButtonColor: '#F25996'
+                });
+            });
+        }
+    });
 }
 
 function openBulkPackingSlips(autoPrint = false) {
